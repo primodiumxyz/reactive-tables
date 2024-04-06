@@ -1,41 +1,36 @@
 {
-  "name": "tiny-base-integration",
-  "private": true,
+  "name": "@primodiumxyz/tiny-base-integration",
+  "version": "0.0.1",
+  "description": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/primodiumxyz/tiny-base-integration"
+  },
+  "type": "module",
+  "main": "index.js",
   "scripts": {
-    "build": "pnpm recursive run build",
-    "clean": "bash clean.sh",
-    "clean:indexer": "pnpm clean-local-docker-indexer",
-    "dev": "concurrently -n node,contracts,client,indexer -c yellow,cyan,magenta,red \"cd packages/contracts && pnpm run devnode\" \"cd packages/contracts && pnpm run deploy:local\" \"cd packages/client && pnpm run dev\" \"pnpm dev:indexer\"",
-    "dev:client": "pnpm --filter 'client' run dev",
-    "dev:contracts": "pnpm --filter 'contracts' deploy:local",
-    "dev:indexer": "pnpm clean-local-docker-indexer && pnpm local-docker-indexer",
-    "dev:node": "pnpm --filter 'contracts' devnode",
-    "foundry:up": "curl -L https://foundry.paradigm.xyz | bash && bash $HOME/.foundry/bin/foundryup",
-    "mud:up": "pnpm mud set-version --tag main && pnpm install",
-    "prepare": "husky install && (forge --version || pnpm foundry:up)",
-    "sort-package-json": "npx sort-package-json package.json 'packages/*/package.json'",
-    "test": "pnpm recursive run test",
-    "upgrade:mud": "pnpm mud set-version --tag=next"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "lint-staged": {
     "*.{ts,tsx}": "eslint --cache --fix",
-    "*.{ts,tsx,css,md,mdx,sol}": "prettier --write",
+    "*.{ts,tsx,css,md,mdx}": "prettier --write",
     "package.json": "pnpm sort-package-json"
-  },
-  "devDependencies": {
-    "@latticexyz/cli": "2.0.1",
-    "@primodiumxyz/pg-indexer-reader": "^0.5.1",
-    "@typescript-eslint/eslint-plugin": "5.46.1",
-    "@typescript-eslint/parser": "5.46.1",
-    "concurrently": "^8.0.1",
-    "eslint": "8.29.0",
-    "husky": ">=6",
-    "lint-staged": ">=10",
-    "rimraf": "^3.0.2",
-    "typescript": "5.1.6"
   },
   "engines": {
     "node": "18.x",
     "pnpm": "8.x"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.30",
+    "@typescript-eslint/eslint-plugin": "^7.5.0",
+    "@typescript-eslint/parser": "^7.5.0",
+    "eslint": "^9.0.0",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2",
+    "prettier": "^3.2.5",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.4"
   }
 }

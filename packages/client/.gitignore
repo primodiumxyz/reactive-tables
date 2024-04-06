@@ -1,8 +1,0 @@
-node_modules
-dist
-.DS_Store
-.env
-.vercel
-
-# Sentry Config File
-.env.sentry-build-plugin
