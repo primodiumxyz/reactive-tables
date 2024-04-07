@@ -32,5 +32,14 @@
     "ts-node": "^10.9.2",
     "tsup": "^8.0.2",
     "typescript": "^5.4.4"
+  },
+  "dependencies": {
+    "@latticexyz/common": "2.0.1",
+    "@latticexyz/recs": "2.0.1",
+    "@latticexyz/store": "2.0.1",
+    "@latticexyz/store-sync": "2.0.1",
+    "@primodiumxyz/sync-stack": "^0.6.1",
+    "tinybase": "^4.8.0",
+    "viem": "1.14.0"
   }
 }
