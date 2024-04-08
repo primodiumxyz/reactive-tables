@@ -1,9 +1,10 @@
 import { World } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { StorageAdapter, storeTables, worldTables } from "@latticexyz/store-sync";
+import { MUDChain } from "@latticexyz/common/chains";
 import { ResolvedStoreConfig, Tables } from "@latticexyz/store/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
-import { Address, Chain, PublicClient } from "viem";
+import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 
 export type AllTables<config extends StoreConfig, extraTables extends Tables | undefined> = ResolvedStoreConfig<
@@ -37,10 +38,12 @@ export type TinyBaseWrapperResult<config extends StoreConfig, tables extends Tab
 };
 
 export interface NetworkConfig {
-  chain: Chain;
+  chainId: number;
+  chain: MUDChain;
   worldAddress: Address;
+  initialBlockNumber: bigint;
+  faucetServiceUrl?: string;
   indexerUrl?: string;
-  initialBlockNumber?: bigint;
 }
 
 /* -------------------------------------------------------------------------- */

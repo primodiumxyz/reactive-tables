@@ -10,7 +10,9 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev:indexer": "pnpm clean-local-docker-indexer && pnpm local-docker-indexer",
+    "dev": "concurrently -n node,contracts,indexer -c yellow,cyan,red \"cd src/__tests__/mocks/contracts && pnpm run devnode\" \"cd src/__tests__/mocks/contracts && pnpm run deploy:local\" \"pnpm dev:indexer\"",
+    "test": "vitest"
   },
   "lint-staged": {
     "*.{ts,tsx}": "eslint --cache --fix",
@@ -22,16 +24,19 @@
     "pnpm": "8.x"
   },
   "devDependencies": {
+    "@primodiumxyz/pg-indexer-reader": "^0.6.0",
     "@types/node": "^18.19.30",
     "@typescript-eslint/eslint-plugin": "^7.5.0",
     "@typescript-eslint/parser": "^7.5.0",
+    "concurrently": "^8.2.2",
     "eslint": "^9.0.0",
     "husky": "^9.0.11",
     "lint-staged": "^15.2.2",
     "prettier": "^3.2.5",
     "ts-node": "^10.9.2",
     "tsup": "^8.0.2",
-    "typescript": "^5.4.4"
+    "typescript": "^5.4.4",
+    "vitest": "^1.4.0"
   },
   "dependencies": {
     "@latticexyz/common": "2.0.1",

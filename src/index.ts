@@ -1,7 +1,5 @@
-import { storeTables, worldTables } from "@latticexyz/store-sync";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { World } from "@latticexyz/recs";
-import { RecsStorageAdapter } from "@latticexyz/store-sync/recs";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Tables, resolveConfig } from "@latticexyz/store/internal";
 
@@ -39,8 +37,6 @@ export const tinyBaseWrapper = async <
   const tables = {
     ...resolveConfig(storeToV1(mudConfig as StoreConfig)).tables,
     ...(otherTables ?? {}),
-    ...storeTables,
-    ...worldTables,
   } as unknown as AllTables<config, extraTables>;
 
   /* ------------------------------- COMPONENTS ------------------------------- */

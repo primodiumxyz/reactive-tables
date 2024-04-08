@@ -1,24 +1,20 @@
 import { Store as StoreConfig } from "@latticexyz/store";
 import { World } from "@latticexyz/recs";
 import { Tables } from "@latticexyz/store/internal";
-import { tablesToComponents } from "@latticexyz/store-sync/src/recs/tablesToComponents";
-import { defineInternalComponents } from "@latticexyz/store-sync/src/recs/defineInternalComponents";
 import { mapObject } from "@latticexyz/common/utils";
 import { createStore } from "tinybase";
 
 import { createStorageAdapter } from "./createStorageAdapter";
 import { CreateComponentStoreOptions, CreateComponentStoreResult } from "@/types";
+import { recsStorage } from "@latticexyz/store-sync/recs";
 
 export const createComponentStore = <world extends World, config extends StoreConfig, tables extends Tables>({
   world,
   tables,
   extend,
 }: CreateComponentStoreOptions<world, config, tables>): CreateComponentStoreResult => {
-  // Resolve tables into components (from recsStorage)
-  const components = {
-    ...tablesToComponents(world, tables),
-    ...defineInternalComponents(world),
-  };
+  // Resolve tables into components
+  const { components } = recsStorage({ world, tables });
 
   const store = createStore();
   mapObject(tables, (table) => {
