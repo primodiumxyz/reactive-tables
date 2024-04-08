@@ -38,7 +38,9 @@
     "@latticexyz/recs": "2.0.1",
     "@latticexyz/store": "2.0.1",
     "@latticexyz/store-sync": "2.0.1",
+    "@latticexyz/world": "2.0.1",
     "@primodiumxyz/sync-stack": "^0.6.1",
+    "rxjs": "^7.8.1",
     "tinybase": "^4.8.0",
     "viem": "1.14.0"
   }

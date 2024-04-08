@@ -1,68 +1,71 @@
+import { storeTables, worldTables } from "@latticexyz/store-sync";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { World } from "@latticexyz/recs";
 import { RecsStorageAdapter } from "@latticexyz/store-sync/recs";
 import { storeToV1 } from "@latticexyz/store/config/v2";
-import { ResolvedStoreConfig, Table, resolveConfig } from "@latticexyz/store/internal";
-import { PublicClient } from "viem";
+import { Tables, resolveConfig } from "@latticexyz/store/internal";
 
 import { createComponentStore } from "@/store";
 import { createSync, handleSync } from "@/sync";
 import { createPublicClient } from "@/utils";
-import { NetworkConfig, OnSyncCallbacks } from "@/types";
+import { TinyBaseWrapperOptions, NetworkConfig, TinyBaseWrapperResult, AllTables } from "@/types";
 
-// TODO: handle type issues in tables & config
-export const tinyBaseWrapper = <
+export const tinyBaseWrapper = async <
   world extends World,
   config extends StoreConfig,
   networkConfig extends NetworkConfig,
-  extraTables extends Record<string, Table>,
->(args: {
-  world: world;
-  mudConfig: config;
-  networkConfig: networkConfig;
-  otherTables?: extraTables;
-  publicClient?: PublicClient;
-  extend?: boolean; // extend components with additional methods
-  startSync?: boolean; // start sync immediately
-  onSync?: OnSyncCallbacks;
+  extraTables extends Tables | undefined,
+>({
+  world,
+  mudConfig,
+  networkConfig,
+  otherTables,
+  publicClient,
+  extend = true, // extend components with additional methods? TODO: might do it anyway as a base
+  startSync = true, // start sync immediately?
+  onSync = {
+    progress: (index, blockNumber, progress) => console.log(`Syncing: ${progress}%`),
+    complete: () => console.log("Sync complete"),
+    error: (err) => console.error("Sync error", err),
+  },
   // TODO: initialQueries?
-}) => {
-  const {
-    world,
-    mudConfig,
-    networkConfig,
-    otherTables,
-    publicClient = createPublicClient(args.networkConfig),
-    extend = true,
-    startSync = true,
-    onSync,
-  } = args;
+}: TinyBaseWrapperOptions<world, config, networkConfig, extraTables>): Promise<
+  TinyBaseWrapperResult<config, extraTables>
+> => {
+  const client = publicClient ?? createPublicClient(networkConfig);
 
   /* --------------------------------- TABLES --------------------------------- */
   // Resolve tables
   const tables = {
     ...resolveConfig(storeToV1(mudConfig as StoreConfig)).tables,
     ...(otherTables ?? {}),
-  } as ResolvedStoreConfig<storeToV1<config>>["tables"] & extraTables;
+    ...storeTables,
+    ...worldTables,
+  } as unknown as AllTables<config, extraTables>;
 
   /* ------------------------------- COMPONENTS ------------------------------- */
-  let { components } = createComponentStore({ world, tables, extend }) as {
-    components: RecsStorageAdapter<ResolvedStoreConfig<config>["tables"] & extraTables>["components"];
-  };
-
-  // TODO(later): copy ExtendedComponent from main repo, for each find out if it's a regular/contract component
+  // TODO: this will later return extended components (`get()`, `use()`, etc)
   /**
-   * Extend components if requested
-   * probably can figure out by differentiating between mudConfig/otherTables? (or anything else unique to one category anyway)
-   * components = extend ? extendComponents({ components }) : components;
+   * So when we return "components", we're essentially returning the store with methods to
+   * ease access/modification of components
+   * e.g. (conceptually) instead of `const { Entity } = useStore((state) => state.Entity)` and then
+   *
    */
+  const { store, storageAdapter } = createComponentStore({ world, tables, extend });
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create custom writer, and setup sync
-  const sync = createSync({ world, tables, networkConfig, publicClient });
+  const sync = createSync({ world, tables, networkConfig, publicClient: client, storageAdapter });
   if (startSync) {
-    handleSync(sync, onSync);
+    handleSync(sync, {
+      ...onSync,
+      progress: (index, blockNumber, progress) => {
+        // TODO: is it relevant to write progress to store here in addition to the provided callback?
+        store.setValue("syncProgress", progress);
+        onSync.progress(index, blockNumber, progress);
+      },
+    });
   }
 
-  return { components, tables, publicClient, sync };
+  return { store, tables, publicClient: client, sync };
 };

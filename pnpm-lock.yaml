@@ -17,9 +17,15 @@ dependencies:
   '@latticexyz/store-sync':
     specifier: 2.0.1
     version: 2.0.1(react@18.2.0)(typescript@5.4.4)
+  '@latticexyz/world':
+    specifier: 2.0.1
+    version: 2.0.1(typescript@5.4.4)
   '@primodiumxyz/sync-stack':
     specifier: ^0.6.1
     version: 0.6.1(typescript@5.4.4)
+  rxjs:
+    specifier: ^7.8.1
+    version: 7.8.1
   tinybase:
     specifier: ^4.8.0
     version: 4.8.0(prettier@3.2.5)(react@18.2.0)
@@ -2703,6 +2709,12 @@ packages:
 
   /rxjs@7.5.5:
     resolution: {integrity: sha512-sy+H0pQofO95VDmFLzyaw9xNJU4KTRSwQIGM6+iG3SypAtCiLDzpeG8sJrNCWn2Up9km+KhkvTdbkrdy+yzZdw==}
+    dependencies:
+      tslib: 2.6.2
+    dev: false
+
+  /rxjs@7.8.1:
+    resolution: {integrity: sha512-AA3TVj+0A2iuIoQkWEK/tqFjBq2j+6PO6Y0zJcvzLAFhEFIO3HL0vls9hWLncZbAAbK0mar7oZ4V079I/qPMxg==}
     dependencies:
       tslib: 2.6.2
     dev: false
