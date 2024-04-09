@@ -8,5 +8,16 @@ export default defineWorld({
       },
       key: [],
     },
+    Position: {
+      schema: {
+        id: "bytes32",
+        x: "int32",
+        y: "int32",
+      },
+      key: ["id"],
+      codegen: {
+        dataStruct: false,
+      },
+    },
   },
 });

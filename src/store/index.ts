@@ -1,1 +1,1 @@
-export * from "./createComponentStore";
+export * from "./createComponentsStore";

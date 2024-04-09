@@ -3,7 +3,7 @@ import { World } from "@latticexyz/recs";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Tables, resolveConfig } from "@latticexyz/store/internal";
 
-import { createComponentStore } from "@/store";
+import { createComponentsStore } from "@/store";
 import { createSync, handleSync } from "@/sync";
 import { createPublicClient } from "@/utils";
 import { TinyBaseWrapperOptions, NetworkConfig, TinyBaseWrapperResult, AllTables } from "@/types";
@@ -19,13 +19,13 @@ export const tinyBaseWrapper = async <
   networkConfig,
   otherTables,
   publicClient,
-  extend = true, // extend components with additional methods? TODO: might do it anyway as a base
   startSync = true, // start sync immediately?
   onSync = {
     progress: (index, blockNumber, progress) => console.log(`Syncing: ${progress}%`),
     complete: () => console.log("Sync complete"),
     error: (err) => console.error("Sync error", err),
   },
+
   // TODO: initialQueries?
 }: TinyBaseWrapperOptions<world, config, networkConfig, extraTables>): Promise<
   TinyBaseWrapperResult<config, extraTables>
@@ -47,7 +47,7 @@ export const tinyBaseWrapper = async <
    * e.g. (conceptually) instead of `const { Entity } = useStore((state) => state.Entity)` and then
    *
    */
-  const { store, storageAdapter } = createComponentStore({ world, tables, extend });
+  const { components, store, storageAdapter } = createComponentsStore({ world, tables });
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create custom writer, and setup sync
@@ -63,5 +63,5 @@ export const tinyBaseWrapper = async <
     });
   }
 
-  return { store, tables, publicClient: client, sync };
+  return { components, tables, publicClient: client, sync };
 };

@@ -12,14 +12,14 @@ describe("tinyBaseWrapper", () => {
     const world = createWorld();
     const networkConfig = getMockNetworkConfig();
 
-    const { store, tables, publicClient, sync } = await tinyBaseWrapper({
+    const { components, tables, publicClient, sync } = await tinyBaseWrapper({
       world,
       mudConfig: mockConfig,
       networkConfig,
     });
 
-    // Verify the existence and basic structure of the returned objects
-    expect(store).toBeDefined();
+    // Verify the existence of the result
+    expect(components).toBeDefined();
     expect(tables).toBeDefined();
     expect(publicClient).toBeDefined();
     expect(sync).toBeDefined();
