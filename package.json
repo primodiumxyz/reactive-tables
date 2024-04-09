@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@primodiumxyz/pg-indexer-reader": "^0.6.0",
+    "@types/debug": "^4.1.12",
     "@types/node": "^18.19.30",
     "@typescript-eslint/eslint-plugin": "^7.5.0",
     "@typescript-eslint/parser": "^7.5.0",
@@ -49,6 +50,7 @@
     "@latticexyz/utils": "2.0.1",
     "@latticexyz/world": "2.0.1",
     "@primodiumxyz/sync-stack": "^0.6.1",
+    "debug": "^4.3.4",
     "rxjs": "^7.5.5",
     "tinybase": "^4.8.0",
     "viem": "2.7.12"

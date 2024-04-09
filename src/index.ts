@@ -47,11 +47,11 @@ export const tinyBaseWrapper = async <
    * e.g. (conceptually) instead of `const { Entity } = useStore((state) => state.Entity)` and then
    *
    */
-  const { components, store, storageAdapter } = createComponentsStore({ world, tables });
+  const { components, store } = createComponentsStore({ world, tables });
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create custom writer, and setup sync
-  const sync = createSync({ world, tables, networkConfig, publicClient: client, storageAdapter });
+  const sync = createSync({ world, store, networkConfig, publicClient: client });
   if (startSync) {
     handleSync(sync, {
       ...onSync,

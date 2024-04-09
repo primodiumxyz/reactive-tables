@@ -32,6 +32,9 @@ dependencies:
   '@primodiumxyz/sync-stack':
     specifier: ^0.6.1
     version: 0.6.1(typescript@5.4.4)
+  debug:
+    specifier: ^4.3.4
+    version: 4.3.4
   rxjs:
     specifier: ^7.5.5
     version: 7.5.5
@@ -46,6 +49,9 @@ devDependencies:
   '@primodiumxyz/pg-indexer-reader':
     specifier: ^0.6.0
     version: 0.6.0(react@18.2.0)(typescript@5.4.4)
+  '@types/debug':
+    specifier: ^4.1.12
+    version: 4.1.12
   '@types/node':
     specifier: ^18.19.30
     version: 18.19.30
@@ -1626,12 +1632,22 @@ packages:
     resolution: {integrity: sha512-vxhUy4J8lyeyinH7Azl1pdd43GJhZH/tP2weN8TntQblOY+A0XbT8DJk1/oCPuOOyg/Ja757rG0CgHcWC8OfMA==}
     dev: true
 
+  /@types/debug@4.1.12:
+    resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
+    dependencies:
+      '@types/ms': 0.7.34
+    dev: true
+
   /@types/estree@1.0.5:
     resolution: {integrity: sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==}
     dev: true
 
   /@types/json-schema@7.0.15:
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
+    dev: true
+
+  /@types/ms@0.7.34:
+    resolution: {integrity: sha512-nG96G3Wp6acyAgJqGasjODb+acrI7KltPiRxzHPXnP3NgI28bpQDRv53olbqGXbfcgF5aiiHmO3xpwEpS5Ld9g==}
     dev: true
 
   /@types/node@18.19.30:

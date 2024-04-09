@@ -1,6 +1,6 @@
 import { Schema, World } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
-import { StorageAdapter, storeTables, worldTables } from "@latticexyz/store-sync";
+import { storeTables, worldTables } from "@latticexyz/store-sync";
 import { MUDChain } from "@latticexyz/common/chains";
 import { ResolvedStoreConfig, Tables } from "@latticexyz/store/internal";
 import { KeySchema, ValueSchema } from "@latticexyz/protocol-parser/internal";
@@ -8,7 +8,7 @@ import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 
-import { ExtendedComponentMethods } from "./store/components/types";
+import { Component, ExtendedComponentMethods } from "@/store/component/types";
 
 export type AllTables<config extends StoreConfig, extraTables extends Tables | undefined> = ResolvedStoreConfig<
   storeToV1<config>
@@ -33,7 +33,7 @@ export type TinyBaseWrapperOptions<
 };
 
 export type TinyBaseWrapperResult<config extends StoreConfig, tables extends Tables | undefined> = {
-  components: Components;
+  components: Components<Schema, config, tables>;
   tables: AllTables<config, tables>;
   publicClient: PublicClient;
   sync: Sync;
@@ -51,21 +51,20 @@ export interface NetworkConfig {
 /* -------------------------------------------------------------------------- */
 /*                                    STORE                                   */
 /* -------------------------------------------------------------------------- */
+// TODO: type key
+export type Components<S extends Schema, config extends StoreConfig, tables extends Tables | undefined, T = unknown> = {
+  [key in keyof tables]: Component<S, config, T>;
+};
 
 export type CreateComponentsStoreOptions<world extends World, config extends StoreConfig, tables extends Tables> = {
   world: world;
   tables: AllTables<config, tables>;
 };
 
-export type CreateComponentsStoreResult = {
-  components: Components;
+export type CreateComponentsStoreResult<config extends StoreConfig, tables extends Tables> = {
+  components: Components<Schema, config, tables>;
   store: Store;
-  storageAdapter: StorageAdapter;
 };
-
-/* ------------------------------- COMPONENTS ------------------------------- */
-// TODO: add types for components
-export type Components = unknown;
 
 export type CreateComponentMethodsOptions = {
   store: Store;
@@ -77,7 +76,6 @@ export type CreateComponentMethodsOptions = {
 
 export type CreateComponentMethodsResult<S extends Schema, T = unknown> = ExtendedComponentMethods<S, T>;
 
-/* -------------------------------- STORE -------------------------------- */
 export type CreateStoreOptions<config extends StoreConfig, tables extends Tables> = {
   tables: AllTables<config, tables>;
 };
@@ -88,12 +86,11 @@ export type CreateStoreResult = Store;
 /*                                    SYNC                                    */
 /* -------------------------------------------------------------------------- */
 
-export type CreateSyncOptions<world extends World, tables extends Tables> = {
+export type CreateSyncOptions<world extends World, config extends StoreConfig, tables extends Tables> = {
   world: world;
-  tables: tables;
+  store: Store;
   networkConfig: NetworkConfig;
   publicClient: PublicClient;
-  storageAdapter: StorageAdapter;
 };
 
 export type CreateSyncResult = Sync;

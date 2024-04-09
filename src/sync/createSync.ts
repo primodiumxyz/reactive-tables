@@ -1,17 +1,17 @@
-import { CreateSyncOptions, CreateSyncResult } from "@/types";
+import { Store as StoreConfig } from "@latticexyz/store";
 import { World } from "@latticexyz/recs";
 import { Read, Sync } from "@primodiumxyz/sync-stack";
 import { Tables } from "@latticexyz/store/internal";
 
-import { createCustomWriter } from "./createCustomWriter";
+import { createCustomWriter } from "@/sync/createCustomWriter";
+import { CreateSyncOptions, CreateSyncResult } from "@/types";
 
-export const createSync = <world extends World, tables extends Tables>({
+export const createSync = <world extends World, config extends StoreConfig, tables extends Tables>({
   world,
-  tables,
+  store,
   networkConfig,
   publicClient,
-  storageAdapter,
-}: CreateSyncOptions<world, tables>): CreateSyncResult => {
+}: CreateSyncOptions<world, config, tables>): CreateSyncResult => {
   const { worldAddress, indexerUrl, initialBlockNumber } = networkConfig;
   const useIndexer = indexerUrl && initialBlockNumber;
 
@@ -22,6 +22,6 @@ export const createSync = <world extends World, tables extends Tables>({
       address: networkConfig.worldAddress,
       publicClient, // TODO: viem version mismatch, 2.7.12 -> 1.14.0
     }),
-    writer: createCustomWriter({ storageAdapter }),
+    writer: createCustomWriter({ store }),
   });
 };
