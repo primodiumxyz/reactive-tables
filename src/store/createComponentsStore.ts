@@ -1,19 +1,18 @@
 import { Store as StoreConfig } from "@latticexyz/store";
-import { Type, World } from "@latticexyz/recs";
-import { Tables } from "@latticexyz/store/internal";
+import { Schema, Type, World } from "@latticexyz/recs";
+import { resourceToLabel } from "@latticexyz/common";
 import { mapObject } from "@latticexyz/utils";
-import { Subject, map } from "rxjs";
+import { Tables } from "@latticexyz/store/internal";
+import { KeySchema, ValueSchema } from "@latticexyz/protocol-parser/internal";
+import { createStore } from "tinybase/store";
 
 import { createStorageAdapter } from "./createStorageAdapter";
+import { createComponentMethods } from "./components/createComponentMethods";
+import { schemaAbiTypeToRecsType } from "./formatters/schemaAbiTypeToRecsType";
 import { CreateComponentsStoreOptions, CreateComponentsStoreResult } from "@/types";
 
 import { storeTables, worldTables } from "@latticexyz/store-sync";
-import { Row, createStore } from "tinybase/store";
-import { resourceToLabel } from "@latticexyz/common";
-import { TableToComponent } from "@latticexyz/store-sync/src/recs/tableToComponent";
-import { schemaAbiTypeToRecsType } from "./formatters/schemaAbiTypeToRecsType";
-import { createComponentMethods } from "./createComponentMethods";
-import { SchemaAbiType } from "@latticexyz/schema-type/internal";
+import { BaseComponent } from "./components/types";
 
 export const createComponentsStore = <world extends World, config extends StoreConfig, tables extends Tables>({
   world,
@@ -33,11 +32,7 @@ export const createComponentsStore = <world extends World, config extends StoreC
     // so it's more of an implementation concern than a design issue.
 
     // Immutable
-    const keySchema = mapObject(table.keySchema, ({ type }) => type) as Record<string, SchemaAbiType>;
-    // TODO: fix types; that's probably here that we should handle autocomplete as well
-    const valueSchema = mapObject(table.valueSchema, ({ type }) => type) as Record<string, SchemaAbiType>;
-
-    store.setTable(table.name, {
+    const component: BaseComponent<Schema, config> = {
       schema: {
         ...Object.fromEntries(
           Object.entries(table.valueSchema).map(([fieldName, { type: schemaAbiType }]) => [
@@ -54,16 +49,24 @@ export const createComponentsStore = <world extends World, config extends StoreC
         componentName: table.name,
         tableName: resourceToLabel(table),
       },
-      keySchema: keySchema as Row,
-      valueSchema: valueSchema as Row,
+      keySchema: mapObject(table.keySchema, ({ type }) => type) as KeySchema,
+      // TODO: fix types; that's probably here that we should handle autocomplete as well
+      valueSchema: mapObject(table.valueSchema, ({ type }) => type) as ValueSchema,
+    };
+
+    const methods = createComponentMethods({
+      store,
+      tableId: table.tableId,
+      keySchema: component.keySchema,
+      valueSchema: component.valueSchema,
+      schema: component.schema,
     });
 
-    const { update$, entities } = createComponentMethods({ store, tableName: table.name, keySchema, valueSchema });
+    return {
+      ...component,
+      ...methods,
+    };
   });
-
-  console.log(store.getTable("Counter"));
-  console.log("-------------------");
-  console.log(store.getTable("Position"));
 
   // Create the storage adapter for syncing with the sync-stack (logs -> component data)
   const storageAdapter = createStorageAdapter({ store });

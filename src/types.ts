@@ -1,13 +1,14 @@
-import { World } from "@latticexyz/recs";
+import { Schema, World } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { StorageAdapter, storeTables, worldTables } from "@latticexyz/store-sync";
 import { MUDChain } from "@latticexyz/common/chains";
 import { ResolvedStoreConfig, Tables } from "@latticexyz/store/internal";
-import { SchemaAbiType } from "@latticexyz/schema-type/internal";
+import { KeySchema, ValueSchema } from "@latticexyz/protocol-parser/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
-import { Subject } from "rxjs";
+
+import { ExtendedComponentMethods } from "./store/components/types";
 
 export type AllTables<config extends StoreConfig, extraTables extends Tables | undefined> = ResolvedStoreConfig<
   storeToV1<config>
@@ -68,16 +69,13 @@ export type Components = unknown;
 
 export type CreateComponentMethodsOptions = {
   store: Store;
-  tableName: string;
-  keySchema: Record<string, SchemaAbiType>;
-  valueSchema: Record<string, SchemaAbiType>;
+  tableId: string;
+  keySchema: KeySchema;
+  valueSchema: ValueSchema;
+  schema: Schema;
 };
 
-export type CreateComponentMethodsResult = {
-  update$: Subject<unknown>;
-  // TODO: add types for tables
-  entities: () => unknown;
-};
+export type CreateComponentMethodsResult<S extends Schema, T = unknown> = ExtendedComponentMethods<S, T>;
 
 /* -------------------------------- STORE -------------------------------- */
 export type CreateStoreOptions<config extends StoreConfig, tables extends Tables> = {

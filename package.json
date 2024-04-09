@@ -11,6 +11,7 @@
   "main": "index.js",
   "scripts": {
     "dev:indexer": "pnpm clean-local-docker-indexer && pnpm local-docker-indexer",
+    "contracts:build": "cd src/__tests__/mocks/contracts && pnpm run build",
     "dev": "concurrently -n node,contracts,indexer -c yellow,cyan,red \"cd src/__tests__/mocks/contracts && pnpm run devnode\" \"cd src/__tests__/mocks/contracts && pnpm run deploy:local\" \"pnpm dev:indexer\"",
     "test": "vitest"
   },
@@ -40,6 +41,7 @@
   },
   "dependencies": {
     "@latticexyz/common": "2.0.1",
+    "@latticexyz/protocol-parser": "2.0.1",
     "@latticexyz/recs": "2.0.1",
     "@latticexyz/schema-type": "2.0.1",
     "@latticexyz/store": "2.0.1",
@@ -49,6 +51,6 @@
     "@primodiumxyz/sync-stack": "^0.6.1",
     "rxjs": "^7.5.5",
     "tinybase": "^4.8.0",
-    "viem": "1.14.0"
+    "viem": "2.7.12"
   }
 }

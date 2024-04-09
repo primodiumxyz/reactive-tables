@@ -8,6 +8,9 @@ dependencies:
   '@latticexyz/common':
     specifier: 2.0.1
     version: 2.0.1(typescript@5.4.4)(zod@3.22.4)
+  '@latticexyz/protocol-parser':
+    specifier: 2.0.1
+    version: 2.0.1(typescript@5.4.4)(zod@3.22.4)
   '@latticexyz/recs':
     specifier: 2.0.1
     version: 2.0.1(typescript@5.4.4)(zod@3.22.4)
@@ -36,8 +39,8 @@ dependencies:
     specifier: ^4.8.0
     version: 4.8.0(prettier@3.2.5)(react@18.2.0)
   viem:
-    specifier: 1.14.0
-    version: 1.14.0(typescript@5.4.4)(zod@3.22.4)
+    specifier: 2.7.12
+    version: 2.7.12(typescript@5.4.4)(zod@3.22.4)
 
 devDependencies:
   '@primodiumxyz/pg-indexer-reader':

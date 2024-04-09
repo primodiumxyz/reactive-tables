@@ -20,7 +20,7 @@ export const createSync = <world extends World, tables extends Tables>({
     // syncing with indexer and remaining with RPC (or direct if failure)
     reader: Read.fromRPC.subscribe({
       address: networkConfig.worldAddress,
-      publicClient,
+      publicClient, // TODO: viem version mismatch, 2.7.12 -> 1.14.0
     }),
     writer: createCustomWriter({ storageAdapter }),
   });
