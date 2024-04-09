@@ -6,18 +6,17 @@ import { Tables } from "@latticexyz/store/internal";
 import { KeySchema, ValueSchema } from "@latticexyz/protocol-parser/internal";
 import { createStore } from "tinybase/store";
 
-import { createStorageAdapter } from "./createStorageAdapter";
-import { createComponentMethods } from "./components/createComponentMethods";
-import { schemaAbiTypeToRecsType } from "./formatters/schemaAbiTypeToRecsType";
-import { CreateComponentsStoreOptions, CreateComponentsStoreResult } from "@/types";
+import { createComponentMethods } from "@/store/component/createComponentMethods";
+import { schemaAbiTypeToRecsType } from "@/store/formatters/schemaAbiTypeToRecsType";
+import { Components, CreateComponentsStoreOptions, CreateComponentsStoreResult } from "@/types";
 
 import { storeTables, worldTables } from "@latticexyz/store-sync";
-import { BaseComponent } from "./components/types";
+import { BaseComponent, Component, ExtendedComponentMethods } from "@/store/component/types";
 
 export const createComponentsStore = <world extends World, config extends StoreConfig, tables extends Tables>({
   world,
   tables,
-}: CreateComponentsStoreOptions<world, config, tables>): CreateComponentsStoreResult => {
+}: CreateComponentsStoreOptions<world, config, tables>): CreateComponentsStoreResult<config, tables> => {
   // Create the TinyBase store
   const store = createStore();
   // Resolve tables into components
@@ -32,7 +31,7 @@ export const createComponentsStore = <world extends World, config extends StoreC
     // so it's more of an implementation concern than a design issue.
 
     // Immutable
-    const component: BaseComponent<Schema, config> = {
+    const componentTable: BaseComponent<Schema, config> = {
       schema: {
         ...Object.fromEntries(
           Object.entries(table.valueSchema).map(([fieldName, { type: schemaAbiType }]) => [
@@ -54,23 +53,22 @@ export const createComponentsStore = <world extends World, config extends StoreC
       valueSchema: mapObject(table.valueSchema, ({ type }) => type) as ValueSchema,
     };
 
-    const methods = createComponentMethods({
+    const methods: ExtendedComponentMethods<Schema> = createComponentMethods({
       store,
       tableId: table.tableId,
-      keySchema: component.keySchema,
-      valueSchema: component.valueSchema,
-      schema: component.schema,
+      keySchema: componentTable.keySchema,
+      valueSchema: componentTable.valueSchema,
+      schema: componentTable.schema,
     });
 
+    // Register immutable data (basically formatted table) in the store for efficient access
+    store.setTable(`table__${table.tableId}`, componentTable);
+
     return {
-      ...component,
+      ...componentTable,
       ...methods,
     };
-  });
+  }) as Components<Schema, config, tables>;
 
-  // Create the storage adapter for syncing with the sync-stack (logs -> component data)
-  const storageAdapter = createStorageAdapter({ store });
-
-  // return { components, store, storageAdapter };
-  return { components, store, storageAdapter };
+  return { components, store };
 };

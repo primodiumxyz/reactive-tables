@@ -2,7 +2,7 @@ import { ComponentValue, Entity, OptionalTypes, Schema, getEntitySymbol } from "
 import { singletonEntity } from "@latticexyz/store-sync/recs";
 
 import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
-import { ValueSansMetadata } from "./types";
+import { ValueSansMetadata } from "@/store/component/types";
 
 export const createComponentMethods = <S extends Schema, T = unknown>({
   store,

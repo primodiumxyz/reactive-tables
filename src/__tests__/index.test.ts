@@ -1,13 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { createWorld, getComponentValue, setComponent } from "@latticexyz/recs";
+import { createWorld, getComponentValue } from "@latticexyz/recs";
+import { syncToRecs } from "@latticexyz/store-sync/recs";
+import { waitForTransactionReceipt, writeContract } from "viem/actions";
 
 // src
-import { tinyBaseWrapper } from "../index";
+import { tinyBaseWrapper } from "@/index";
 // mocks
-import { getMockNetworkConfig } from "./mocks";
-import mockConfig from "./mocks/contracts/mud.config";
-import { recsStorage, singletonEntity, syncToRecs } from "@latticexyz/store-sync/recs";
-import { waitForTransactionReceipt, writeContract } from "viem/actions";
+import { getMockNetworkConfig } from "@/__tests__/mocks";
+import mockConfig from "@/__tests__/mocks/contracts/mud.config";
 
 describe("tinyBaseWrapper", () => {
   it("should properly initialize and return expected objects", async () => {

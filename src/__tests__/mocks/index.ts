@@ -15,8 +15,8 @@ import {
 } from "viem";
 
 import { NetworkConfig } from "@/types";
-import worldsJson from "./contracts/worlds.json";
-import IWorldAbi from "./contracts/out/IWorld.sol/IWorld.abi.json";
+import worldsJson from "@/__tests__/mocks/contracts/worlds.json";
+import IWorldAbi from "@/__tests__/mocks/contracts/out/IWorld.sol/IWorld.abi.json";
 
 const worlds = worldsJson as Partial<Record<string, { address: Address; blockNumber?: number }>>;
 
