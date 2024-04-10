@@ -20,6 +20,8 @@ import IWorldAbi from "@/__tests__/mocks/contracts/out/IWorld.sol/IWorld.abi.jso
 
 const worlds = worldsJson as Partial<Record<string, { address: Address; blockNumber?: number }>>;
 
+export type MockNetworkConfig = ReturnType<typeof getMockNetworkConfig>;
+
 export const getMockNetworkConfig = (): NetworkConfig & {
   publicClient: PublicClient;
   burnerAccount: Account;

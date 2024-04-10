@@ -1,4 +1,4 @@
-import { ComponentValue, Entity, OptionalTypes, Schema, getEntitySymbol } from "@latticexyz/recs";
+import { ComponentValue, Entity, OptionalTypes, Schema } from "@latticexyz/recs";
 import { singletonEntity } from "@latticexyz/store-sync/recs";
 
 import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
@@ -16,14 +16,13 @@ export const createComponentMethods = <S extends Schema, T = unknown>({
   function set(value: ComponentValue<S, T>, entity?: Entity) {
     entity = entity ?? singletonEntity;
     if (entity == undefined) throw new Error(`[set ${entity} for ${tableId}] no entity registered`);
-    const entitySymbol = getEntitySymbol(entity);
 
     for (const [key, val] of Object.entries(value)) {
       const type = valueSchema[key];
       // TODO: handle non-primitive types
       const isArray = type.includes("[]");
 
-      store.setTable(tableId, { [key]: { [entitySymbol]: val } });
+      store.setCell(tableId, entity, key, val);
     }
   }
 
@@ -33,17 +32,17 @@ export const createComponentMethods = <S extends Schema, T = unknown>({
   function get(entity?: Entity, defaultValue?: ValueSansMetadata<S>) {
     entity = entity ?? singletonEntity;
     if (entity == undefined) return defaultValue;
-    const entitySymbol = getEntitySymbol(entity);
 
-    const row = store.getRow(tableId, entitySymbol);
+    const row = store.getRow(tableId, entity);
     let value: Record<string, unknown> = {};
+
     for (const key of Object.keys(schema)) {
       const val = row[key];
       if (val === undefined && !OptionalTypes.includes(schema[key])) return undefined;
 
       const type = valueSchema[key];
       // TODO: handle non-primitive types
-      const isArray = type.includes("[]");
+      const isArray = type && type.includes("[]"); // !type means it's __staticData, etc
 
       value[key] = val;
     }

@@ -1,8 +1,8 @@
 import { ComponentValue, Entity, Schema } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { ResourceLabel } from "@latticexyz/common";
-import { storeToV1 } from "@latticexyz/store/config/v2";
 import { KeySchema, ValueSchema } from "@latticexyz/protocol-parser/internal";
+import { storeToV1 } from "@latticexyz/store/config/v2";
 
 // TODO: figure out if we need Schema & StoreConfig
 export type Component<S extends Schema, config extends StoreConfig, T = unknown> = BaseComponent<S, config> &

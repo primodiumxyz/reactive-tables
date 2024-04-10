@@ -8,6 +8,9 @@ import { createSync, handleSync } from "@/sync";
 import { createPublicClient } from "@/utils";
 import { TinyBaseWrapperOptions, NetworkConfig, TinyBaseWrapperResult, AllTables } from "@/types";
 
+import { storeTables, worldTables } from "@latticexyz/store-sync";
+import { internalTables } from "@/constants";
+
 export const tinyBaseWrapper = async <
   world extends World,
   config extends StoreConfig,
@@ -26,7 +29,7 @@ export const tinyBaseWrapper = async <
     error: (err) => console.error("Sync error", err),
   },
 
-  // TODO: initialQueries?
+  // TODO: initialQueries
 }: TinyBaseWrapperOptions<world, config, networkConfig, extraTables>): Promise<
   TinyBaseWrapperResult<config, extraTables>
 > => {
@@ -37,31 +40,21 @@ export const tinyBaseWrapper = async <
   const tables = {
     ...resolveConfig(storeToV1(mudConfig as StoreConfig)).tables,
     ...(otherTables ?? {}),
+    ...storeTables,
+    ...worldTables,
+    ...internalTables, // e.g. sync components
   } as unknown as AllTables<config, extraTables>;
 
   /* ------------------------------- COMPONENTS ------------------------------- */
-  // TODO: this will later return extended components (`get()`, `use()`, etc)
-  /**
-   * So when we return "components", we're essentially returning the store with methods to
-   * ease access/modification of components
-   * e.g. (conceptually) instead of `const { Entity } = useStore((state) => state.Entity)` and then
-   *
-   */
   const { components, store } = createComponentsStore({ world, tables });
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create custom writer, and setup sync
-  const sync = createSync({ world, store, networkConfig, publicClient: client });
+  const sync = await createSync({ world, store, networkConfig, publicClient: client });
   if (startSync) {
-    handleSync(sync, {
-      ...onSync,
-      progress: (index, blockNumber, progress) => {
-        // TODO: is it relevant to write progress to store here in addition to the provided callback?
-        store.setValue("syncProgress", progress);
-        onSync.progress(index, blockNumber, progress);
-      },
-    });
+    handleSync(components, sync, onSync);
   }
 
+  // TODO: fix annoying type issue
   return { components, tables, publicClient: client, sync };
 };

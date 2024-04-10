@@ -1,18 +1,18 @@
 import { Store as StoreConfig } from "@latticexyz/store";
 import { hexToResource, spliceHex } from "@latticexyz/common";
-import { Schema, getEntitySymbol } from "@latticexyz/recs";
+import { Schema } from "@latticexyz/recs";
 import { StorageAdapterLog } from "@latticexyz/store-sync";
 import { hexKeyTupleToEntity } from "@latticexyz/store-sync/recs";
 import { decodeValueArgs } from "@latticexyz/protocol-parser/internal";
 import { Write } from "@primodiumxyz/sync-stack";
-import { ValueSchema } from "@latticexyz/store/internal";
 import { Hex, size } from "viem";
 import { Store } from "tinybase/store";
 
-import { flattenSchema } from "@/store/formatters/flattenSchema";
 import { debug } from "@/utils";
 import { BaseComponent } from "@/store/component/types";
 
+// TODO: show notice on how we're not using flattenSchema because we flattened it already
+// in order to store it in the table, at component creation
 export const createCustomWriter = <config extends StoreConfig>({ store }: { store: Store }) => {
   const processLog = (log: StorageAdapterLog) => {
     const { namespace, name } = hexToResource(log.args.tableId);
@@ -38,8 +38,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
     return {
       entity,
       component,
-      // TODO: we need to cast ValueSchema from @latticexyz/protocol-parser to @latticexyz/store...
-      table: { ...table, namespace, valueSchema: table.valueSchema as unknown as ValueSchema },
+      table: { ...table, namespace },
     };
   };
 
@@ -50,7 +49,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       if (!values) return;
       const { entity, table } = values;
 
-      const value = decodeValueArgs(flattenSchema(table.valueSchema), log.args);
+      const value = decodeValueArgs(table.valueSchema, log.args);
 
       debug("setting component", {
         namespace: table.namespace,
@@ -60,7 +59,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       });
 
       // TODO: handle non-primitive types
-      store.setRow(table.metadata.id, getEntitySymbol(entity), {
+      store.setRow(table.metadata.id, entity, {
         ...value,
         __staticData: log.args.staticData,
         __encodedLengths: log.args.encodedLengths,
@@ -72,10 +71,10 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       if (!values) return;
       const { entity, component, table } = values;
 
-      const previousValue = component[getEntitySymbol(entity)];
+      const previousValue = component[entity];
       const previousStaticData = (previousValue?.__staticData as Hex) ?? "0x";
       const newStaticData = spliceHex(previousStaticData, log.args.start, size(log.args.data), log.args.data);
-      const newValue = decodeValueArgs(flattenSchema(table.valueSchema), {
+      const newValue = decodeValueArgs(table.valueSchema, {
         staticData: newStaticData,
         encodedLengths: (previousValue?.__encodedLengths as Hex) ?? "0x",
         dynamicData: (previousValue?.__dynamicData as Hex) ?? "0x",
@@ -92,7 +91,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       });
 
       // TODO: handle non-primitive types
-      store.setRow(table.metadata.id, getEntitySymbol(entity), {
+      store.setRow(table.metadata.id, entity, {
         ...newValue,
         __staticData: newStaticData,
         __encodedLengths: previousValue?.__encodedLengths,
@@ -105,10 +104,10 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       if (!values) return;
       const { entity, component, table } = values;
 
-      const previousValue = component[getEntitySymbol(entity)];
+      const previousValue = component[entity];
       const previousDynamicData = (previousValue?.__dynamicData as Hex) ?? "0x";
       const newDynamicData = spliceHex(previousDynamicData, log.args.start, log.args.deleteCount, log.args.data);
-      const newValue = decodeValueArgs(flattenSchema(table.valueSchema), {
+      const newValue = decodeValueArgs(table.valueSchema, {
         staticData: (previousValue?.__staticData as Hex) ?? "0x",
         encodedLengths: log.args.encodedLengths,
         dynamicData: newDynamicData,
@@ -125,7 +124,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       });
 
       // TODO: handle non-primitive types
-      store.setRow(table.metadata.id, getEntitySymbol(entity), {
+      store.setRow(table.metadata.id, entity, {
         ...newValue,
         __staticData: previousValue?.__staticData,
         __encodedLengths: log.args.encodedLengths,
@@ -143,7 +142,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
         entity,
       });
 
-      store.delRow(table.metadata.id, getEntitySymbol(entity));
+      store.delRow(table.metadata.id, entity);
     },
   });
 };

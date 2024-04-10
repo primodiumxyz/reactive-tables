@@ -1,21 +1,24 @@
 import { Schema, World } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
-import { storeTables, worldTables } from "@latticexyz/store-sync";
 import { MUDChain } from "@latticexyz/common/chains";
 import { ResolvedStoreConfig, Tables } from "@latticexyz/store/internal";
-import { KeySchema, ValueSchema } from "@latticexyz/protocol-parser/internal";
+import { ValueSchema, KeySchema } from "@latticexyz/protocol-parser/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 
 import { Component, ExtendedComponentMethods } from "@/store/component/types";
 
+import { storeTables, worldTables } from "@latticexyz/store-sync";
+import { internalTables } from "@/constants";
+
 export type AllTables<config extends StoreConfig, extraTables extends Tables | undefined> = ResolvedStoreConfig<
   storeToV1<config>
 >["tables"] &
   (extraTables extends Tables ? extraTables : Record<never, never>) &
   typeof storeTables &
-  typeof worldTables;
+  typeof worldTables &
+  typeof internalTables;
 
 export type TinyBaseWrapperOptions<
   world extends World,
@@ -56,12 +59,16 @@ export type Components<S extends Schema, config extends StoreConfig, tables exte
   [key in keyof tables]: Component<S, config, T>;
 };
 
-export type CreateComponentsStoreOptions<world extends World, config extends StoreConfig, tables extends Tables> = {
+export type CreateComponentsStoreOptions<
+  world extends World,
+  config extends StoreConfig,
+  tables extends Tables | undefined,
+> = {
   world: world;
   tables: AllTables<config, tables>;
 };
 
-export type CreateComponentsStoreResult<config extends StoreConfig, tables extends Tables> = {
+export type CreateComponentsStoreResult<config extends StoreConfig, tables extends Tables | undefined> = {
   components: Components<Schema, config, tables>;
   store: Store;
 };
@@ -96,12 +103,14 @@ export type CreateSyncOptions<world extends World, config extends StoreConfig, t
 export type CreateSyncResult = Sync;
 
 export type Sync = {
-  start: (
-    onProgress?: (index: number, blockNumber: bigint, progress: number) => void,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    error?: (err: any) => void,
-  ) => void;
-  unsubscribe: () => void;
+  [key in "historical" | "live"]: {
+    start: (
+      onProgress?: (index: number, blockNumber: bigint, progress: number) => void,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      error?: (err: any) => void,
+    ) => void;
+    unsubscribe: () => void;
+  };
 };
 
 export type OnSyncCallbacks = {

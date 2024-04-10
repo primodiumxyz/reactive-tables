@@ -7,11 +7,9 @@ import { KeySchema, ValueSchema } from "@latticexyz/protocol-parser/internal";
 import { createStore } from "tinybase/store";
 
 import { createComponentMethods } from "@/store/component/createComponentMethods";
-import { schemaAbiTypeToRecsType } from "@/store/formatters/schemaAbiTypeToRecsType";
+import { schemaAbiTypeToRecsType } from "@/utils";
 import { Components, CreateComponentsStoreOptions, CreateComponentsStoreResult } from "@/types";
-
-import { storeTables, worldTables } from "@latticexyz/store-sync";
-import { BaseComponent, Component, ExtendedComponentMethods } from "@/store/component/types";
+import { BaseComponent, ExtendedComponentMethods } from "@/store/component/types";
 
 export const createComponentsStore = <world extends World, config extends StoreConfig, tables extends Tables>({
   world,
@@ -19,18 +17,13 @@ export const createComponentsStore = <world extends World, config extends StoreC
 }: CreateComponentsStoreOptions<world, config, tables>): CreateComponentsStoreResult<config, tables> => {
   // Create the TinyBase store
   const store = createStore();
+
   // Resolve tables into components
-  const allTables = { ...tables, ...storeTables, ...worldTables };
-  const components = mapObject(allTables, (table) => {
+  const components = mapObject(tables, (table) => {
     if (Object.keys(table.valueSchema).length === 0) throw new Error("Component schema must have at least one key");
 
-    // TODO: can we use the component name as the id? or should we use the table id? We shouldn't have multiple components with the
-    // same name, as we wouldn't be able to access them by name.
-    // Obviously here there would be a conflict if any schema property (value label) were to have the same name as
-    // one of the keys here, but the issue already exists in RECS with __staticData, __encodedLengths, and __dynamicData;
-    // so it's more of an implementation concern than a design issue.
-
     // Immutable
+    // TODO: Add types from https://github.com/latticexyz/mud/blob/ade94a7fa761070719bcd4b4dac6cb8cc7783c3b/packages/store-sync/src/recs/tableToComponent.ts#L9
     const componentTable: BaseComponent<Schema, config> = {
       schema: {
         ...Object.fromEntries(
@@ -49,7 +42,6 @@ export const createComponentsStore = <world extends World, config extends StoreC
         tableName: resourceToLabel(table),
       },
       keySchema: mapObject(table.keySchema, ({ type }) => type) as KeySchema,
-      // TODO: fix types; that's probably here that we should handle autocomplete as well
       valueSchema: mapObject(table.valueSchema, ({ type }) => type) as ValueSchema,
     };
 
