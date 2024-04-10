@@ -19,10 +19,10 @@ export default defineWorld({
         dataStruct: false,
       },
     },
-    Array: {
+    Inventory: {
       schema: {
         id: "bytes32",
-        theArray: "int32[]",
+        items: "uint32[]",
       },
       key: ["id"],
     },

@@ -5,4 +5,4 @@ pragma solidity >=0.8.24;
 
 import { Counter } from "./tables/Counter.sol";
 import { Position } from "./tables/Position.sol";
-import { Array } from "./tables/Array.sol";
+import { Inventory } from "./tables/Inventory.sol";

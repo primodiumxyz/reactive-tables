@@ -15,7 +15,7 @@ export const createComponentMethods = <S extends Schema, T = unknown>({
 
   function set(value: ComponentValue<S, T>, entity?: Entity) {
     entity = entity ?? singletonEntity;
-    if (entity == undefined) throw new Error(`[set ${entity} for ${tableId}] no entity registered`);
+    if (entity === undefined) throw new Error(`[set ${entity} for ${tableId}] no entity registered`);
 
     for (const [key, val] of Object.entries(value)) {
       const type = valueSchema[key];
@@ -31,7 +31,7 @@ export const createComponentMethods = <S extends Schema, T = unknown>({
   function get(entity?: Entity | undefined, defaultValue?: ValueSansMetadata<S>): ComponentValue<S, T>;
   function get(entity?: Entity, defaultValue?: ValueSansMetadata<S>) {
     entity = entity ?? singletonEntity;
-    if (entity == undefined) return defaultValue;
+    if (entity === undefined) return defaultValue;
 
     const row = store.getRow(tableId, entity);
     let value: Record<string, unknown> = {};

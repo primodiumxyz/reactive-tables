@@ -38,8 +38,9 @@ export type TinyBaseWrapperOptions<
 export type TinyBaseWrapperResult<config extends StoreConfig, tables extends Tables | undefined> = {
   components: Components<Schema, config, tables>;
   tables: AllTables<config, tables>;
-  publicClient: PublicClient;
+  store: Store;
   sync: Sync;
+  publicClient: PublicClient;
 };
 
 export interface NetworkConfig {
