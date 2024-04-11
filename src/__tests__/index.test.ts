@@ -107,7 +107,7 @@ const storeItems = async (networkConfig: MockNetworkConfig) => {
     chain: networkConfig.chain,
     account: networkConfig.burnerAccount.address,
     functionName: "storeItems",
-    args: [Array.from({ length: 5 }, () => random(1, 100))],
+    args: [Array.from({ length: 5 }, () => random(1, 100)), Array.from({ length: 5 }, () => random(1, 100))],
   });
   await waitForTransactionReceipt(networkConfig.publicClient, { hash: txHash });
 };

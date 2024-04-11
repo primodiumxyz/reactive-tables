@@ -1,0 +1,34 @@
+{
+  "name": "@primodiumxyz/mud-state-tools",
+  "description": "Set of tools for reading data in MUD compliant projects.",
+  "scripts": {
+    "lerna-publish": "lerna publish",
+    "build": "lerna run build",
+    "prepare": "husky install",
+    "sort-package-json": "npx sort-package-json package.json 'packages/*/package.json'",
+    "indexer:local": "pnpm --filter 'pg-indexer-reader' start:local",
+    "indexer:clean": "pnpm --filter 'pg-indexer-reader' docker:clean"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": "eslint --cache --fix",
+    "*.{ts,tsx,css,md,mdx,sol}": "prettier --write",
+    "package.json": "pnpm sort-package-json"
+  },
+  "engines": {
+    "node": "18.x",
+    "pnpm": "8.x"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "5.46.1",
+    "@typescript-eslint/parser": "5.46.1",
+    "concurrently": "^8.0.1",
+    "eslint": "8.29.0",
+    "husky": ">=6",
+    "lerna": "^8.0.2",
+    "lint-staged": ">=10",
+    "rimraf": "^3.0.2",
+    "run-pty": "4.0.4",
+    "typescript": "5.1.6"
+  },
+  "dependencies": {}
+}

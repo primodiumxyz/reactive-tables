@@ -24,7 +24,7 @@ export const tinyBaseWrapper = async <
   publicClient,
   startSync = true, // start sync immediately?
   onSync = {
-    progress: (index, blockNumber, progress) => console.log(`Syncing: ${progress}%`),
+    progress: (index, blockNumber, progress) => console.log(`Syncing: ${(progress * 100).toFixed()}%`),
     complete: () => console.log("Sync complete"),
     error: (err) => console.error("Sync error", err),
   },
@@ -56,5 +56,5 @@ export const tinyBaseWrapper = async <
   }
 
   // TODO: fix annoying type issue
-  return { components, tables, publicClient: client, sync };
+  return { components, tables, store, sync, publicClient: client };
 };

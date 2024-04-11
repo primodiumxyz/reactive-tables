@@ -6,6 +6,8 @@ import {Counter, Inventory, Position} from "../codegen/index.sol";
 
 contract TestSystem is System {
     /* ---------------------------------- TEST ---------------------------------- */
+    error ITEMS_LENGTH_MISMATCH();
+
     function increment() public {
         Counter.set(Counter.get() + 1);
     }
@@ -14,11 +16,21 @@ contract TestSystem is System {
         Position.set(_addressToEntityKey(_msgSender()), x, y);
     }
 
-    function storeItems(uint32[] memory itemIds) public {
-        // Let's do it the ugly way
-        for (uint256 i = 0; i < itemIds.length; i++) {
-            Inventory.push(_addressToEntityKey(_msgSender()), itemIds[i]);
+    function storeItems(uint32[] memory ids, uint32[] memory weights) public {
+        if (ids.length != weights.length) {
+            revert ITEMS_LENGTH_MISMATCH();
         }
+
+        uint256 totalWeight = Inventory.getTotalWeight(_addressToEntityKey(_msgSender()));
+
+        // Let's do it the ugly way
+        for (uint256 i = 0; i < ids.length; i++) {
+            Inventory.pushItems(_addressToEntityKey(_msgSender()), ids[i]);
+            Inventory.pushWeights(_addressToEntityKey(_msgSender()), weights[i]);
+            totalWeight += weights[i];
+        }
+
+        Inventory.setTotalWeight(_addressToEntityKey(_msgSender()), totalWeight);
     }
 
     /* ---------------------------------- UTILS --------------------------------- */

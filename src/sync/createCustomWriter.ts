@@ -3,8 +3,9 @@ import { hexToResource, spliceHex } from "@latticexyz/common";
 import { Schema } from "@latticexyz/recs";
 import { StorageAdapterLog } from "@latticexyz/store-sync";
 import { hexKeyTupleToEntity } from "@latticexyz/store-sync/recs";
-import { decodeValueArgs } from "@latticexyz/protocol-parser/internal";
-import { Write } from "@primodiumxyz/sync-stack";
+// import { Write } from "@primodiumxyz/sync-stack";
+// TODO: TEMP IMPORT
+import { Write } from "@/_indexer/packages/sync-stack/src";
 import { Hex, size } from "viem";
 import { Store } from "tinybase/store";
 
@@ -16,7 +17,6 @@ import { BaseComponent } from "@/store/component/types";
 export const createCustomWriter = <config extends StoreConfig>({ store }: { store: Store }) => {
   const processLog = (log: StorageAdapterLog) => {
     const { namespace, name } = hexToResource(log.args.tableId);
-
     const entity = hexKeyTupleToEntity(log.args.keyTuple);
 
     // TODO: We could grab the row for this entity directly, but we then we wouldn't be able to check
@@ -49,18 +49,13 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       if (!values) return;
       const { entity, table } = values;
 
-      const value = decodeValueArgs(table.valueSchema, log.args);
-
       debug("setting component", {
         namespace: table.namespace,
         name: table.metadata.tableName,
         entity,
-        value,
       });
 
-      // TODO: handle non-primitive types
       store.setRow(table.metadata.id, entity, {
-        ...value,
         __staticData: log.args.staticData,
         __encodedLengths: log.args.encodedLengths,
         __dynamicData: log.args.dynamicData,
@@ -74,11 +69,6 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       const previousValue = component[entity];
       const previousStaticData = (previousValue?.__staticData as Hex) ?? "0x";
       const newStaticData = spliceHex(previousStaticData, log.args.start, size(log.args.data), log.args.data);
-      const newValue = decodeValueArgs(table.valueSchema, {
-        staticData: newStaticData,
-        encodedLengths: (previousValue?.__encodedLengths as Hex) ?? "0x",
-        dynamicData: (previousValue?.__dynamicData as Hex) ?? "0x",
-      });
 
       debug("setting component via splice static", {
         namespace: table.namespace,
@@ -87,31 +77,22 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
         previousStaticData,
         newStaticData,
         previousValue,
-        newValue,
       });
 
-      // TODO: handle non-primitive types
       store.setRow(table.metadata.id, entity, {
-        ...newValue,
         __staticData: newStaticData,
         __encodedLengths: previousValue?.__encodedLengths,
         __dynamicData: previousValue?.__dynamicData,
       });
     },
     updateDynamic: (log) => {
-      // TODO: here it's missing dynamicFieldIndex; should be ok to cast
-      const values = processLog(log as StorageAdapterLog);
+      const values = processLog(log);
       if (!values) return;
       const { entity, component, table } = values;
 
       const previousValue = component[entity];
       const previousDynamicData = (previousValue?.__dynamicData as Hex) ?? "0x";
       const newDynamicData = spliceHex(previousDynamicData, log.args.start, log.args.deleteCount, log.args.data);
-      const newValue = decodeValueArgs(table.valueSchema, {
-        staticData: (previousValue?.__staticData as Hex) ?? "0x",
-        encodedLengths: log.args.encodedLengths,
-        dynamicData: newDynamicData,
-      });
 
       debug("setting component via splice dynamic", {
         namespace: table.namespace,
@@ -120,12 +101,9 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
         previousDynamicData,
         newDynamicData,
         previousValue,
-        newValue,
       });
 
-      // TODO: handle non-primitive types
       store.setRow(table.metadata.id, entity, {
-        ...newValue,
         __staticData: previousValue?.__staticData,
         __encodedLengths: log.args.encodedLengths,
         __dynamicData: newDynamicData,
@@ -134,7 +112,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
     delete: (log) => {
       const values = processLog(log);
       if (!values) return;
-      const { entity, component, table } = values;
+      const { entity, table } = values;
 
       debug("deleting component", {
         namespace: table.namespace,

@@ -15,14 +15,14 @@ export default defineWorld({
         y: "int32",
       },
       key: ["id"],
-      codegen: {
-        dataStruct: false,
-      },
+      codegen: { dataStruct: false },
     },
     Inventory: {
       schema: {
         id: "bytes32",
+        totalWeight: "uint256",
         items: "uint32[]",
+        weights: "uint32[]",
       },
       key: ["id"],
     },

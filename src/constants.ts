@@ -30,7 +30,7 @@ export const internalTables: Tables = {
     valueSchema: {
       step: { type: "uint32" }, // => Number, see SyncStep
       message: { type: "string" },
-      progress: { type: "uint32" }, // 0 -> 1
+      progress: { type: "uint32" }, // 0 -> 100
     },
   },
 };

@@ -33,12 +33,16 @@ export const hydrateFromRpc: HandleSync<Schema, StoreConfig, Tables> = (componen
 
   sync.historical.start(
     (index, blockNumber, progress) => {
-      SyncStatus.set({ step: SyncStep.Syncing, message: "Hydrating from RPC", progress });
+      SyncStatus.set({
+        step: SyncStep.Syncing,
+        message: "Hydrating from RPC",
+        progress: Number((progress * 100).toFixed()),
+      });
       SyncSource.set({ source: SyncSourceType.RPC });
       onProgress(index, blockNumber, progress);
 
       if (progress === 1) {
-        SyncStatus.set({ step: SyncStep.Complete, message: "DONE", progress: 1 });
+        SyncStatus.set({ step: SyncStep.Complete, message: "DONE", progress: 100 });
         onComplete();
       }
     },

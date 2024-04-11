@@ -1,6 +1,8 @@
 import { Store as StoreConfig } from "@latticexyz/store";
 import { World } from "@latticexyz/recs";
-import { Read, Sync } from "@primodiumxyz/sync-stack";
+// import { Read, Sync } from "@primodiumxyz/sync-stack";
+// TODO: TEMP IMPORT
+import { Read, Sync } from "@/_indexer/packages/sync-stack/src";
 import { Tables } from "@latticexyz/store/internal";
 
 import { createCustomWriter } from "@/sync/createCustomWriter";
@@ -20,9 +22,10 @@ export const createSync = async <world extends World, config extends StoreConfig
 
   return {
     // TODO: only RPC right now
+    // TODO: if I were to pass an array of readers, how to have them launch one by one? (i.e. not have live rpc run before historical is done)
     historical: Sync.withCustom({
       reader: Read.fromRPC.filter({
-        address: networkConfig.worldAddress,
+        address: worldAddress,
         publicClient, // TODO: viem version mismatch, 2.7.12 -> 1.14.0
         filters: logFilters,
         fromBlock: networkConfig.initialBlockNumber,
@@ -32,7 +35,7 @@ export const createSync = async <world extends World, config extends StoreConfig
     }),
     live: Sync.withCustom({
       reader: Read.fromRPC.subscribe({
-        address: networkConfig.worldAddress,
+        address: worldAddress,
         publicClient, // TODO: viem version mismatch, 2.7.12 -> 1.14.0
         logFilter: logFilters,
       }),
