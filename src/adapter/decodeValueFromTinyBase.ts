@@ -2,22 +2,22 @@ import { DynamicPrimitiveType, StaticPrimitiveType } from "@latticexyz/schema-ty
 import { TinyBaseFormattedType } from "./formatValueForTinyBase";
 import { Hex } from "viem";
 
-type DecodedTinyBaseType = {
-  [key: string]: DynamicPrimitiveType | StaticPrimitiveType | Hex;
-};
+type DecodedTinyBaseType =
+  | {
+      [key: string]: DynamicPrimitiveType | StaticPrimitiveType | Hex | undefined;
+    }
+  | undefined;
 
-const shouldReturnIntact = (key: string) =>
-  key === "__staticData" || key === "__encodedLengths" || key === "__dynamicData";
+const encodedDataKeys = ["__staticData", "__encodedLengths", "__dynamicData"];
+const ignoreKey = (key: string) => encodedDataKeys.includes(key) || key.startsWith("type__");
 
 export const decodeValueFromTinyBase = (formattedData: TinyBaseFormattedType): DecodedTinyBaseType => {
+  if (Object.keys(formattedData).length === 0) return undefined;
   let decoded: DecodedTinyBaseType = {};
 
   Object.entries(formattedData).forEach(([key, value]) => {
-    // Return special keys as is
-    if (shouldReturnIntact(key)) {
-      decoded[key] = value as Hex;
-      // Skip type information
-    } else if (!key.startsWith("type__")) {
+    // Return encoded keys as is and ignore type keys
+    if (!ignoreKey(key)) {
       const type = formattedData[`type__${key}`];
       if (!type) throw new Error(`Type information missing for key: ${key}`);
 
@@ -35,6 +35,11 @@ export const decodeValueFromTinyBase = (formattedData: TinyBaseFormattedType): D
         decoded[key] = JSON.parse(value as string).map((v: string) => v === "true");
       }
     }
+  });
+
+  // Encoded data should be undefined if it doesn't exist
+  encodedDataKeys.forEach((key) => {
+    decoded[key] = formattedData[key];
   });
 
   return decoded;
