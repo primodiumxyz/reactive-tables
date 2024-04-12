@@ -7,7 +7,7 @@ import { Write } from "@primodiumxyz/sync-stack";
 import { Hex, size } from "viem";
 import { Store } from "tinybase/store";
 
-import { decodeValueArgs } from "@/adapter/decodeValueArgs";
+import { TinyBaseAdapter } from "@/adapter";
 import { debug } from "@/utils";
 import { BaseComponent } from "@/store/component/types";
 
@@ -47,7 +47,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       if (!values) return;
       const { entity, table } = values;
 
-      const value = decodeValueArgs(table.valueSchema, log.args);
+      const value = TinyBaseAdapter.decodeArgs(table.valueSchema, log.args);
 
       debug("setting component", {
         namespace: table.namespace,
@@ -71,7 +71,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       const previousValue = component[entity];
       const previousStaticData = (previousValue?.__staticData as Hex) ?? "0x";
       const newStaticData = spliceHex(previousStaticData, log.args.start, size(log.args.data), log.args.data);
-      const newValue = decodeValueArgs(table.valueSchema, {
+      const newValue = TinyBaseAdapter.decodeArgs(table.valueSchema, {
         staticData: newStaticData,
         encodedLengths: (previousValue?.__encodedLengths as Hex) ?? "0x",
         dynamicData: (previousValue?.__dynamicData as Hex) ?? "0x",
@@ -102,7 +102,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       const previousValue = component[entity];
       const previousDynamicData = (previousValue?.__dynamicData as Hex) ?? "0x";
       const newDynamicData = spliceHex(previousDynamicData, log.args.start, log.args.deleteCount, log.args.data);
-      const newValue = decodeValueArgs(table.valueSchema, {
+      const newValue = TinyBaseAdapter.decodeArgs(table.valueSchema, {
         staticData: (previousValue?.__staticData as Hex) ?? "0x",
         encodedLengths: log.args.encodedLengths,
         dynamicData: newDynamicData,

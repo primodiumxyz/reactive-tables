@@ -1,10 +1,9 @@
 import { ComponentValue, Entity, OptionalTypes, Schema } from "@latticexyz/recs";
 import { singletonEntity } from "@latticexyz/store-sync/recs";
 
+import { TinyBaseAdapter } from "@/adapter";
 import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
 import { ValueSansMetadata } from "@/store/component/types";
-import { decodeValueFromTinyBase } from "@/adapter/decodeValueFromTinyBase";
-import { formatValueForTinyBase } from "@/adapter/formatValueForTinyBase";
 
 export const createComponentMethods = <S extends Schema, T = unknown>({
   store,
@@ -19,7 +18,7 @@ export const createComponentMethods = <S extends Schema, T = unknown>({
     entity = entity ?? singletonEntity;
     if (entity === undefined) throw new Error(`[set ${entity} for ${tableId}] no entity registered`);
 
-    const formatted = formatValueForTinyBase(Object.keys(value), Object.values(value));
+    const formatted = TinyBaseAdapter.format(Object.keys(value), Object.values(value));
     store.setRow(tableId, entity, formatted);
   }
 
@@ -31,7 +30,7 @@ export const createComponentMethods = <S extends Schema, T = unknown>({
     if (entity === undefined) return defaultValue;
 
     const row = store.getRow(tableId, entity);
-    const decoded = decodeValueFromTinyBase(row);
+    const decoded = TinyBaseAdapter.parse(row);
     return (decoded ?? defaultValue) as ComponentValue<S, T>;
   }
 
