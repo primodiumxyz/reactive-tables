@@ -49,15 +49,10 @@
     "@latticexyz/store-sync": "2.0.1",
     "@latticexyz/utils": "2.0.1",
     "@latticexyz/world": "2.0.1",
-    "@primodiumxyz/sync-stack": "^0.6.2",
+    "@primodiumxyz/sync-stack": "^0.6.3",
     "debug": "^4.3.4",
     "rxjs": "^7.5.5",
     "tinybase": "^4.8.0",
     "viem": "2.7.12"
-  },
-  "pnpm": {
-    "patchedDependencies": {
-      "@primodiumxyz/sync-stack@0.6.2": "patches/@primodiumxyz__sync-stack@0.6.2.patch"
-    }
   }
 }
