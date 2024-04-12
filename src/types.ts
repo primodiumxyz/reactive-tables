@@ -39,7 +39,7 @@ export type TinyBaseWrapperResult<config extends StoreConfig, tables extends Tab
   components: Components<Schema, config, tables>;
   tables: AllTables<config, tables>;
   store: Store;
-  sync: Sync;
+  sync: Syncs;
   publicClient: PublicClient;
 };
 
@@ -101,17 +101,22 @@ export type CreateSyncOptions<world extends World, config extends StoreConfig, t
   publicClient: PublicClient;
 };
 
-export type CreateSyncResult = Sync;
+export type CreateSyncResult = Syncs;
+
+export type Syncs = {
+  indexer: Sync | undefined;
+  rpc: Sync;
+  live: Sync;
+};
 
 export type Sync = {
-  [key in "historical" | "live"]: {
-    start: (
-      onProgress?: (index: number, blockNumber: bigint, progress: number) => void,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      error?: (err: any) => void,
-    ) => void;
-    unsubscribe: () => void;
-  };
+  start: (
+    onProgress?: (index: number, blockNumber: bigint, progress: number) => void,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    error?: (err: any) => void,
+  ) => void;
+  unsubscribe: () => void;
+  // it can be undefined if key is indexer
 };
 
 export type OnSyncCallbacks = {

@@ -3,16 +3,14 @@ import { hexToResource, spliceHex } from "@latticexyz/common";
 import { Schema } from "@latticexyz/recs";
 import { StorageAdapterLog } from "@latticexyz/store-sync";
 import { hexKeyTupleToEntity } from "@latticexyz/store-sync/recs";
-// import { Write } from "@primodiumxyz/sync-stack";
-// TODO: TEMP IMPORT
-import { Write } from "@/_indexer/packages/sync-stack/src";
+import { Write } from "@primodiumxyz/sync-stack";
 import { Hex, size } from "viem";
 import { Store } from "tinybase/store";
 
+import { decodeValueArgs } from "@/adapter/decodeValueArgs";
 import { debug } from "@/utils";
 import { BaseComponent } from "@/store/component/types";
 
-// TODO: show notice on how we're not using flattenSchema because we flattened it already
 // in order to store it in the table, at component creation
 export const createCustomWriter = <config extends StoreConfig>({ store }: { store: Store }) => {
   const processLog = (log: StorageAdapterLog) => {
@@ -49,13 +47,17 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       if (!values) return;
       const { entity, table } = values;
 
+      const value = decodeValueArgs(table.valueSchema, log.args);
+
       debug("setting component", {
         namespace: table.namespace,
         name: table.metadata.tableName,
         entity,
+        value,
       });
 
       store.setRow(table.metadata.id, entity, {
+        ...value,
         __staticData: log.args.staticData,
         __encodedLengths: log.args.encodedLengths,
         __dynamicData: log.args.dynamicData,
@@ -69,6 +71,11 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       const previousValue = component[entity];
       const previousStaticData = (previousValue?.__staticData as Hex) ?? "0x";
       const newStaticData = spliceHex(previousStaticData, log.args.start, size(log.args.data), log.args.data);
+      const newValue = decodeValueArgs(table.valueSchema, {
+        staticData: newStaticData,
+        encodedLengths: (previousValue?.__encodedLengths as Hex) ?? "0x",
+        dynamicData: (previousValue?.__dynamicData as Hex) ?? "0x",
+      });
 
       debug("setting component via splice static", {
         namespace: table.namespace,
@@ -77,9 +84,11 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
         previousStaticData,
         newStaticData,
         previousValue,
+        newValue,
       });
 
       store.setRow(table.metadata.id, entity, {
+        ...newValue,
         __staticData: newStaticData,
         __encodedLengths: previousValue?.__encodedLengths,
         __dynamicData: previousValue?.__dynamicData,
@@ -93,6 +102,11 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       const previousValue = component[entity];
       const previousDynamicData = (previousValue?.__dynamicData as Hex) ?? "0x";
       const newDynamicData = spliceHex(previousDynamicData, log.args.start, log.args.deleteCount, log.args.data);
+      const newValue = decodeValueArgs(table.valueSchema, {
+        staticData: (previousValue?.__staticData as Hex) ?? "0x",
+        encodedLengths: log.args.encodedLengths,
+        dynamicData: newDynamicData,
+      });
 
       debug("setting component via splice dynamic", {
         namespace: table.namespace,
@@ -101,9 +115,11 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
         previousDynamicData,
         newDynamicData,
         previousValue,
+        newValue,
       });
 
       store.setRow(table.metadata.id, entity, {
+        ...newValue,
         __staticData: previousValue?.__staticData,
         __encodedLengths: log.args.encodedLengths,
         __dynamicData: newDynamicData,

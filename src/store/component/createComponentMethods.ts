@@ -1,10 +1,10 @@
-import { ComponentValue, Entity, Schema } from "@latticexyz/recs";
+import { ComponentValue, Entity, OptionalTypes, Schema } from "@latticexyz/recs";
 import { singletonEntity } from "@latticexyz/store-sync/recs";
-import { decodeValueArgs, encodeValueArgs } from "@latticexyz/protocol-parser/internal";
-import { Hex } from "viem";
 
 import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
 import { ValueSansMetadata } from "@/store/component/types";
+import { decodeValueFromTinyBase } from "@/adapter/decodeValueFromTinyBase";
+import { formatValueForTinyBase } from "@/adapter/formatValueForTinyBase";
 
 export const createComponentMethods = <S extends Schema, T = unknown>({
   store,
@@ -19,10 +19,8 @@ export const createComponentMethods = <S extends Schema, T = unknown>({
     entity = entity ?? singletonEntity;
     if (entity === undefined) throw new Error(`[set ${entity} for ${tableId}] no entity registered`);
 
-    // We want to encode values set on the client side the same way as contract values
-    // so it can be decoded in a consistent way
-    const encodedValue = encodeValueArgs(valueSchema, value);
-    store.setRow(tableId, entity, encodedValue);
+    const formatted = formatValueForTinyBase(Object.keys(value), Object.values(value));
+    store.setRow(tableId, entity, formatted);
   }
 
   function get(): ComponentValue<S, T> | undefined;
@@ -33,17 +31,8 @@ export const createComponentMethods = <S extends Schema, T = unknown>({
     if (entity === undefined) return defaultValue;
 
     const row = store.getRow(tableId, entity);
-
-    const value = {
-      ...row,
-      ...decodeValueArgs(valueSchema, {
-        staticData: (row.__staticData as Hex) ?? "0x",
-        encodedLengths: (row.__encodedLengths as Hex) ?? "0x",
-        dynamicData: (row.__dynamicData as Hex) ?? "0x",
-      }),
-    };
-
-    return (value ?? defaultValue) as ComponentValue<S, T>;
+    const decoded = decodeValueFromTinyBase(row);
+    return (decoded ?? defaultValue) as ComponentValue<S, T>;
   }
 
   return { get, set };

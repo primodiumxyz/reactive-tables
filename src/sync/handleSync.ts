@@ -2,12 +2,12 @@ import { Store as StoreConfig } from "@latticexyz/store";
 import { Schema } from "@latticexyz/recs";
 import { Tables } from "@latticexyz/store/internal";
 
-import { Components, NetworkConfig, OnSyncCallbacks, Sync } from "@/types";
+import { Components, NetworkConfig, OnSyncCallbacks, Syncs } from "@/types";
 import { SyncSourceType, SyncStep } from "@/constants";
 
 export type HandleSync<S extends Schema, config extends StoreConfig, tables extends Tables> = (
   components: Components<S, config, tables>,
-  sync: Sync,
+  sync: Syncs,
   onSync: OnSyncCallbacks,
 ) => void;
 
@@ -23,7 +23,7 @@ export const handleSync: HandleSync<Schema, StoreConfig, Tables> = (components, 
     },
   });
 
-  const unsubscribe = () => Object.values(sync).forEach((syncType) => syncType.unsubscribe());
+  const unsubscribe = () => Object.values(sync).forEach((syncType) => syncType?.unsubscribe());
   return unsubscribe;
 };
 
@@ -31,7 +31,7 @@ export const hydrateFromRpc: HandleSync<Schema, StoreConfig, Tables> = (componen
   const { SyncStatus, SyncSource } = components;
   const { progress: onProgress, complete: onComplete, error: onError } = onSync;
 
-  sync.historical.start(
+  sync.rpc.start(
     (index, blockNumber, progress) => {
       SyncStatus.set({
         step: SyncStep.Syncing,
