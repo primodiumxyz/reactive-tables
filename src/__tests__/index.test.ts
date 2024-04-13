@@ -1,4 +1,4 @@
-import { describe, it, expect, assert } from "vitest";
+import { describe, it, expect, assert, beforeAll } from "vitest";
 import { createWorld, getComponentValue } from "@latticexyz/recs";
 import { encodeEntity, singletonEntity, syncToRecs } from "@latticexyz/store-sync/recs";
 import { wait } from "@latticexyz/common/utils";
@@ -16,8 +16,14 @@ import mockConfig from "@/__tests__/mocks/contracts/mud.config";
 
 const FUZZ_ITERATIONS = 20;
 
+type TestOptions = {
+  useIndexer?: boolean;
+  startSync?: boolean;
+};
+
 /* ---------------------------------- INIT ---------------------------------- */
-const init = async (useIndexer = true) => {
+const init = async (options: TestOptions = { useIndexer: true, startSync: true }) => {
+  const { useIndexer, startSync } = options;
   const world = createWorld();
   const networkConfig = getMockNetworkConfig();
 
@@ -29,6 +35,7 @@ const init = async (useIndexer = true) => {
       ...networkConfig,
       indexerUrl: useIndexer ? networkConfig.indexerUrl : undefined,
     },
+    startSync,
   });
 
   // Sync RECS components for comparison
@@ -61,7 +68,7 @@ const init = async (useIndexer = true) => {
 describe("tinyBaseWrapper", () => {
   /* ---------------------------------- SETUP --------------------------------- */
   it("should properly initialize and return expected objects", async () => {
-    const { components, tables, publicClient, sync, store } = await init();
+    const { components, tables, publicClient, sync, store } = await init({ startSync: false });
 
     // Verify the existence of the result
     expect(components).toBeDefined();
@@ -73,12 +80,11 @@ describe("tinyBaseWrapper", () => {
 
   /* ---------------------------------- SYNC ---------------------------------- */
   describe("sync: should properly sync similar values to RECS components", () => {
-    const performTest = async (useIndexer: boolean) => {
-      const { components, recsComponents, networkConfig, waitForSyncLive } = await init(useIndexer);
+    const runTest = async (options: TestOptions) => {
+      const { components, recsComponents, networkConfig, waitForSyncLive } = await init(options);
       const player = encodeEntity({ address: "address" }, { address: networkConfig.burnerAccount.address });
       assert(components);
 
-      await fuzz(networkConfig, FUZZ_ITERATIONS);
       await waitForSyncLive();
 
       // Ignore SyncSource and SyncStatus (not registered in RECS)
@@ -92,12 +98,16 @@ describe("tinyBaseWrapper", () => {
       }
     };
 
+    beforeAll(async () => {
+      await fuzz(FUZZ_ITERATIONS);
+    });
+
     it("using indexer", async () => {
-      await performTest(true);
+      await runTest({ useIndexer: true });
     });
 
     it("using RPC", async () => {
-      await performTest(false);
+      await runTest({ useIndexer: false });
     });
   });
 });
