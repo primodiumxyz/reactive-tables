@@ -84,8 +84,6 @@ export const subToRpc: HandleSync<Schema, StoreConfig, Tables> = (components, _,
   const { SyncStatus } = components;
   sync.start(
     (_, blockNumber) => {
-      if (blockNumber === BigInt(0)) return;
-
       SyncStatus.set({
         step: SyncStep.Live,
         message: "Subscribed to RPC",

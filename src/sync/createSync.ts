@@ -14,6 +14,10 @@ import {
 
 import { hydrateFromIndexer, hydrateFromRpc, subToRpc } from "./handleSync";
 
+/* -------------------------------------------------------------------------- */
+/*                                   GLOBAL                                   */
+/* -------------------------------------------------------------------------- */
+
 export const createSync = ({
   components,
   store,
@@ -38,6 +42,11 @@ export const createSync = ({
         ...onSync,
         // When it's complete, sync remaining blocks from RPC
         complete: async (lastBlock) => startRpcSync(lastBlock),
+        error: (error) => {
+          console.warn("Error hydrating from indexer");
+          console.error(error);
+          startRpcSync(initialBlockNumber);
+        },
       });
     } else {
       // Otherwise, start by syncing from RPC directly
@@ -72,6 +81,10 @@ export const createSync = ({
   return { start: startSync, unsubscribe: () => unsubs.forEach((unsub) => unsub()) };
 };
 
+/* -------------------------------------------------------------------------- */
+/*                                   INDEXER                                  */
+/* -------------------------------------------------------------------------- */
+
 const createIndexerSync = <S extends Schema, config extends StoreConfig, tables extends Tables>({
   store,
   networkConfig,
@@ -87,6 +100,10 @@ const createIndexerSync = <S extends Schema, config extends StoreConfig, tables 
     writer: createCustomWriter({ store }),
   });
 };
+
+/* -------------------------------------------------------------------------- */
+/*                                     RPC                                    */
+/* -------------------------------------------------------------------------- */
 
 const createRpcSync = <S extends Schema, config extends StoreConfig, tables extends Tables>({
   store,
