@@ -6,7 +6,7 @@ import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 
-import { Components, ExtendedComponentMethods } from "@/store/component/types";
+import { Components, ComponentMethods } from "@/store/component/types";
 
 import { storeTables, worldTables } from "@latticexyz/store-sync";
 import { internalTables } from "@/constants";
@@ -74,7 +74,7 @@ export type CreateComponentMethodsOptions = {
   tableId: string;
 };
 
-export type CreateComponentMethodsResult<S extends Schema, T = unknown> = ExtendedComponentMethods<S, T>;
+export type CreateComponentMethodsResult<S extends Schema, T = unknown> = ComponentMethods<S, T>;
 
 export type CreateStoreOptions<config extends StoreConfig, tables extends Tables> = {
   tables: AllTables<config, tables>;

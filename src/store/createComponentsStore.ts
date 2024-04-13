@@ -10,7 +10,7 @@ import { createComponentMethods } from "@/store/component/createComponentMethods
 import { setComponentTable } from "@/store/utils";
 import { schemaAbiTypeToRecsType } from "@/utils";
 import { CreateComponentsStoreOptions, CreateComponentsStoreResult } from "@/types";
-import { Components, ComponentTable, ExtendedComponentMethods } from "@/store/component/types";
+import { Components, ComponentTable, ComponentMethods } from "@/store/component/types";
 
 export const createComponentsStore = <
   world extends World,
@@ -31,17 +31,18 @@ export const createComponentsStore = <
     // Immutable
     const componentTable = {
       id: table.tableId,
-      schema: {
-        ...Object.fromEntries(
-          Object.entries(table.valueSchema).map(([fieldName, schemaAbiType]) => [
-            fieldName,
-            schemaAbiTypeToRecsType[schemaAbiType["type"]],
-          ]),
-        ),
-        __staticData: Type.OptionalString,
-        __encodedLengths: Type.OptionalString,
-        __dynamicData: Type.OptionalString,
-      },
+      // TODO: we're actually never using the schema; should we include it? what should its purpose be?
+      // schema: {
+      //   ...Object.fromEntries(
+      //     Object.entries(table.valueSchema).map(([fieldName, schemaAbiType]) => [
+      //       fieldName,
+      //       schemaAbiTypeToRecsType[schemaAbiType["type"]],
+      //     ]),
+      //   ),
+      //   __staticData: Type.OptionalString,
+      //   __encodedLengths: Type.OptionalString,
+      //   __dynamicData: Type.OptionalString,
+      // },
       metadata: {
         componentName: table.name,
         tableName: resourceToLabel(table),
@@ -50,7 +51,7 @@ export const createComponentsStore = <
       },
     } as ComponentTable<typeof table, config>;
 
-    const methods: ExtendedComponentMethods<Schema> = createComponentMethods({
+    const methods: ComponentMethods<Schema> = createComponentMethods({
       store,
       tableId: table.tableId,
     });
