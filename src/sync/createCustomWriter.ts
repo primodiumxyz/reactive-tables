@@ -1,6 +1,5 @@
 import { Store as StoreConfig } from "@latticexyz/store";
 import { hexToResource, spliceHex } from "@latticexyz/common";
-import { Schema } from "@latticexyz/recs";
 import { StorageAdapterLog } from "@latticexyz/store-sync";
 import { hexKeyTupleToEntity } from "@latticexyz/store-sync/recs";
 import { Write } from "@primodiumxyz/sync-stack";
@@ -8,8 +7,8 @@ import { Hex, size } from "viem";
 import { Store } from "tinybase/store";
 
 import { TinyBaseAdapter } from "@/adapter";
+import { getComponentTable } from "@/store/utils";
 import { debug } from "@/utils";
-import { BaseComponent } from "@/store/component/types";
 
 // in order to store it in the table, at component creation
 export const createCustomWriter = <config extends StoreConfig>({ store }: { store: Store }) => {
@@ -20,8 +19,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
     // TODO: We could grab the row for this entity directly, but we then we wouldn't be able to check
     // its exisence; is the tradeoff worth it?
     const component = store.getTable(log.args.tableId);
-    // Not strictly the table but the same content formatted for TinyBase
-    const table = store.getTable(`table__${log.args.tableId}`) as BaseComponent<Schema, config>;
+    const table = getComponentTable(store, log.args.tableId);
 
     if (!component) {
       debug(`unknown component: ${log.args.tableId} (${namespace}:${name})`);
@@ -48,7 +46,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       if (!values) return;
       const { entity, table } = values;
 
-      const value = TinyBaseAdapter.decodeArgs(table.valueSchema, log.args);
+      const value = TinyBaseAdapter.decodeArgs(table.metadata.valueSchema, log.args);
 
       debug("setting component", {
         namespace: table.namespace,
@@ -57,7 +55,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
         value,
       });
 
-      store.setRow(table.metadata.id, entity, {
+      store.setRow(table.id, entity, {
         ...value,
         __staticData: log.args.staticData,
         __encodedLengths: log.args.encodedLengths,
@@ -73,7 +71,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       const previousValue = component[entity];
       const previousStaticData = (previousValue?.__staticData as Hex) ?? "0x";
       const newStaticData = spliceHex(previousStaticData, log.args.start, size(log.args.data), log.args.data);
-      const newValue = TinyBaseAdapter.decodeArgs(table.valueSchema, {
+      const newValue = TinyBaseAdapter.decodeArgs(table.metadata.valueSchema, {
         staticData: newStaticData,
         encodedLengths: (previousValue?.__encodedLengths as Hex) ?? "0x",
         dynamicData: (previousValue?.__dynamicData as Hex) ?? "0x",
@@ -89,7 +87,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
         newValue,
       });
 
-      store.setRow(table.metadata.id, entity, {
+      store.setRow(table.id, entity, {
         // We need to pass previous values to keep the encodedLengths and dynamicData (if any)
         // and be consistent with RECS
         ...previousValue,
@@ -106,7 +104,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       const previousValue = component[entity];
       const previousDynamicData = (previousValue?.__dynamicData as Hex) ?? "0x";
       const newDynamicData = spliceHex(previousDynamicData, log.args.start, log.args.deleteCount, log.args.data);
-      const newValue = TinyBaseAdapter.decodeArgs(table.valueSchema, {
+      const newValue = TinyBaseAdapter.decodeArgs(table.metadata.valueSchema, {
         staticData: (previousValue?.__staticData as Hex) ?? "0x",
         encodedLengths: log.args.encodedLengths,
         dynamicData: newDynamicData,
@@ -122,7 +120,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
         newValue,
       });
 
-      store.setRow(table.metadata.id, entity, {
+      store.setRow(table.id, entity, {
         ...newValue,
         __encodedLengths: log.args.encodedLengths,
         __dynamicData: newDynamicData,
@@ -140,7 +138,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
         entity,
       });
 
-      store.delRow(table.metadata.id, entity);
+      store.delRow(table.id, entity);
     },
   });
 };

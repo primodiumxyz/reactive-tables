@@ -3,33 +3,39 @@ import { Schema, Type, World } from "@latticexyz/recs";
 import { resourceToLabel } from "@latticexyz/common";
 import { mapObject } from "@latticexyz/utils";
 import { Tables } from "@latticexyz/store/internal";
-import { KeySchema, ValueSchema } from "@latticexyz/protocol-parser/internal";
+import { SchemaAbiType } from "@latticexyz/schema-type/internal";
 import { createStore } from "tinybase/store";
 
 import { createComponentMethods } from "@/store/component/createComponentMethods";
+import { setComponentTable } from "@/store/utils";
 import { schemaAbiTypeToRecsType } from "@/utils";
-import { Components, CreateComponentsStoreOptions, CreateComponentsStoreResult } from "@/types";
-import { BaseComponent, ExtendedComponentMethods } from "@/store/component/types";
+import { CreateComponentsStoreOptions, CreateComponentsStoreResult } from "@/types";
+import { Components, ComponentTable, ExtendedComponentMethods } from "@/store/component/types";
 
-export const createComponentsStore = <world extends World, config extends StoreConfig, tables extends Tables>({
+export const createComponentsStore = <
+  world extends World,
+  config extends StoreConfig,
+  extraTables extends Tables | undefined,
+>({
   world,
   tables,
-}: CreateComponentsStoreOptions<world, config, tables>): CreateComponentsStoreResult<config, tables> => {
+}: CreateComponentsStoreOptions<world, config, extraTables>): CreateComponentsStoreResult<config, extraTables> => {
   // Create the TinyBase store
   const store = createStore();
 
   // Resolve tables into components
+  // @ts-ignore excessively deep and possibly infinite type instantiation
   const components = mapObject(tables, (table) => {
     if (Object.keys(table.valueSchema).length === 0) throw new Error("Component schema must have at least one key");
 
     // Immutable
-    // TODO: Add types from https://github.com/latticexyz/mud/blob/ade94a7fa761070719bcd4b4dac6cb8cc7783c3b/packages/store-sync/src/recs/tableToComponent.ts#L9
-    const componentTable: BaseComponent<Schema, config> = {
+    const componentTable = {
+      id: table.tableId,
       schema: {
         ...Object.fromEntries(
-          Object.entries(table.valueSchema).map(([fieldName, { type: schemaAbiType }]) => [
+          Object.entries(table.valueSchema).map(([fieldName, schemaAbiType]) => [
             fieldName,
-            schemaAbiTypeToRecsType[schemaAbiType],
+            schemaAbiTypeToRecsType[schemaAbiType["type"]],
           ]),
         ),
         __staticData: Type.OptionalString,
@@ -37,30 +43,26 @@ export const createComponentsStore = <world extends World, config extends StoreC
         __dynamicData: Type.OptionalString,
       },
       metadata: {
-        id: table.tableId,
         componentName: table.name,
         tableName: resourceToLabel(table),
+        keySchema: mapObject(table.keySchema, ({ type }) => type),
+        valueSchema: mapObject(table.valueSchema, ({ type }) => type),
       },
-      keySchema: mapObject(table.keySchema, ({ type }) => type) as KeySchema,
-      valueSchema: mapObject(table.valueSchema, ({ type }) => type) as ValueSchema,
-    };
+    } as ComponentTable<typeof table, config>;
 
     const methods: ExtendedComponentMethods<Schema> = createComponentMethods({
       store,
       tableId: table.tableId,
-      keySchema: componentTable.keySchema,
-      valueSchema: componentTable.valueSchema,
-      schema: componentTable.schema,
     });
 
     // Register immutable data (basically formatted table) in the store for efficient access
-    store.setTable(`table__${table.tableId}`, componentTable);
+    setComponentTable(store, componentTable);
 
     return {
       ...componentTable,
       ...methods,
     };
-  }) as Components<Schema, config, tables>;
+  }) as Components<typeof tables, config>;
 
   return { components, store };
 };

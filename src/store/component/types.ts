@@ -1,22 +1,47 @@
-import { ComponentValue, Entity, Schema } from "@latticexyz/recs";
+import { ComponentValue, Entity, Metadata, Schema, Type } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { ResourceLabel } from "@latticexyz/common";
-import { KeySchema, ValueSchema } from "@latticexyz/protocol-parser/internal";
+import { Table, Tables } from "@latticexyz/store/internal";
+import { SchemaAbiTypeToRecsType } from "@/utils";
+import { SchemaAbiType } from "@latticexyz/schema-type/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 
-// TODO: figure out if we need Schema & StoreConfig
-export type Component<S extends Schema, config extends StoreConfig, T = unknown> = BaseComponent<S, config> &
-  ExtendedComponentMethods<S, T>;
+export type Components<tables extends Tables, config extends StoreConfig> = {
+  [tableName in keyof tables]: Component<tables[tableName], config>;
+};
 
-export type BaseComponent<S, config> = {
-  schema: S;
-  metadata: {
-    id: string;
-    componentName: string;
+export type Component<
+  table extends Table,
+  config extends StoreConfig,
+  S extends Schema = Schema,
+  M extends Metadata = Metadata,
+  T = unknown,
+> = ComponentTable<table, config, S, M> & ExtendedComponentMethods<ComponentValueSchema<table, S>, T>;
+
+// Base component structure containing information about its table & schemas
+export type ComponentTable<
+  table extends Table,
+  config extends StoreConfig,
+  S extends Schema = Schema,
+  M extends Metadata = Metadata,
+> = {
+  id: string;
+  schema: ComponentValueSchema<table, S>;
+  metadata: M & {
+    componentName: table["name"];
     tableName: ResourceLabel<storeToV1<config>["namespace"], string>;
+    keySchema: { [name in keyof table["keySchema"] & string]: table["keySchema"][name]["type"] };
+    valueSchema: { [name in keyof table["valueSchema"] & string]: table["valueSchema"][name]["type"] };
   };
-  keySchema: KeySchema;
-  valueSchema: ValueSchema;
+};
+
+export type ComponentValueSchema<table extends Table, S extends Schema = Schema> = S & {
+  __staticData: Type.OptionalString;
+  __encodedLengths: Type.OptionalString;
+  __dynamicData: Type.OptionalString;
+} & {
+  [fieldName in keyof table["valueSchema"] & string]: Type &
+    SchemaAbiTypeToRecsType<SchemaAbiType & table["valueSchema"][fieldName]["type"]>;
 };
 
 // Copied from Primodium
@@ -66,3 +91,8 @@ export type ExtendedComponentMethods<S extends Schema, T = unknown> = {
 
 //   getEntityKeys: (entity: Entity) => SchemaToPrimitives<TKeySchema>;
 // };
+
+// export type OriginalComponentMethods<S extends Schema, T = unknown> = {
+//   update$: Subject<ComponentUpdate<S, T>> & { observers: any };
+//   entities: () => IterableIterator<Entity>; // ???
+// }

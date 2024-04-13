@@ -1,7 +1,6 @@
 import { Store as StoreConfig } from "@latticexyz/store";
-import { Schema } from "@latticexyz/recs";
-import { Read, Sync } from "@primodiumxyz/sync-stack";
 import { Tables } from "@latticexyz/store/internal";
+import { Read, Sync } from "@primodiumxyz/sync-stack";
 
 import { createCustomWriter } from "@/sync/createCustomWriter";
 import {
@@ -18,13 +17,13 @@ import { hydrateFromIndexer, hydrateFromRpc, subToRpc } from "./handleSync";
 /*                                   GLOBAL                                   */
 /* -------------------------------------------------------------------------- */
 
-export const createSync = ({
+export const createSync = <config extends StoreConfig, extraTables extends Tables | undefined>({
   components,
   store,
   networkConfig,
   publicClient,
   onSync,
-}: CreateSyncOptions<Schema, StoreConfig, Tables>): CreateSyncResult => {
+}: CreateSyncOptions<config, extraTables>): CreateSyncResult => {
   const { complete: onComplete } = onSync;
   const { indexerUrl, initialBlockNumber } = networkConfig;
 
@@ -85,11 +84,11 @@ export const createSync = ({
 /*                                   INDEXER                                  */
 /* -------------------------------------------------------------------------- */
 
-const createIndexerSync = <S extends Schema, config extends StoreConfig, tables extends Tables>({
+const createIndexerSync = <config extends StoreConfig, extraTables extends Tables | undefined>({
   store,
   networkConfig,
   logFilters,
-}: CreateIndexerSyncOptions<S, config, tables>): SyncType => {
+}: CreateIndexerSyncOptions<config, extraTables>): SyncType => {
   const { worldAddress, indexerUrl } = networkConfig;
 
   return Sync.withCustom({
@@ -105,14 +104,14 @@ const createIndexerSync = <S extends Schema, config extends StoreConfig, tables 
 /*                                     RPC                                    */
 /* -------------------------------------------------------------------------- */
 
-const createRpcSync = <S extends Schema, config extends StoreConfig, tables extends Tables>({
+const createRpcSync = <config extends StoreConfig, extraTables extends Tables | undefined>({
   store,
   networkConfig,
   publicClient,
   logFilters,
   startBlock,
   endBlock,
-}: CreateRpcSyncOptions<S, config, tables>): { historical: SyncType; live: SyncType } => {
+}: CreateRpcSyncOptions<config, extraTables>): { historical: SyncType; live: SyncType } => {
   const { worldAddress } = networkConfig;
 
   return {

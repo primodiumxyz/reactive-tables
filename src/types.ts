@@ -2,12 +2,11 @@ import { Schema, World } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { MUDChain } from "@latticexyz/common/chains";
 import { ResolvedStoreConfig, Tables } from "@latticexyz/store/internal";
-import { ValueSchema, KeySchema } from "@latticexyz/protocol-parser/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 
-import { Component, ExtendedComponentMethods } from "@/store/component/types";
+import { Components, ExtendedComponentMethods } from "@/store/component/types";
 
 import { storeTables, worldTables } from "@latticexyz/store-sync";
 import { internalTables } from "@/constants";
@@ -15,7 +14,7 @@ import { internalTables } from "@/constants";
 export type AllTables<config extends StoreConfig, extraTables extends Tables | undefined> = ResolvedStoreConfig<
   storeToV1<config>
 >["tables"] &
-  (extraTables extends Tables ? extraTables : Record<never, never>) &
+  (extraTables extends Tables ? extraTables : {}) &
   typeof storeTables &
   typeof worldTables &
   typeof internalTables;
@@ -36,7 +35,7 @@ export type TinyBaseWrapperOptions<
 };
 
 export type TinyBaseWrapperResult<config extends StoreConfig, tables extends Tables | undefined> = {
-  components: Components<Schema, config, tables>;
+  components: Components<AllTables<config, tables>, config>;
   tables: AllTables<config, tables>;
   store: Store;
   sync: CreateSyncResult;
@@ -55,31 +54,24 @@ export interface NetworkConfig {
 /* -------------------------------------------------------------------------- */
 /*                                    STORE                                   */
 /* -------------------------------------------------------------------------- */
-// TODO: type key
-export type Components<S extends Schema, config extends StoreConfig, tables extends Tables | undefined, T = unknown> = {
-  [key in keyof tables]: Component<S, config, T>;
-};
-
 export type CreateComponentsStoreOptions<
   world extends World,
   config extends StoreConfig,
-  tables extends Tables | undefined,
+  extraTables extends Tables | undefined,
 > = {
   world: world;
-  tables: AllTables<config, tables>;
+  tables: AllTables<config, extraTables>;
+  extraTables?: extraTables;
 };
 
-export type CreateComponentsStoreResult<config extends StoreConfig, tables extends Tables | undefined> = {
-  components: Components<Schema, config, tables>;
+export type CreateComponentsStoreResult<config extends StoreConfig, extraTables extends Tables | undefined> = {
+  components: Components<AllTables<config, extraTables>, config>;
   store: Store;
 };
 
 export type CreateComponentMethodsOptions = {
   store: Store;
   tableId: string;
-  keySchema: KeySchema;
-  valueSchema: ValueSchema;
-  schema: Schema;
 };
 
 export type CreateComponentMethodsResult<S extends Schema, T = unknown> = ExtendedComponentMethods<S, T>;
@@ -94,8 +86,8 @@ export type CreateStoreResult = Store;
 /*                                    SYNC                                    */
 /* -------------------------------------------------------------------------- */
 
-export type CreateSyncOptions<S extends Schema, config extends StoreConfig, tables extends Tables> = {
-  components: Components<S, config, tables>;
+export type CreateSyncOptions<config extends StoreConfig, extraTables extends Tables | undefined> = {
+  components: Components<AllTables<config, extraTables>, config>;
   store: Store;
   networkConfig: NetworkConfig;
   publicClient: PublicClient;
@@ -107,15 +99,15 @@ export type CreateSyncResult = {
   unsubscribe: () => void;
 };
 
-export type CreateIndexerSyncOptions<S extends Schema, config extends StoreConfig, tables extends Tables> = Omit<
-  CreateSyncOptions<S, config, tables>,
+export type CreateIndexerSyncOptions<config extends StoreConfig, extraTables extends Tables | undefined> = Omit<
+  CreateSyncOptions<config, extraTables>,
   "components" | "publicClient" | "onSync"
 > & {
   logFilters: { tableId: string }[];
 };
 
-export type CreateRpcSyncOptions<S extends Schema, config extends StoreConfig, tables extends Tables> = Omit<
-  CreateSyncOptions<S, config, tables>,
+export type CreateRpcSyncOptions<config extends StoreConfig, extraTables extends Tables | undefined> = Omit<
+  CreateSyncOptions<config, extraTables>,
   "components" | "onSync"
 > & {
   logFilters: { tableId: string }[];

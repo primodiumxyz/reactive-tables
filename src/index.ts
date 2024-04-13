@@ -11,7 +11,7 @@ import { TinyBaseWrapperOptions, NetworkConfig, TinyBaseWrapperResult, AllTables
 import { storeTables, worldTables } from "@latticexyz/store-sync";
 import { internalTables } from "@/constants";
 
-export const tinyBaseWrapper = async <
+export const tinyBaseWrapper = <
   world extends World,
   config extends StoreConfig,
   networkConfig extends NetworkConfig,
@@ -30,9 +30,8 @@ export const tinyBaseWrapper = async <
   },
 
   // TODO: initialQueries
-}: TinyBaseWrapperOptions<world, config, networkConfig, extraTables>): Promise<
-  TinyBaseWrapperResult<config, extraTables>
-> => {
+  // TODO: internalComponents; should also be passed for return type to be used in Components type inference
+}: TinyBaseWrapperOptions<world, config, networkConfig, extraTables>): TinyBaseWrapperResult<config, extraTables> => {
   const client = publicClient ?? createPublicClient(networkConfig);
 
   /* --------------------------------- TABLES --------------------------------- */
@@ -42,6 +41,7 @@ export const tinyBaseWrapper = async <
     ...(otherTables ?? {}),
     ...storeTables,
     ...worldTables,
+    // TODO: defineInternalComponents; minimal (not full tables)
     ...internalTables, // e.g. sync components
   } as unknown as AllTables<config, extraTables>;
 
@@ -56,6 +56,5 @@ export const tinyBaseWrapper = async <
     world.registerDisposer(sync.unsubscribe);
   }
 
-  // TODO: fix annoying type issue
   return { components, tables, store, sync, publicClient: client };
 };
