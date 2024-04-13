@@ -41,6 +41,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
   };
 
   return Write.toCustom({
+    /* ----------------------------------- SET ---------------------------------- */
     set: (log) => {
       const values = processLog(log);
 
@@ -63,6 +64,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
         __dynamicData: log.args.dynamicData,
       });
     },
+    /* --------------------------------- STATIC --------------------------------- */
     updateStatic: (log) => {
       const values = processLog(log);
       if (!values) return;
@@ -88,12 +90,14 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
       });
 
       store.setRow(table.metadata.id, entity, {
+        // We need to pass previous values to keep the encodedLengths and dynamicData (if any)
+        // and be consistent with RECS
+        ...previousValue,
         ...newValue,
         __staticData: newStaticData,
-        __encodedLengths: previousValue?.__encodedLengths,
-        __dynamicData: previousValue?.__dynamicData,
       });
     },
+    /* --------------------------------- DYNAMIC -------------------------------- */
     updateDynamic: (log) => {
       const values = processLog(log);
       if (!values) return;
@@ -120,11 +124,11 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
 
       store.setRow(table.metadata.id, entity, {
         ...newValue,
-        __staticData: previousValue?.__staticData,
         __encodedLengths: log.args.encodedLengths,
         __dynamicData: newDynamicData,
       });
     },
+    /* --------------------------------- DELETE --------------------------------- */
     delete: (log) => {
       const values = processLog(log);
       if (!values) return;

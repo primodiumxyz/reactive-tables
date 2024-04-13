@@ -30,6 +30,7 @@ export const createComponentMethods = <S extends Schema, T = unknown>({
     if (entity === undefined) return defaultValue;
 
     const row = store.getRow(tableId, entity);
+
     const decoded = row ? TinyBaseAdapter.parse(row) : undefined; // empty object should be undefined
     return (decoded ?? defaultValue) as ComponentValue<S, T>;
   }

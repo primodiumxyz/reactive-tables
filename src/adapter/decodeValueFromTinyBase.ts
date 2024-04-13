@@ -35,11 +35,11 @@ export const decodeValueFromTinyBase = (formattedData: TinyBaseFormattedType): D
         decoded[key] = JSON.parse(value as string).map((v: string) => v === "true");
       }
     }
-  });
 
-  // Encoded data should be undefined if it doesn't exist
-  encodedDataKeys.forEach((key) => {
-    decoded[key] = formattedData[key];
+    // Write encoded data
+    encodedDataKeys.forEach((encodedKey) => {
+      decoded[encodedKey] = formattedData[encodedKey];
+    });
   });
 
   return decoded;

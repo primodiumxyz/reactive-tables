@@ -4,13 +4,21 @@ import { WriteContractParameters } from "viem";
 
 import IWorldAbi from "@/__tests__/mocks/contracts/out/IWorld.sol/IWorld.abi.json";
 
+// We don't want to run everything with Promise.all because it will quickly cause an issue with Viem (transaction underpriced)
+// This way it should at least reduce a bit the waiting time
 export const fuzz = async (networkConfig: MockNetworkConfig, iterations: number) => {
-  await Promise.all(
-    Array.from({ length: iterations }, async () => {
-      const randomFunction = Object.values(mockFunctions)[random(0, Object.values(mockFunctions).length - 1)];
-      await randomFunction(networkConfig);
-    }),
-  );
+  const allFunctions = Object.values(mockFunctions);
+  const tasks = [];
+
+  for (let i = 0; i < iterations; i++) {
+    const randomFunction = allFunctions[random(0, allFunctions.length - 1)];
+    tasks.push(randomFunction(networkConfig));
+
+    if (tasks.length === 20 || i === iterations - 1) {
+      await Promise.all(tasks);
+      tasks.length = 0;
+    }
+  }
 };
 
 // Call a test function
@@ -34,7 +42,7 @@ export const callContractWithArgs = async <
 };
 
 // Test functions
-const mockFunctions = {
+export const mockFunctions = {
   // Update an entity's position
   move: async (networkConfig: MockNetworkConfig) => {
     await callContractWithArgs(networkConfig, "move", [random(-100, 100), random(-100, 100)]);

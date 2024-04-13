@@ -4,7 +4,7 @@ import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Tables, resolveConfig } from "@latticexyz/store/internal";
 
 import { createComponentsStore } from "@/store";
-import { createSync, handleSync } from "@/sync";
+import { createSync } from "@/sync";
 import { createPublicClient } from "@/utils";
 import { TinyBaseWrapperOptions, NetworkConfig, TinyBaseWrapperResult, AllTables } from "@/types";
 
@@ -24,8 +24,8 @@ export const tinyBaseWrapper = async <
   publicClient,
   startSync = true, // start sync immediately?
   onSync = {
-    progress: (index, blockNumber, progress) => console.log(`Syncing: ${(progress * 100).toFixed()}%`),
-    complete: () => console.log("Sync complete"),
+    progress: (_, __, progress) => console.log(`Syncing: ${(progress * 100).toFixed()}%`),
+    complete: (blockNumber) => console.log("Sync complete, latest block:", blockNumber?.toString() ?? "unknown"),
     error: (err) => console.error("Sync error", err),
   },
 
@@ -50,9 +50,10 @@ export const tinyBaseWrapper = async <
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create custom writer, and setup sync
-  const sync = await createSync({ world, store, networkConfig, publicClient: client });
+  const sync = createSync({ components, store, networkConfig, publicClient: client, onSync });
   if (startSync) {
-    handleSync(components, sync, onSync);
+    sync.start();
+    world.registerDisposer(sync.unsubscribe);
   }
 
   // TODO: fix annoying type issue

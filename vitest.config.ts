@@ -6,5 +6,7 @@ export default defineConfig({
       "@": "/src",
     },
   },
-  test: {},
+  test: {
+    testTimeout: 50000,
+  },
 });

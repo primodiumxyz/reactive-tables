@@ -39,7 +39,7 @@ export type TinyBaseWrapperResult<config extends StoreConfig, tables extends Tab
   components: Components<Schema, config, tables>;
   tables: AllTables<config, tables>;
   store: Store;
-  sync: Syncs;
+  sync: CreateSyncResult;
   publicClient: PublicClient;
 };
 
@@ -94,19 +94,33 @@ export type CreateStoreResult = Store;
 /*                                    SYNC                                    */
 /* -------------------------------------------------------------------------- */
 
-export type CreateSyncOptions<world extends World, config extends StoreConfig, tables extends Tables> = {
-  world: world;
+export type CreateSyncOptions<S extends Schema, config extends StoreConfig, tables extends Tables> = {
+  components: Components<S, config, tables>;
   store: Store;
   networkConfig: NetworkConfig;
   publicClient: PublicClient;
+  onSync: OnSyncCallbacks;
 };
 
-export type CreateSyncResult = Syncs;
+export type CreateSyncResult = {
+  start: () => void;
+  unsubscribe: () => void;
+};
 
-export type Syncs = {
-  indexer: Sync | undefined;
-  rpc: Sync;
-  live: Sync;
+export type CreateIndexerSyncOptions<S extends Schema, config extends StoreConfig, tables extends Tables> = Omit<
+  CreateSyncOptions<S, config, tables>,
+  "components" | "publicClient" | "onSync"
+> & {
+  logFilters: { tableId: string }[];
+};
+
+export type CreateRpcSyncOptions<S extends Schema, config extends StoreConfig, tables extends Tables> = Omit<
+  CreateSyncOptions<S, config, tables>,
+  "components" | "onSync"
+> & {
+  logFilters: { tableId: string }[];
+  startBlock: bigint;
+  endBlock: bigint;
 };
 
 export type Sync = {
@@ -121,6 +135,6 @@ export type Sync = {
 
 export type OnSyncCallbacks = {
   progress: (index: number, blockNumber: bigint, progress: number) => void;
-  complete: () => void;
+  complete: (blockNumber?: bigint) => void;
   error: (err: any) => void;
 };

@@ -10,6 +10,7 @@ export enum SyncStep {
   Syncing,
   Error,
   Complete,
+  Live,
 }
 
 export const internalTables: Tables = {
@@ -30,7 +31,8 @@ export const internalTables: Tables = {
     valueSchema: {
       step: { type: "uint32" }, // => Number, see SyncStep
       message: { type: "string" },
-      progress: { type: "uint32" }, // 0 -> 100
+      progress: { type: "uint32" }, // 0 -> 1
+      lastBlockNumberProcessed: { type: "uint64" },
     },
   },
 };
