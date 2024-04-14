@@ -7,17 +7,23 @@ import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 
 import { Components, ComponentMethods } from "@/store/component/types";
+import { InternalComponentsTables } from "./store/internal/internalComponents";
+import { InternalComponents } from "./store/internal/types";
 
 import { storeTables, worldTables } from "@latticexyz/store-sync";
-import { internalTables } from "@/constants";
 
 export type AllTables<config extends StoreConfig, extraTables extends Tables | undefined> = ResolvedStoreConfig<
   storeToV1<config>
 >["tables"] &
   (extraTables extends Tables ? extraTables : {}) &
   typeof storeTables &
-  typeof worldTables &
-  typeof internalTables;
+  typeof worldTables;
+
+export type AllComponents<config extends StoreConfig, tables extends Tables | undefined> = Components<
+  AllTables<config, tables>,
+  config
+> &
+  InternalComponents<InternalComponentsTables>;
 
 export type TinyBaseWrapperOptions<
   world extends World,
@@ -35,7 +41,7 @@ export type TinyBaseWrapperOptions<
 };
 
 export type TinyBaseWrapperResult<config extends StoreConfig, tables extends Tables | undefined> = {
-  components: Components<AllTables<config, tables>, config>;
+  components: AllComponents<config, tables>;
   tables: AllTables<config, tables>;
   store: Store;
   sync: CreateSyncResult;
@@ -61,11 +67,11 @@ export type CreateComponentsStoreOptions<
 > = {
   world: world;
   tables: AllTables<config, extraTables>;
-  extraTables?: extraTables;
+  internalComponentsTables: InternalComponentsTables;
 };
 
 export type CreateComponentsStoreResult<config extends StoreConfig, extraTables extends Tables | undefined> = {
-  components: Components<AllTables<config, extraTables>, config>;
+  components: AllComponents<config, extraTables>;
   store: Store;
 };
 
@@ -87,7 +93,7 @@ export type CreateStoreResult = Store;
 /* -------------------------------------------------------------------------- */
 
 export type CreateSyncOptions<config extends StoreConfig, extraTables extends Tables | undefined> = {
-  components: Components<AllTables<config, extraTables>, config>;
+  components: AllComponents<config, extraTables>;
   store: Store;
   networkConfig: NetworkConfig;
   publicClient: PublicClient;

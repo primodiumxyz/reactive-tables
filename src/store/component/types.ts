@@ -2,10 +2,11 @@ import { Entity, Metadata, Schema, Type, ValueType } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { ResourceLabel } from "@latticexyz/common";
 import { Table, Tables } from "@latticexyz/store/internal";
-import { SchemaAbiTypeToRecsType } from "@/utils";
 import { SchemaAbiType } from "@latticexyz/schema-type/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Hex } from "viem";
+
+import { SchemaAbiTypeToRecsType } from "@/store/utils";
 
 export type Components<tables extends Tables, config extends StoreConfig> = {
   [tableName in keyof tables]: Component<tables[tableName], config>;
@@ -16,8 +17,7 @@ export type Component<
   config extends StoreConfig,
   S extends Schema = Schema,
   M extends Metadata = Metadata,
-  T = unknown,
-> = ComponentTable<table, config, S, M> & ComponentMethods<table, ComponentValueSchema<table, S>, T>;
+> = ComponentTable<table, config, S, M> & ComponentMethods<ComponentValueSchema<table, S>>;
 
 // Base component structure containing information about its table & schemas
 export type ComponentTable<
@@ -27,7 +27,7 @@ export type ComponentTable<
   M extends Metadata = Metadata,
 > = {
   id: string;
-  // schema: ComponentValueSchema<table, S>;
+  schema: ComponentValueSchema<table, S>;
   metadata: M & {
     componentName: table["name"];
     tableName: ResourceLabel<storeToV1<config>["namespace"], string>;
@@ -36,6 +36,7 @@ export type ComponentTable<
   };
 };
 
+// Used to infer the RECS types from the component's value schema
 export type ComponentValueSchema<table extends Table, S extends Schema = Schema> = S & {
   __staticData: ComponentValue<S, Type.OptionalString>;
   __encodedLengths: ComponentValue<S, Type.OptionalString>;
@@ -45,6 +46,7 @@ export type ComponentValueSchema<table extends Table, S extends Schema = Schema>
     SchemaAbiTypeToRecsType<SchemaAbiType & table["valueSchema"][fieldName]["type"]>;
 };
 
+// Used to infer the TypeScript types from the RECS types
 export type ComponentValue<S extends Schema, T = unknown> = {
   [key in keyof S]: ValueType<T>[S[key]];
 } & {
@@ -53,21 +55,22 @@ export type ComponentValue<S extends Schema, T = unknown> = {
   __dynamicData: Hex | undefined;
 };
 
-// Copied from Primodium
+// Used to infer the TypeScript types from the RECS types (excluding encoded metadata fields)
 export type ComponentValueSansMetadata<S extends Schema, T = unknown> = {
   [key in keyof S as Exclude<key, "__staticData" | "__encodedLengths" | "__dynamicData">]: ValueType<T>[S[key]];
-} & {
-  __staticData?: Hex;
-  __encodedLengths?: Hex;
-  __dynamicData?: Hex;
 };
+// } & {
+//   __staticData?: Hex;
+//   __encodedLengths?: Hex;
+//   __dynamicData?: Hex;
+// };
 
-export type ComponentMethods<table extends Table, S extends Schema, T = unknown> = {
-  get(): ComponentValue<S> | undefined;
-  get(entity: Entity | undefined): ComponentValue<S> | undefined;
-  get(entity?: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S>): ComponentValue<S>;
+export type ComponentMethods<S extends Schema, T = unknown> = {
+  get(): ComponentValue<S, T> | undefined;
+  get(entity: Entity | undefined): ComponentValue<S, T> | undefined;
+  get(entity?: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S, T>): ComponentValue<S, T>;
 
-  set: (value: ComponentValueSansMetadata<S>, entity?: Entity) => void;
+  set: (value: ComponentValueSansMetadata<S, T>, entity?: Entity) => void;
   // getAll: () => Entity[];
   // getAllWith: (value: Partial<ComponentValue<S>>) => Entity[];
   // getAllWithout: (value: Partial<ComponentValue<S>>) => Entity[];

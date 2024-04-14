@@ -1,9 +1,9 @@
-import { ComponentValue, Entity, OptionalTypes, Schema } from "@latticexyz/recs";
+import { Entity, OptionalTypes, Schema } from "@latticexyz/recs";
 import { singletonEntity } from "@latticexyz/store-sync/recs";
 
 import { TinyBaseAdapter } from "@/adapter";
 import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
-import { ValueSansMetadata } from "@/store/component/types";
+import { ComponentValue, ComponentValueSansMetadata } from "@/store/component/types";
 
 export const createComponentMethods = <S extends Schema, T = unknown>({
   store,
@@ -12,7 +12,7 @@ export const createComponentMethods = <S extends Schema, T = unknown>({
   // TODO: register an entity?
 
   /* ----------------------------------- SET ---------------------------------- */
-  function set(value: ComponentValue<S, T>, entity?: Entity) {
+  function set(value: ComponentValueSansMetadata<S, T>, entity?: Entity) {
     entity = entity ?? singletonEntity;
     if (entity === undefined) throw new Error(`[set ${entity} for ${tableId}] no entity registered`);
 
@@ -23,8 +23,8 @@ export const createComponentMethods = <S extends Schema, T = unknown>({
   /* ----------------------------------- GET ---------------------------------- */
   function get(): ComponentValue<S, T> | undefined;
   function get(entity: Entity | undefined): ComponentValue<S, T> | undefined;
-  function get(entity?: Entity | undefined, defaultValue?: ValueSansMetadata<S>): ComponentValue<S, T>;
-  function get(entity?: Entity, defaultValue?: ValueSansMetadata<S>) {
+  function get(entity?: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S>): ComponentValue<S, T>;
+  function get(entity?: Entity, defaultValue?: ComponentValueSansMetadata<S>) {
     entity = entity ?? singletonEntity;
     if (entity === undefined) return defaultValue;
 

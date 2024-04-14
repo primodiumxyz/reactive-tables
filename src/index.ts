@@ -9,7 +9,7 @@ import { createPublicClient } from "@/utils";
 import { TinyBaseWrapperOptions, NetworkConfig, TinyBaseWrapperResult, AllTables } from "@/types";
 
 import { storeTables, worldTables } from "@latticexyz/store-sync";
-import { internalTables } from "@/constants";
+import { internalComponentsTables } from "@/store/internal/internalComponents";
 
 export const tinyBaseWrapper = <
   world extends World,
@@ -30,7 +30,6 @@ export const tinyBaseWrapper = <
   },
 
   // TODO: initialQueries
-  // TODO: internalComponents; should also be passed for return type to be used in Components type inference
 }: TinyBaseWrapperOptions<world, config, networkConfig, extraTables>): TinyBaseWrapperResult<config, extraTables> => {
   const client = publicClient ?? createPublicClient(networkConfig);
 
@@ -41,15 +40,14 @@ export const tinyBaseWrapper = <
     ...(otherTables ?? {}),
     ...storeTables,
     ...worldTables,
-    // TODO: defineInternalComponents; minimal (not full tables)
-    ...internalTables, // e.g. sync components
   } as unknown as AllTables<config, extraTables>;
 
   /* ------------------------------- COMPONENTS ------------------------------- */
-  const { components, store } = createComponentsStore({ world, tables });
+  const { components, store } = createComponentsStore({ world, tables, internalComponentsTables });
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create custom writer, and setup sync
+  // @ts-ignore union too complex to represent
   const sync = createSync({ components, store, networkConfig, publicClient: client, onSync });
   if (startSync) {
     sync.start();

@@ -1,16 +1,15 @@
 import { Store as StoreConfig } from "@latticexyz/store";
-import { Schema, Type, World } from "@latticexyz/recs";
-import { resourceToLabel } from "@latticexyz/common";
-import { mapObject } from "@latticexyz/utils";
+import { World } from "@latticexyz/recs";
 import { Tables } from "@latticexyz/store/internal";
-import { SchemaAbiType } from "@latticexyz/schema-type/internal";
 import { createStore } from "tinybase/store";
 
 import { createComponentMethods } from "@/store/component/createComponentMethods";
 import { setComponentTable } from "@/store/utils";
-import { schemaAbiTypeToRecsType } from "@/utils";
 import { CreateComponentsStoreOptions, CreateComponentsStoreResult } from "@/types";
-import { Components, ComponentTable, ComponentMethods } from "@/store/component/types";
+import { Components } from "@/store/component/types";
+import { createComponentTable } from "./component/createComponentTable";
+import { InternalComponent, InternalComponents } from "./internal/types";
+import { InternalComponentsTables } from "./internal/internalComponents";
 
 export const createComponentsStore = <
   world extends World,
@@ -19,39 +18,21 @@ export const createComponentsStore = <
 >({
   world,
   tables,
+  internalComponentsTables,
 }: CreateComponentsStoreOptions<world, config, extraTables>): CreateComponentsStoreResult<config, extraTables> => {
   // Create the TinyBase store
   const store = createStore();
 
+  /* ------------------------------- COMPONENTS ------------------------------- */
   // Resolve tables into components
-  // @ts-ignore excessively deep and possibly infinite type instantiation
-  const components = mapObject(tables, (table) => {
+  const components = Object.keys(tables).reduce((acc, key) => {
+    const table = tables[key];
     if (Object.keys(table.valueSchema).length === 0) throw new Error("Component schema must have at least one key");
 
-    // Immutable
-    const componentTable = {
-      id: table.tableId,
-      // TODO: we're actually never using the schema; should we include it? what should its purpose be?
-      // schema: {
-      //   ...Object.fromEntries(
-      //     Object.entries(table.valueSchema).map(([fieldName, schemaAbiType]) => [
-      //       fieldName,
-      //       schemaAbiTypeToRecsType[schemaAbiType["type"]],
-      //     ]),
-      //   ),
-      //   __staticData: Type.OptionalString,
-      //   __encodedLengths: Type.OptionalString,
-      //   __dynamicData: Type.OptionalString,
-      // },
-      metadata: {
-        componentName: table.name,
-        tableName: resourceToLabel(table),
-        keySchema: mapObject(table.keySchema, ({ type }) => type),
-        valueSchema: mapObject(table.valueSchema, ({ type }) => type),
-      },
-    } as ComponentTable<typeof table, config>;
+    // @ts-expect-error table misinterpreted as non-compatible type
+    const componentTable = createComponentTable(table, store);
 
-    const methods: ComponentMethods<Schema> = createComponentMethods({
+    const methods = createComponentMethods({
       store,
       tableId: table.tableId,
     });
@@ -59,11 +40,35 @@ export const createComponentsStore = <
     // Register immutable data (basically formatted table) in the store for efficient access
     setComponentTable(store, componentTable);
 
-    return {
+    // @ts-expect-error component is generic and can only be indexed for reading.
+    acc[key] = {
       ...componentTable,
       ...methods,
     };
-  }) as Components<typeof tables, config>;
 
-  return { components, store };
+    return acc;
+  }, {}) as Components<typeof tables, config>;
+
+  /* --------------------------- INTERNAL COMPONENTS -------------------------- */
+  const extendedInternalComponents = Object.keys(internalComponentsTables).reduce((acc, key) => {
+    const typedKey = key as keyof typeof internalComponentsTables;
+    const table = internalComponentsTables[typedKey];
+
+    // TODO: figure out if it's ok; we're using the same methods as regular components but with
+    // the typing from internal components, which basically excludes using a key, and remove metadata from values
+    // so we get the type-safety as expected
+    const methods = createComponentMethods({
+      store,
+      tableId: table.id,
+    });
+
+    acc[typedKey] = {
+      ...table,
+      ...methods,
+    };
+
+    return acc;
+  }, {}) as InternalComponents<typeof internalComponentsTables>;
+
+  return { components: { ...components, ...extendedInternalComponents }, store };
 };
