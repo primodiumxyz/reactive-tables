@@ -16,6 +16,10 @@ contract TestSystem is System {
         Position.set(_addressToEntityKey(_msgSender()), x, y);
     }
 
+    function moveWithArbitraryKey(bytes32 entityKey, int32 x, int32 y) public {
+        Position.set(entityKey, x, y);
+    }
+
     function storeItems(uint32[] memory ids, uint32[] memory weights) public {
         if (ids.length != weights.length) {
             revert ITEMS_LENGTH_MISMATCH();

@@ -12,14 +12,11 @@ import {
   getMockNetworkConfig,
   getRandomBigInts,
   getRandomNumbers,
-  mockFunctions,
   setItems,
+  setPositionForEntity,
 } from "@/__tests__/utils";
 import mockConfig from "@/__tests__/mocks/contracts/mud.config";
-
-/* -------------------------------------------------------------------------- */
-/*                                    TESTS                                   */
-/* -------------------------------------------------------------------------- */
+import { padHex, toHex } from "viem";
 
 const FUZZ_ITERATIONS = 20;
 
@@ -28,7 +25,10 @@ type TestOptions = {
   startSync?: boolean;
 };
 
-/* ---------------------------------- INIT ---------------------------------- */
+/* -------------------------------------------------------------------------- */
+/*                                    INIT                                    */
+/* -------------------------------------------------------------------------- */
+
 const init = async (options: TestOptions = { useIndexer: true, startSync: true }) => {
   const { useIndexer, startSync } = options;
   const world = createWorld();
@@ -95,7 +95,10 @@ const init = async (options: TestOptions = { useIndexer: true, startSync: true }
 };
 
 describe("tinyBaseWrapper", () => {
-  /* ---------------------------------- SETUP --------------------------------- */
+  /* -------------------------------------------------------------------------- */
+  /*                                    SETUP                                   */
+  /* -------------------------------------------------------------------------- */
+
   it("should properly initialize and return expected objects", async () => {
     const { components, tables, publicClient, sync, store } = await init({ startSync: false });
 
@@ -107,7 +110,10 @@ describe("tinyBaseWrapper", () => {
     expect(publicClient).toBeDefined();
   });
 
-  /* ---------------------------------- SYNC ---------------------------------- */
+  /* -------------------------------------------------------------------------- */
+  /*                                    SYNC                                    */
+  /* -------------------------------------------------------------------------- */
+
   describe("sync: should properly sync similar values to RECS components", () => {
     const runTest = async (options: TestOptions) => {
       const { components, recsComponents, networkConfig, waitForSyncLive } = await init(options);
@@ -120,8 +126,6 @@ describe("tinyBaseWrapper", () => {
       const componentKeys = Object.keys(components).filter((key) =>
         Object.keys(recsComponents).includes(key),
       ) as (keyof typeof components)[];
-
-      console.log(components.Counter.get()?.__lastSyncedAtBlock);
 
       // Verify the equality
       for (const comp of componentKeys) {
@@ -173,90 +177,123 @@ describe("tinyBaseWrapper", () => {
     });
   });
 
-  /* ---------------------------- COMPONENT METHODS --------------------------- */
+  /* -------------------------------------------------------------------------- */
+  /*                              COMPONENT METHODS                             */
+  /* -------------------------------------------------------------------------- */
+
   describe("methods: should set and return intended values", () => {
-    // Init and return components and utils
-    const preTest = async () => {
-      const { components, networkConfig, waitForBlockSynced } = await init();
-      const player = encodeEntity({ address: "address" }, { address: networkConfig.burnerAccount.address });
-      assert(components);
+    /* ---------------------------------- BASIC --------------------------------- */
+    describe("basic methods", () => {
+      // Init and return components and utils
+      const preTest = async () => {
+        const { components, networkConfig, waitForBlockSynced } = await init();
+        const player = encodeEntity({ address: "address" }, { address: networkConfig.burnerAccount.address });
+        assert(components);
 
-      // Generate random args
-      const length = 5;
-      const getRandomArgs = () => ({
-        items: getRandomNumbers(length),
-        weights: getRandomNumbers(length),
-        totalWeight: getRandomBigInts(1)[0],
+        // Generate random args
+        const length = 5;
+        const getRandomArgs = () => ({
+          items: getRandomNumbers(length),
+          weights: getRandomNumbers(length),
+          totalWeight: getRandomBigInts(1)[0],
+        });
+
+        return { components, player, getRandomArgs, waitForBlockSynced };
+      };
+
+      // Check returned values against input args
+      const postTest = (args: Record<string, unknown>, value: Record<string, unknown>) => {
+        Object.entries(args).forEach(([key, v]) => {
+          expect(value?.[key]).toEqual(v);
+        });
+      };
+
+      // Get component value after a transaction was made
+      it("get()", async () => {
+        const { components, player, getRandomArgs, waitForBlockSynced } = await preTest();
+
+        // Set the items and wait for sync
+        const args = getRandomArgs();
+        const { blockNumber } = await setItems(args);
+        await waitForBlockSynced(blockNumber, "Inventory", player);
+
+        const value = components.Inventory.get(player);
+        postTest({ ...args, block: blockNumber }, { ...value, block: value?.__lastSyncedAtBlock });
       });
 
-      return { components, player, getRandomArgs, waitForBlockSynced };
-    };
+      // Set component value client-side
+      it("set()", async () => {
+        const { components, player, getRandomArgs } = await preTest();
 
-    // Check returned values against input args
-    const postTest = (args: Record<string, unknown>, value: Record<string, unknown>) => {
-      Object.entries(args).forEach(([key, v]) => {
-        expect(value?.[key]).toEqual(v);
+        // Set the component manually
+        const args = getRandomArgs();
+        components.Inventory.set(args, player);
+
+        const value = components.Inventory.get(player);
+        assert(value);
+        postTest(args, value);
       });
-    };
 
-    // Get component value after a transaction was made
-    it("get()", async () => {
-      const { components, player, getRandomArgs, waitForBlockSynced } = await preTest();
+      // Update component value client-side
+      it("update()", async () => {
+        const { components, player, getRandomArgs, waitForBlockSynced } = await preTest();
 
-      // Set the items and wait for sync
-      const args = getRandomArgs();
-      const { blockNumber } = await setItems(args);
-      await waitForBlockSynced(blockNumber, "Inventory", player);
+        // Set the items and wait for sync
+        const args = getRandomArgs();
+        const { blockNumber } = await setItems(args);
+        await waitForBlockSynced(blockNumber, "Inventory", player);
 
-      const value = components.Inventory.get(player);
-      postTest({ ...args, block: blockNumber }, { ...value, block: value?.__lastSyncedAtBlock });
+        // Update the component
+        const updateArgs = getRandomArgs();
+        components.Inventory.update(updateArgs, player);
+
+        const value = components.Inventory.get(player);
+        assert(value);
+        postTest(updateArgs, value);
+      });
+
+      // Remove component value client-side
+      it("remove()", async () => {
+        const { components, player, getRandomArgs, waitForBlockSynced } = await preTest();
+
+        // Set the items and wait for sync
+        const args = getRandomArgs();
+        const { blockNumber } = await setItems(args);
+        await waitForBlockSynced(blockNumber, "Inventory", player);
+
+        // Remove the component
+        components.Inventory.remove(player);
+
+        const value = components.Inventory.get(player);
+        expect(value).toBeUndefined();
+      });
     });
 
-    // Set component value client-side
-    it("set()", async () => {
-      const { components, player, getRandomArgs } = await preTest();
+    /* --------------------------------- NATIVE --------------------------------- */
+    describe("native methods", () => {
+      // Entities iterator
+      it("entities()", async () => {
+        const { components, waitForSyncLive } = await init();
+        assert(components);
 
-      // Set the component manually
-      const args = getRandomArgs();
-      components.Inventory.set(args, player);
+        const entityA = padHex(toHex("entityA"));
+        const entityB = padHex(toHex("entityB"));
 
-      const value = components.Inventory.get(player);
-      assert(value);
-      postTest(args, value);
+        expect(components.Position.entities().next().value).toBeUndefined();
+
+        await setPositionForEntity({ entity: entityA, x: 1, y: 1 });
+        await setPositionForEntity({ entity: entityB, x: 1, y: 1 });
+        await waitForSyncLive();
+
+        const iterator = components.Position.entities();
+
+        expect(iterator.next()).toEqual({ done: false, value: entityA });
+        expect(iterator.next()).toEqual({ done: false, value: entityB });
+        expect(iterator.next()).toEqual({ done: true, value: undefined });
+      });
     });
 
-    // Update component value client-side
-    it("update()", async () => {
-      const { components, player, getRandomArgs, waitForBlockSynced } = await preTest();
-
-      // Set the items and wait for sync
-      const args = getRandomArgs();
-      const { blockNumber } = await setItems(args);
-      await waitForBlockSynced(blockNumber, "Inventory", player);
-
-      // Update the component
-      const updateArgs = getRandomArgs();
-      components.Inventory.update(updateArgs, player);
-
-      const value = components.Inventory.get(player);
-      assert(value);
-      postTest(updateArgs, value);
-    });
-
-    // Remove component value client-side
-    it("remove()", async () => {
-      const { components, player, getRandomArgs, waitForBlockSynced } = await preTest();
-
-      // Set the items and wait for sync
-      const args = getRandomArgs();
-      const { blockNumber } = await setItems(args);
-      await waitForBlockSynced(blockNumber, "Inventory", player);
-
-      // Remove the component
-      components.Inventory.remove(player);
-
-      const value = components.Inventory.get(player);
-      expect(value).toBeUndefined();
-    });
+    /* -------------------------------- REACTIVE -------------------------------- */
+    // describe("reactive methods", () => {});
   });
 });

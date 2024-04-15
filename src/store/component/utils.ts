@@ -66,3 +66,22 @@ export const createComponentMethodsUtils = (store: Store, tableId: string) => {
 
   return { paused, pendingUpdate };
 };
+
+export const arrayToIterator = <T>(array: T[]): IterableIterator<T> => {
+  let i = 0;
+  const iterator: Iterator<T> = {
+    next() {
+      if (i >= array.length) return { done: true, value: undefined };
+      return { done: false, value: array[i++] };
+    },
+  };
+
+  const iterable: IterableIterator<T> = {
+    ...iterator,
+    [Symbol.iterator]() {
+      return this;
+    },
+  };
+
+  return iterable;
+};

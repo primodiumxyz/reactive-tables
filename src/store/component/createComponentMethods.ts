@@ -1,10 +1,10 @@
-import { Entity, Metadata, OptionalTypes, Schema } from "@latticexyz/recs";
+import { Entity, Metadata, OptionalTypes, Schema, getEntityString } from "@latticexyz/recs";
 import { singletonEntity } from "@latticexyz/store-sync/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { Table } from "@latticexyz/store/internal";
 import { Subject } from "rxjs";
 
-import { createComponentMethodsUtils } from "./utils";
+import { arrayToIterator, createComponentMethodsUtils } from "./utils";
 import { TinyBaseAdapter } from "@/adapter";
 import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
 import { Component, ComponentValue, ComponentValueSansMetadata } from "@/store/component/types";
@@ -42,9 +42,8 @@ export const createComponentMethods = <
 
   // TODO: register an entity?
 
-  // TODO: entities iterator
-  // const entities = () =>
-  //   transformIterator((Object.values(values)[0] as Map<EntitySymbol, unknown>).keys(), getEntityString);
+  // Native RECS entities iterator
+  const entities = () => arrayToIterator(store.getRowIds(tableId));
 
   /* --------------------------------- STREAMS -------------------------------- */
   // Original RECS component update stream
@@ -173,6 +172,7 @@ export const createComponentMethods = <
   };
 
   return {
+    entities,
     update$,
     get,
     set,

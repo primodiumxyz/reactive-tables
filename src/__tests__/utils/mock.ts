@@ -1,5 +1,6 @@
 import { waitForTransactionReceipt } from "viem/actions";
 import { getMockNetworkConfig } from "./init";
+import { Hex } from "viem";
 
 const networkConfig = getMockNetworkConfig();
 
@@ -57,6 +58,15 @@ export const mockFunctions = {
 export const setItems = async (args: { items: number[]; weights: number[]; totalWeight: bigint }) => {
   const { items, weights, totalWeight } = args;
   const hash = await networkConfig.worldContract.write.setItems([items, weights, totalWeight], {
+    chain: networkConfig.chain,
+    account: networkConfig.burnerAccount.address,
+  });
+  return await waitForTransactionReceipt(networkConfig.publicClient, { hash });
+};
+
+export const setPositionForEntity = async (args: { entity: Hex; x: number; y: number }) => {
+  const { entity, x, y } = args;
+  const hash = await networkConfig.worldContract.write.moveWithArbitraryKey([entity, x, y], {
     chain: networkConfig.chain,
     account: networkConfig.burnerAccount.address,
   });
