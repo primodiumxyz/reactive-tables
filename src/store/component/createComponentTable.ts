@@ -34,6 +34,7 @@ export const createComponentTable = <table extends Table, config extends StoreCo
       __staticData: Type.OptionalString,
       __encodedLengths: Type.OptionalString,
       __dynamicData: Type.OptionalString,
+      __lastSyncedAtBlock: Type.OptionalBigInt,
     },
   } as const satisfies ComponentTable<table, config>;
 };

@@ -54,9 +54,9 @@ export const createComponentMethods = <
   const update$ = new Subject<ComponentUpdate<S, T>>();
 
   // Add a new override to some entity
-  const pauseUpdates = (entity: Entity, value?: ComponentValue<S, T>, skipUpdateStream = false) => {
+  const pauseUpdates = (entity: Entity, value?: ComponentValueSansMetadata<S, T>, skipUpdateStream = false) => {
     paused.set(entity, true);
-    if (value) set(entity, value, { skipUpdateStream, bypassPausedCheck: true });
+    if (value) set(value, entity, { skipUpdateStream, bypassPausedCheck: true });
   };
 
   // Remove an override from an entity
@@ -121,7 +121,7 @@ export const createComponentMethods = <
   };
 
   // Utility function to save on computation when we want to set the formatted data directly
-  const setRaw = (entity: Entity, value: TinyBaseFormattedType, options?: ComponentMutationOptions) => {
+  const setRaw = (value: TinyBaseFormattedType, entity: Entity, options?: ComponentMutationOptions) => {
     const { skipUpdateStream } = options ?? { skipUpdateStream: false };
     entity = entity ?? singletonEntity;
     if (entity === undefined) throw new Error(`[set ${entity} for ${tableId}] no entity registered`);
@@ -168,6 +168,8 @@ export const createComponentMethods = <
     if (entity === undefined) throw new Error(`[update ${entity} for ${tableId}] no entity registered`);
 
     const currentValue = getRaw(entity);
+    console.log("currentValue", currentValue);
+    console.log("value", value);
     const newValue = TinyBaseAdapter.format(Object.keys(value), Object.values(value));
     setRaw({ ...currentValue, ...newValue }, entity);
   };

@@ -8,10 +8,11 @@ type DecodedTinyBaseType =
     }
   | undefined;
 
-const encodedDataKeys = ["__staticData", "__encodedLengths", "__dynamicData"];
+const encodedDataKeys = ["__staticData", "__encodedLengths", "__dynamicData", "__lastSyncedAtBlock"];
 const ignoreKey = (key: string) => encodedDataKeys.includes(key) || key.startsWith("type__");
 
 export const decodeValueFromTinyBase = (formattedData: TinyBaseFormattedType): DecodedTinyBaseType => {
+  console.log("formatted data", formattedData);
   if (Object.keys(formattedData).length === 0) return undefined;
   let decoded: DecodedTinyBaseType = {};
 
@@ -40,6 +41,10 @@ export const decodeValueFromTinyBase = (formattedData: TinyBaseFormattedType): D
     encodedDataKeys.forEach((encodedKey) => {
       decoded[encodedKey] = formattedData[encodedKey];
     });
+
+    // Write the last block at which the component was synced
+    const lastSynced = formattedData.__lastSyncedAtBlock;
+    decoded["__lastSyncedAtBlock"] = lastSynced && lastSynced !== "unknown" ? BigInt(lastSynced) : undefined;
   });
 
   return decoded;

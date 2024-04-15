@@ -60,6 +60,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
         __staticData: log.args.staticData,
         __encodedLengths: log.args.encodedLengths,
         __dynamicData: log.args.dynamicData,
+        __lastSyncedAtBlock: log.blockNumber?.toString() ?? "unknown",
       });
     },
     /* --------------------------------- STATIC --------------------------------- */
@@ -93,6 +94,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
         ...previousValue,
         ...newValue,
         __staticData: newStaticData,
+        __lastSyncedAtBlock: log.blockNumber?.toString() ?? "unknown",
       });
     },
     /* --------------------------------- DYNAMIC -------------------------------- */
@@ -124,6 +126,7 @@ export const createCustomWriter = <config extends StoreConfig>({ store }: { stor
         ...newValue,
         __encodedLengths: log.args.encodedLengths,
         __dynamicData: newDynamicData,
+        __lastSyncedAtBlock: log.blockNumber?.toString() ?? "unknown",
       });
     },
     /* --------------------------------- DELETE --------------------------------- */

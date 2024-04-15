@@ -45,6 +45,8 @@ export type ComponentValueSchema<table extends Table, S extends Schema = Schema>
   __staticData: ComponentValue<S, Type.OptionalString>;
   __encodedLengths: ComponentValue<S, Type.OptionalString>;
   __dynamicData: ComponentValue<S, Type.OptionalString>;
+  // Remember the last block at which the component was synced with the indexer/rpc
+  __lastSyncedAtBlock: ComponentValue<S, Type.OptionalBigInt>;
 } & {
   [fieldName in keyof table["valueSchema"] & string]: Type &
     SchemaAbiTypeToRecsType<SchemaAbiType & table["valueSchema"][fieldName]["type"]>;
@@ -57,11 +59,15 @@ export type ComponentValue<S extends Schema, T = unknown> = {
   __staticData: Hex | undefined;
   __encodedLengths: Hex | undefined;
   __dynamicData: Hex | undefined;
+  __lastSyncedAtBlock: bigint | undefined;
 };
 
 // Used to infer the TypeScript types from the RECS types (excluding encoded metadata fields)
 export type ComponentValueSansMetadata<S extends Schema, T = unknown> = {
-  [key in keyof S as Exclude<key, "__staticData" | "__encodedLengths" | "__dynamicData">]: ValueType<T>[S[key]];
+  [key in keyof S as Exclude<
+    key,
+    "__staticData" | "__encodedLengths" | "__dynamicData" | "__lastSyncedAtBlock"
+  >]: ValueType<T>[S[key]];
 };
 // } & {
 //   __staticData?: Hex;
@@ -89,7 +95,7 @@ export type ComponentMethods<S extends Schema, T = unknown> = OriginalComponentM
   use(entity?: Entity | undefined): ComponentValue<S> | undefined;
   use(entity: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S>): ComponentValue<S>;
 
-  pauseUpdates: (entity: Entity, value?: ComponentValue<S, T>, skipUpdateStream?: boolean) => void;
+  pauseUpdates: (entity: Entity, value?: ComponentValueSansMetadata<S, T>, skipUpdateStream?: boolean) => void;
   resumeUpdates: (entity: Entity, skipUpdateStream?: boolean) => void;
 };
 
