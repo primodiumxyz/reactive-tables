@@ -8,8 +8,7 @@ import { setComponentTable } from "@/store/utils";
 import { CreateComponentsStoreOptions, CreateComponentsStoreResult } from "@/types";
 import { Components } from "@/store/component/types";
 import { createComponentTable } from "./component/createComponentTable";
-import { InternalComponent, InternalComponents } from "./internal/types";
-import { InternalComponentsTables } from "./internal/internalComponents";
+import { InternalComponents } from "./internal/types";
 
 export const createComponentsStore = <
   world extends World,
@@ -62,6 +61,7 @@ export const createComponentsStore = <
       tableId: table.id,
     });
 
+    // @ts-expect-error internal components keys do not exist on object
     acc[typedKey] = {
       ...table,
       ...methods,

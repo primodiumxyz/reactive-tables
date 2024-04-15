@@ -248,29 +248,3 @@ export const schemaAbiTypeToRecsType = {
 } as const satisfies Record<SchemaAbiType, RecsType>;
 
 export type SchemaAbiTypeToRecsType<T extends SchemaAbiType> = (typeof schemaAbiTypeToRecsType)[T];
-
-// We want to be able to get the reverse type mapping for internal components
-// TODO: Add support for bool array
-// export const recsTypeToSchemaAbiType = {
-//   [RecsType.Boolean]: "bool",
-//   [RecsType.Number]: "int48",
-//   [RecsType.OptionalNumber]: "int48",
-//   [RecsType.BigInt]: "int256",
-//   [RecsType.OptionalBigInt]: "int256",
-//   [RecsType.String]: "string",
-//   [RecsType.OptionalString]: "string",
-//   [RecsType.NumberArray]: "int48[]",
-//   [RecsType.OptionalNumberArray]: "int48[]",
-//   [RecsType.BigIntArray]: "int256[]",
-//   [RecsType.OptionalBigIntArray]: "int256[]",
-//   [RecsType.StringArray]: "bytes32[]",
-//   [RecsType.OptionalStringArray]: "bytes32[]",
-//   [RecsType.Entity]: "address",
-//   [RecsType.OptionalEntity]: "address",
-//   [RecsType.EntityArray]: "address[]",
-//   [RecsType.OptionalEntityArray]: "address[]",
-//   [RecsType.T]: "string",
-//   [RecsType.OptionalT]: "string",
-// } as const satisfies Record<RecsType, SchemaAbiType>;
-
-// export type RecsTypeToSchemaAbiType<T extends RecsType> = (typeof recsTypeToSchemaAbiType)[T];

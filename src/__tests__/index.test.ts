@@ -5,7 +5,7 @@ import { wait } from "@latticexyz/common/utils";
 
 // src
 import { tinyBaseWrapper } from "@/index";
-import { SyncStep, internalTables } from "@/constants";
+import { SyncStep } from "@/constants";
 // mocks
 import { fuzz, getMockNetworkConfig, mockFunctions } from "@/__tests__/utils";
 import mockConfig from "@/__tests__/mocks/contracts/mud.config";
@@ -28,7 +28,7 @@ const init = async (options: TestOptions = { useIndexer: true, startSync: true }
   const networkConfig = getMockNetworkConfig();
 
   // Initialize & sync with the wrapper
-  const { components, tables, store, sync, publicClient } = await tinyBaseWrapper({
+  const { components, tables, store, sync, publicClient } = tinyBaseWrapper({
     world,
     mudConfig: mockConfig,
     networkConfig: {
@@ -42,7 +42,6 @@ const init = async (options: TestOptions = { useIndexer: true, startSync: true }
   const { components: recsComponents } = await syncToRecs({
     world,
     config: mockConfig,
-    tables: internalTables,
     address: networkConfig.worldAddress,
     publicClient: networkConfig.publicClient,
     startBlock: networkConfig.initialBlockNumber,
@@ -87,13 +86,16 @@ describe("tinyBaseWrapper", () => {
 
       await waitForSyncLive();
 
-      // Ignore SyncSource and SyncStatus (not registered in RECS)
-      const ignoredComponents = ["SyncSource", "SyncStatus"];
-      const componentKeys = Object.keys(components).filter((key) => !ignoredComponents.includes(key));
+      // Ignore components not registered in RECS (e.g. SyncSource)
+      const componentKeys = Object.keys(components).filter((key) =>
+        Object.keys(recsComponents).includes(key),
+      ) as (keyof typeof components)[];
 
       // Verify the equality
       for (const comp of componentKeys) {
+        // @ts-ignore
         expect(components[comp].get(player)).toEqual(getComponentValue(recsComponents[comp], player));
+        // @ts-ignore
         expect(components[comp].get(singletonEntity)).toEqual(getComponentValue(recsComponents[comp], singletonEntity));
       }
     };

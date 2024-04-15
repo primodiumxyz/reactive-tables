@@ -1,24 +1,18 @@
 import { Store as StoreConfig } from "@latticexyz/store";
-import { Schema } from "@latticexyz/recs";
 import { Tables } from "@latticexyz/store/internal";
 
-import { Components, NetworkConfig, OnSyncCallbacks, Sync as SyncType } from "@/types";
+import { AllComponents, NetworkConfig, OnSyncCallbacks, Sync as SyncType } from "@/types";
 import { SyncSourceType, SyncStep } from "@/constants";
 
-export type HandleSync<S extends Schema, config extends StoreConfig, tables extends Tables> = (
-  components: Components<S, config, tables>,
+export type HandleSync<config extends StoreConfig, tables extends Tables> = (
+  components: AllComponents<config, tables>,
   networkConfig: NetworkConfig,
   sync: SyncType,
   onSync: OnSyncCallbacks,
 ) => void;
 
-export const hydrateFromIndexer: HandleSync<Schema, StoreConfig, Tables> = (
-  components,
-  networkConfig,
-  sync,
-  onSync,
-) => {
-  const { SyncStatus } = components;
+export const hydrateFromIndexer: HandleSync<StoreConfig, Tables> = (components, networkConfig, sync, onSync) => {
+  const { SyncSource, SyncStatus } = components;
   const { progress: onProgress, complete: onComplete, error: onError } = onSync;
 
   let startBlock = networkConfig.initialBlockNumber;
@@ -27,6 +21,7 @@ export const hydrateFromIndexer: HandleSync<Schema, StoreConfig, Tables> = (
     startBlock = blockNumber;
 
     onProgress(index, blockNumber, progress);
+    SyncSource.set({ value: SyncSourceType.Indexer });
     SyncStatus.set({
       step: SyncStep.Syncing,
       progress,
@@ -41,19 +36,19 @@ export const hydrateFromIndexer: HandleSync<Schema, StoreConfig, Tables> = (
   }, onError);
 };
 
-export const hydrateFromRpc: HandleSync<Schema, StoreConfig, Tables> = (components, networkConfig, sync, onSync) => {
+export const hydrateFromRpc: HandleSync<StoreConfig, Tables> = (components, networkConfig, sync, onSync) => {
   const { SyncStatus, SyncSource } = components;
   const { progress: onProgress, complete: onComplete, error: onError } = onSync;
 
   sync.start(
     (index, blockNumber, progress) => {
+      SyncSource.set({ value: SyncSourceType.RPC });
       SyncStatus.set({
         step: SyncStep.Syncing,
         message: "Hydrating from RPC",
         progress,
         lastBlockNumberProcessed: blockNumber,
       });
-      SyncSource.set({ source: SyncSourceType.RPC });
       onProgress(index, blockNumber, progress);
 
       if (progress === 1) {
@@ -80,7 +75,7 @@ export const hydrateFromRpc: HandleSync<Schema, StoreConfig, Tables> = (componen
   );
 };
 
-export const subToRpc: HandleSync<Schema, StoreConfig, Tables> = (components, _, sync) => {
+export const subToRpc: HandleSync<StoreConfig, Tables> = (components, _, sync) => {
   const { SyncStatus } = components;
   sync.start(
     (_, blockNumber) => {

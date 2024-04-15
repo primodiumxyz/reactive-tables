@@ -31,7 +31,7 @@ export const mockFunctions = {
     await waitForTransactionReceipt(networkConfig.publicClient, { hash });
   },
 
-  // Increment the counter
+  // Increment counter
   increment: async () => {
     const hash = await networkConfig.worldContract.write.increment({
       chain: networkConfig.chain,
