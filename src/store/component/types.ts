@@ -7,6 +7,9 @@ import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Hex } from "viem";
 
 import { SchemaAbiTypeToRecsType } from "@/store/utils";
+import { Subject } from "rxjs";
+import { ComponentUpdate } from "./createComponentMethods";
+import { InternalTable } from "../internal/types";
 
 export type Components<tables extends Tables, config extends StoreConfig> = {
   [tableName in keyof tables]: Component<tables[tableName], config>;
@@ -17,7 +20,8 @@ export type Component<
   config extends StoreConfig,
   S extends Schema = Schema,
   M extends Metadata = Metadata,
-> = ComponentTable<table, config, S, M> & ComponentMethods<ComponentValueSchema<table, S>>;
+  T = unknown,
+> = ComponentTable<table, config, S, M> & ComponentMethods<ComponentValueSchema<table, S>, T>;
 
 // Base component structure containing information about its table & schemas
 export type ComponentTable<
@@ -65,28 +69,28 @@ export type ComponentValueSansMetadata<S extends Schema, T = unknown> = {
 //   __dynamicData?: Hex;
 // };
 
-export type ComponentMethods<S extends Schema, T = unknown> = {
-  get(): ComponentValue<S, T> | undefined;
-  get(entity: Entity | undefined): ComponentValue<S, T> | undefined;
-  get(entity?: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S, T>): ComponentValue<S, T>;
+export type ComponentMethods<S extends Schema, T = unknown> = OriginalComponentMethods<S, T> & {
+  get(): ComponentValue<S> | undefined;
+  get(entity: Entity | undefined): ComponentValue<S> | undefined;
+  get(entity?: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S>): ComponentValue<S>;
 
   set: (value: ComponentValueSansMetadata<S, T>, entity?: Entity) => void;
-  // getAll: () => Entity[];
-  // getAllWith: (value: Partial<ComponentValue<S>>) => Entity[];
-  // getAllWithout: (value: Partial<ComponentValue<S>>) => Entity[];
-  // useAll: () => Entity[];
-  // useAllWith: (value: Partial<ComponentValue<S>>) => Entity[];
-  // useAllWithout: (value: Partial<ComponentValue<S>>) => Entity[];
-  // remove: (entity?: Entity) => void;
-  // clear: () => void;
-  // update: (value: Partial<ComponentValue<S, T>>, entity?: Entity) => void;
-  // has: (entity?: Entity) => boolean;
+  getAll: () => Entity[];
+  getAllWith: (value: Partial<ComponentValue<S>>) => Entity[];
+  getAllWithout: (value: Partial<ComponentValue<S>>) => Entity[];
+  useAll: () => Entity[];
+  useAllWith: (value: Partial<ComponentValue<S>>) => Entity[];
+  useAllWithout: (value: Partial<ComponentValue<S>>) => Entity[];
+  remove: (entity?: Entity) => void;
+  clear: () => void;
+  update: (value: Partial<ComponentValue<S, T>>, entity?: Entity) => void;
+  has: (entity?: Entity) => boolean;
 
-  // use(entity?: Entity | undefined): ComponentValue<S> | undefined;
-  // use(entity: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S>): ComponentValue<S>;
+  use(entity?: Entity | undefined): ComponentValue<S> | undefined;
+  use(entity: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S>): ComponentValue<S>;
 
-  // pauseUpdates: (entity: Entity, value?: ComponentValue<S, T>, skipUpdateStream?: boolean) => void;
-  // resumeUpdates: (entity: Entity, skipUpdateStream?: boolean) => void;
+  pauseUpdates: (entity: Entity, value?: ComponentValue<S, T>, skipUpdateStream?: boolean) => void;
+  resumeUpdates: (entity: Entity, skipUpdateStream?: boolean) => void;
 };
 
 // export type ExtendedContractComponentMethods<
@@ -107,7 +111,7 @@ export type ComponentMethods<S extends Schema, T = unknown> = {
 //   getEntityKeys: (entity: Entity) => SchemaToPrimitives<TKeySchema>;
 // };
 
-// export type OriginalComponentMethods<S extends Schema, T = unknown> = {
-//   update$: Subject<ComponentUpdate<S, T>> & { observers: any };
-//   entities: () => IterableIterator<Entity>; // ???
-// }
+export type OriginalComponentMethods<S extends Schema, T = unknown> = {
+  update$: Subject<ComponentUpdate<S, T>> & { observers: any };
+  entities: () => IterableIterator<Entity>;
+};

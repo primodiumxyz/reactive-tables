@@ -1,6 +1,8 @@
 import { Metadata, Schema, ValueType } from "@latticexyz/recs";
-
+import { Store as StoreConfig } from "@latticexyz/store";
 import { Hex } from "viem";
+
+import { OriginalComponentMethods } from "../component/types";
 
 export type InternalComponents<tables extends InternalTables> = {
   [tableName in keyof tables]: InternalComponent<tables[tableName]>;
@@ -10,7 +12,8 @@ export type InternalComponent<
   table extends InternalTable,
   S extends Schema = Schema,
   M extends Metadata = Metadata,
-> = InternalComponentTable<table, S, M> & InternalComponentMethods<table["schema"]>;
+  T = unknown,
+> = InternalComponentTable<table, S, M> & InternalComponentMethods<table["schema"], T>;
 
 export type InternalComponentTable<
   table extends InternalTable,
@@ -40,9 +43,10 @@ export type InternalTable = {
   schema: Schema;
 };
 
-export type InternalComponentMethods<S extends Schema, T = unknown> = {
-  get(): InternalComponentValue<S, T> | undefined;
-  get(defaultValue?: InternalComponentValue<S, T>): InternalComponentValue<S, T>;
+// TODO: Internal components don't have keys, so methods have been adapted/removed; see if we wantto include it
+export type InternalComponentMethods<S extends Schema, T = unknown> = OriginalComponentMethods<S, T> & {
+  get(): InternalComponentValue<S> | undefined;
+  get(defaultValue?: InternalComponentValue<S>): InternalComponentValue<S>;
 
   set: (value: InternalComponentValue<S, T>) => void;
   // getAll: () => Entity[];
@@ -52,13 +56,13 @@ export type InternalComponentMethods<S extends Schema, T = unknown> = {
   // useAllWith: (value: Partial<ComponentValue<S>>) => Entity[];
   // useAllWithout: (value: Partial<ComponentValue<S>>) => Entity[];
   // remove: (entity?: Entity) => void;
-  // clear: () => void;
-  // update: (value: Partial<ComponentValue<S, T>>, entity?: Entity) => void;
+  clear: () => void;
+  update: (value: Partial<InternalComponentValue<S, T>>) => void;
   // has: (entity?: Entity) => boolean;
 
-  // use(entity?: Entity | undefined): ComponentValue<S> | undefined;
-  // use(entity: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S>): ComponentValue<S>;
+  use(): InternalComponentValue<S> | undefined;
+  use(defaultValue?: InternalComponentValue<S>): InternalComponentValue<S>;
 
-  // pauseUpdates: (entity: Entity, value?: ComponentValue<S, T>, skipUpdateStream?: boolean) => void;
-  // resumeUpdates: (entity: Entity, skipUpdateStream?: boolean) => void;
+  pauseUpdates: (value?: InternalComponentValue<S, T>, skipUpdateStream?: boolean) => void;
+  resumeUpdates: (skipUpdateStream?: boolean) => void;
 };

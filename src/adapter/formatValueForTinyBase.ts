@@ -21,7 +21,7 @@ export type TinyBaseFormattedType = {
 // don't have a schema to rely on. And we don't care that much about the schema, because that's TypeScript types we want.
 export const formatValueForTinyBase = (
   keys: string[],
-  values: readonly (StaticPrimitiveType | DynamicPrimitiveType)[] = [],
+  values: readonly (StaticPrimitiveType | DynamicPrimitiveType | undefined)[] = [],
 ): TinyBaseFormattedType => {
   let formatted: TinyBaseFormattedType = {};
 

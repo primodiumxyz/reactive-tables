@@ -1,14 +1,14 @@
 import { Schema, World } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { MUDChain } from "@latticexyz/common/chains";
-import { ResolvedStoreConfig, Tables } from "@latticexyz/store/internal";
+import { ResolvedStoreConfig, Table, Tables } from "@latticexyz/store/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 
 import { Components, ComponentMethods } from "@/store/component/types";
 import { InternalComponentsTables } from "./store/internal/internalComponents";
-import { InternalComponents } from "./store/internal/types";
+import { InternalComponents, InternalTable } from "./store/internal/types";
 
 import { storeTables, worldTables } from "@latticexyz/store-sync";
 
@@ -75,8 +75,9 @@ export type CreateComponentsStoreResult<config extends StoreConfig, extraTables 
   store: Store;
 };
 
-export type CreateComponentMethodsOptions = {
+export type CreateComponentMethodsOptions<table extends Table | InternalTable> = {
   store: Store;
+  table: table;
   tableId: string;
 };
 

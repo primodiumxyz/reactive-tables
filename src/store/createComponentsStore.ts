@@ -33,6 +33,7 @@ export const createComponentsStore = <
 
     const methods = createComponentMethods({
       store,
+      table: table,
       tableId: table.tableId,
     });
 
@@ -58,6 +59,7 @@ export const createComponentsStore = <
     // so we get the type-safety as expected
     const methods = createComponentMethods({
       store,
+      table: table,
       tableId: table.id,
     });
 
