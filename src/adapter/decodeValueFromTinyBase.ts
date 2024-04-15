@@ -12,7 +12,6 @@ const encodedDataKeys = ["__staticData", "__encodedLengths", "__dynamicData", "_
 const ignoreKey = (key: string) => encodedDataKeys.includes(key) || key.startsWith("type__");
 
 export const decodeValueFromTinyBase = (formattedData: TinyBaseFormattedType): DecodedTinyBaseType => {
-  console.log("formatted data", formattedData);
   if (Object.keys(formattedData).length === 0) return undefined;
   let decoded: DecodedTinyBaseType = {};
 

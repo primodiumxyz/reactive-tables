@@ -168,8 +168,6 @@ export const createComponentMethods = <
     if (entity === undefined) throw new Error(`[update ${entity} for ${tableId}] no entity registered`);
 
     const currentValue = getRaw(entity);
-    console.log("currentValue", currentValue);
-    console.log("value", value);
     const newValue = TinyBaseAdapter.format(Object.keys(value), Object.values(value));
     setRaw({ ...currentValue, ...newValue }, entity);
   };
