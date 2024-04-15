@@ -28,7 +28,7 @@ export const mockFunctions = {
       chain: networkConfig.chain,
       account: networkConfig.burnerAccount.address,
     });
-    await waitForTransactionReceipt(networkConfig.publicClient, { hash });
+    return await waitForTransactionReceipt(networkConfig.publicClient, { hash });
   },
 
   // Increment counter
@@ -37,7 +37,7 @@ export const mockFunctions = {
       chain: networkConfig.chain,
       account: networkConfig.burnerAccount.address,
     });
-    await waitForTransactionReceipt(networkConfig.publicClient, { hash });
+    return await waitForTransactionReceipt(networkConfig.publicClient, { hash });
   },
 
   // Add elements to the inventory array
@@ -49,8 +49,23 @@ export const mockFunctions = {
         account: networkConfig.burnerAccount.address,
       },
     );
-    await waitForTransactionReceipt(networkConfig.publicClient, { hash });
+    return await waitForTransactionReceipt(networkConfig.publicClient, { hash });
   },
 };
 
+// Set elements in the inventory array
+export const setItems = async (args: { items: number[]; weights: number[]; totalWeight: bigint }) => {
+  const { items, weights, totalWeight } = args;
+  const hash = await networkConfig.worldContract.write.setItems([items, weights, totalWeight], {
+    chain: networkConfig.chain,
+    account: networkConfig.burnerAccount.address,
+  });
+  return await waitForTransactionReceipt(networkConfig.publicClient, { hash });
+};
+
 const random = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+export const getRandomNumbers = (length?: number, min?: number, max?: number) =>
+  Array.from({ length: length ?? 1 }, () => random(min ?? 1, max ?? 10000));
+export const getRandomBigInts = (length?: number, min?: number, max?: number) =>
+  getRandomNumbers(length, min, max).map((n) => BigInt(n));

@@ -21,16 +21,28 @@ contract TestSystem is System {
             revert ITEMS_LENGTH_MISMATCH();
         }
 
-        uint256 totalWeight = Inventory.getTotalWeight(_addressToEntityKey(_msgSender()));
+        bytes32 entityKey = _addressToEntityKey(_msgSender());
+        uint256 totalWeight = Inventory.getTotalWeight(entityKey);
 
         // Let's do it the ugly way
         for (uint256 i = 0; i < ids.length; i++) {
-            Inventory.pushItems(_addressToEntityKey(_msgSender()), ids[i]);
-            Inventory.pushWeights(_addressToEntityKey(_msgSender()), weights[i]);
+            Inventory.pushItems(entityKey, ids[i]);
+            Inventory.pushWeights(entityKey, weights[i]);
             totalWeight += weights[i];
         }
 
-        Inventory.setTotalWeight(_addressToEntityKey(_msgSender()), totalWeight);
+        Inventory.setTotalWeight(entityKey, totalWeight);
+    }
+
+    function setItems(uint32[] memory ids, uint32[] memory weights, uint256 totalWeight) public {
+        if (ids.length != weights.length) {
+            revert ITEMS_LENGTH_MISMATCH();
+        }
+
+        bytes32 entityKey = _addressToEntityKey(_msgSender());
+        Inventory.setItems(entityKey, ids);
+        Inventory.setWeights(entityKey, weights);
+        Inventory.setTotalWeight(entityKey, totalWeight);
     }
 
     /* ---------------------------------- UTILS --------------------------------- */

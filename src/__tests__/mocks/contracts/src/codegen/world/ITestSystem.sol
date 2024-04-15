@@ -16,4 +16,6 @@ interface ITestSystem {
   function move(int32 x, int32 y) external;
 
   function storeItems(uint32[] memory ids, uint32[] memory weights) external;
+
+  function setItems(uint32[] memory ids, uint32[] memory weights, uint256 totalWeight) external;
 }
