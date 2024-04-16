@@ -18,8 +18,8 @@ export const setComponentTable = <table extends Table, config extends StoreConfi
       componentName: componentTable.metadata.componentName,
       tableName: componentTable.metadata.tableName,
     },
-    keySchema: componentTable.metadata.keySchema,
-    valueSchema: componentTable.metadata.valueSchema,
+    keySchema: componentTable.metadata.keySchema!, // we won't pass an internal table (missing schemas)
+    valueSchema: componentTable.metadata.valueSchema!,
   });
 };
 

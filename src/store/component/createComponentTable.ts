@@ -1,16 +1,16 @@
-import { Type } from "@latticexyz/recs";
 import { ResourceLabel, resourceToLabel } from "@latticexyz/common";
 import { Store as StoreConfig } from "@latticexyz/store";
-import { Table } from "@latticexyz/store/internal";
+import { Table as MUDTable } from "@latticexyz/store/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
-import { Store } from "tinybase/store";
 
-import { ComponentTable } from "./types";
-import { schemaAbiTypeToRecsType } from "../utils";
+import { ComponentTable, ContractTable, InternalTable } from "./types";
 
-export const createComponentTable = <table extends Table, config extends StoreConfig>(table: table, store: Store) => {
+export const createComponentTable = <table extends ContractTable | MUDTable, config extends StoreConfig>(
+  table: table,
+) => {
   return {
     id: table.tableId,
+    namespace: table.namespace ?? "contract",
     metadata: {
       componentName: table.name,
       tableName: resourceToLabel(table) as ResourceLabel<storeToV1<config>["namespace"], string>,
@@ -23,18 +23,17 @@ export const createComponentTable = <table extends Table, config extends StoreCo
         Object.entries(table.valueSchema).map(([fieldName, schemaAbiType]) => [fieldName, schemaAbiType["type"]]),
       ),
     },
-    // TODO: we're actually never using the schema; should we include it? what should its purpose be?
-    schema: {
-      ...Object.fromEntries(
-        Object.entries(table.valueSchema).map(([fieldName, schemaAbiType]) => [
-          fieldName,
-          schemaAbiTypeToRecsType[schemaAbiType["type"]],
-        ]),
-      ),
-      __staticData: Type.OptionalString,
-      __encodedLengths: Type.OptionalString,
-      __dynamicData: Type.OptionalString,
-      __lastSyncedAtBlock: Type.OptionalBigInt,
+  } as const satisfies ComponentTable<table, config>;
+};
+
+export const createInternalComponentTable = <table extends InternalTable, config extends StoreConfig>(table: table) => {
+  return {
+    id: table.tableId,
+    namespace: table.namespace,
+    schema: table.schema,
+    metadata: {
+      componentName: table.name,
+      tableName: resourceToLabel(table) as ResourceLabel<storeToV1<config>["namespace"], string>,
     },
   } as const satisfies ComponentTable<table, config>;
 };

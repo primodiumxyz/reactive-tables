@@ -1,7 +1,5 @@
-import { Entity, Metadata, OptionalTypes, Schema, getEntityString } from "@latticexyz/recs";
+import { Entity, Schema } from "@latticexyz/recs";
 import { singletonEntity } from "@latticexyz/store-sync/recs";
-import { Store as StoreConfig } from "@latticexyz/store";
-import { Table } from "@latticexyz/store/internal";
 import { createQueries } from "tinybase";
 
 import { useEffect, useState } from "react";
@@ -10,31 +8,13 @@ import { queryAllWithValue, queryAllWithoutValue, useAllWithValue, useAllWithout
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
 import { arrayToIterator, createComponentMethodsUtils } from "./utils";
 import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
-import { Component, ComponentValue, ComponentValueSansMetadata } from "@/store/component/types";
-import { InternalComponent, InternalTable } from "@/store/internal/types";
+import { ComponentValue, ComponentValueSansMetadata, Table } from "@/store/component/types";
 
-export type ComponentUpdate<S extends Schema = Schema, T = unknown> = {
-  entity: Entity;
-  value: {
-    current: ComponentValue<S, T> | ComponentValueSansMetadata<S, T> | undefined;
-    prev: ComponentValue<S, T> | ComponentValueSansMetadata<S, T> | undefined;
-  };
-  // component:
-  // | Component<table extends Table ? table : Table, config, S, Metadata, T>
-  // | InternalComponent<table extends InternalTable ? table : InternalTable, S, Metadata, T>;
-  tableId: string; // TODO: ask Hank if we need the component or if it's just to identify (then tableId should be enough)
-};
-
-export const createComponentMethods = <
-  table extends Table | InternalTable,
-  config extends StoreConfig,
-  S extends Schema,
-  T = unknown,
->({
+export const createComponentMethods = <table extends Table, S extends Schema, T = unknown>({
   store,
   table,
   tableId,
-}: CreateComponentMethodsOptions<table>): CreateComponentMethodsResult<S, T> => {
+}: CreateComponentMethodsOptions<table>): CreateComponentMethodsResult<S, table, T> => {
   const { paused } = createComponentMethodsUtils(store, tableId);
   const queries = createQueries(store);
 
@@ -76,8 +56,8 @@ export const createComponentMethods = <
   /* ----------------------------------- GET ---------------------------------- */
   function get(): ComponentValue<S, T> | undefined;
   function get(entity: Entity | undefined): ComponentValue<S, T> | undefined;
-  function get(entity?: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S>): ComponentValue<S, T>;
-  function get(entity?: Entity, defaultValue?: ComponentValueSansMetadata<S>) {
+  function get(entity?: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S, T>): ComponentValue<S, T>;
+  function get(entity?: Entity, defaultValue?: ComponentValueSansMetadata<S, T>) {
     entity = entity ?? singletonEntity;
     const row = store.getRow(tableId, entity);
 
@@ -95,11 +75,11 @@ export const createComponentMethods = <
     return store.getRowIds(tableId);
   };
 
-  const getAllWith = (value: Partial<ComponentValue<S>>) => {
+  const getAllWith = (value: Partial<ComponentValue<S, T>>) => {
     return queryAllWithValue(queries, tableId, value);
   };
 
-  const getAllWithout = (value: Partial<ComponentValue<S>>) => {
+  const getAllWithout = (value: Partial<ComponentValue<S, T>>) => {
     return queryAllWithoutValue(queries, tableId, value);
   };
 
@@ -121,11 +101,11 @@ export const createComponentMethods = <
     return entities;
   }
 
-  const useAllWith = (value: Partial<ComponentValue<S>>) => {
+  const useAllWith = (value: Partial<ComponentValue<S, T>>) => {
     return useAllWithValue(queries, tableId, value);
   };
 
-  const useAllWithout = (value: Partial<ComponentValue<S>>) => {
+  const useAllWithout = (value: Partial<ComponentValue<S, T>>) => {
     return useAllWithoutValue(queries, tableId, value);
   };
 
@@ -156,9 +136,9 @@ export const createComponentMethods = <
   };
 
   /* -------------------------------- USE VALUE ------------------------------- */
-  function useValue(entity?: Entity | undefined): ComponentValue<S> | undefined;
-  function useValue(entity: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S>): ComponentValue<S>;
-  function useValue(entity?: Entity, defaultValue?: ComponentValueSansMetadata<S>) {
+  function useValue(entity?: Entity | undefined): ComponentValue<S, T> | undefined;
+  function useValue(entity: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S, T>): ComponentValue<S, T>;
+  function useValue(entity?: Entity, defaultValue?: ComponentValueSansMetadata<S, T>) {
     entity = entity ?? singletonEntity;
     const [value, setValue] = useState(get(entity));
 

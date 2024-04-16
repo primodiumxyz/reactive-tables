@@ -1,10 +1,6 @@
-import { Metadata, Schema, Type, ValueType } from "@latticexyz/recs";
-import { KeySchema, Table, ValueSchema } from "@latticexyz/store/internal";
+import { Metadata, Schema, Type } from "@latticexyz/recs";
 import { uuid } from "@latticexyz/utils";
 import { keccak256, toHex } from "viem";
-
-import { InternalComponentTable } from "./types";
-import { ComponentValueSansMetadata } from "../component/types";
 
 // These components will be created alongside the contract components, in a different process,
 // but aggregated into the same store to be used the exact same way to reduce complexity and computation
@@ -20,26 +16,15 @@ export const createInternalComponent = <S extends Schema, M extends Metadata = M
 ) => {
   const { id, indexed } = options ?? { id: uuid() };
 
-  // const toSchemaAbiType = (recsSchema: Record<string, Type>): KeySchema | ValueSchema => {
-  //   return Object.fromEntries(
-  //     Object.entries(recsSchema).map(([key, type]) => [
-  //       key,
-  //       { type: recsTypeToSchemaAbiType[type] as RecsTypeToSchemaAbiType<Type> },
-  //     ]),
-  //   );
-  // };
-
   return {
-    id: keccak256(toHex(id)),
-    namespace: "internal",
+    tableId: keccak256(toHex(id)),
+    namespace: "internal" as const,
     name: `internal_${id}`,
     schema,
     metadata: {
       ...options?.metadata,
       componentName: id,
       tableName: id,
-      // keySchema: {} as { [K in keyof S]: Type },
-      // valueSchema: schema,
     },
   };
 };

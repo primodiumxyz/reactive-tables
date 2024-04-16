@@ -86,7 +86,6 @@ const init = async (options: TestOptions = { useIndexer: true, startSync: true }
     while (!synced) {
       await wait(1000);
 
-      // @ts-expect-error __lastSyncedAtBlock doesn't exist on internal components
       const lastSyncedBlock = components?.[componentKey].get(key)?.__lastSyncedAtBlock;
       synced = lastSyncedBlock >= txBlock;
     }

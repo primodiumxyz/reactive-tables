@@ -1,14 +1,13 @@
 import { Schema, World } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { MUDChain } from "@latticexyz/common/chains";
-import { ResolvedStoreConfig, Table, Tables } from "@latticexyz/store/internal";
+import { ResolvedStoreConfig, Table as MUDTable, Tables as MUDTables } from "@latticexyz/store/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 
-import { Components, ComponentMethods } from "@/store/component/types";
-import { InternalComponentsTables } from "./store/internal/internalComponents";
-import { InternalComponents, InternalTable } from "./store/internal/types";
+import { Components, ComponentMethods, Table, Tables } from "@/store/component/types";
+import { internalComponentsTables } from "./store/internal/internalComponents";
 
 import { storeTables, worldTables } from "@latticexyz/store-sync";
 
@@ -17,13 +16,13 @@ export type AllTables<config extends StoreConfig, extraTables extends Tables | u
 >["tables"] &
   (extraTables extends Tables ? extraTables : {}) &
   typeof storeTables &
-  typeof worldTables;
+  typeof worldTables &
+  typeof internalComponentsTables;
 
 export type AllComponents<config extends StoreConfig, tables extends Tables | undefined> = Components<
   AllTables<config, tables>,
   config
-> &
-  InternalComponents<InternalComponentsTables>;
+>;
 
 export type TinyBaseWrapperOptions<
   world extends World,
@@ -67,7 +66,6 @@ export type CreateComponentsStoreOptions<
 > = {
   world: world;
   tables: AllTables<config, extraTables>;
-  internalComponentsTables: InternalComponentsTables;
 };
 
 export type CreateComponentsStoreResult<config extends StoreConfig, extraTables extends Tables | undefined> = {
@@ -75,13 +73,17 @@ export type CreateComponentsStoreResult<config extends StoreConfig, extraTables 
   store: Store;
 };
 
-export type CreateComponentMethodsOptions<table extends Table | InternalTable> = {
+export type CreateComponentMethodsOptions<table extends Table> = {
   store: Store;
   table: table;
   tableId: string;
 };
 
-export type CreateComponentMethodsResult<S extends Schema, T = unknown> = ComponentMethods<S, T>;
+export type CreateComponentMethodsResult<S extends Schema, table extends Table, T = unknown> = ComponentMethods<
+  S,
+  table,
+  T
+>;
 
 export type CreateStoreOptions<config extends StoreConfig, tables extends Tables> = {
   tables: AllTables<config, tables>;
@@ -125,11 +127,9 @@ export type CreateRpcSyncOptions<config extends StoreConfig, extraTables extends
 export type Sync = {
   start: (
     onProgress?: (index: number, blockNumber: bigint, progress: number) => void,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     error?: (err: any) => void,
   ) => void;
   unsubscribe: () => void;
-  // it can be undefined if key is indexer
 };
 
 export type OnSyncCallbacks = {

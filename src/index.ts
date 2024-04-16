@@ -40,10 +40,11 @@ export const tinyBaseWrapper = <
     ...(otherTables ?? {}),
     ...storeTables,
     ...worldTables,
+    ...internalComponentsTables,
   } as unknown as AllTables<config, extraTables>;
 
   /* ------------------------------- COMPONENTS ------------------------------- */
-  const { components, store } = createComponentsStore({ world, tables, internalComponentsTables });
+  const { components, store } = createComponentsStore({ world, tables });
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create custom writer, and setup sync
