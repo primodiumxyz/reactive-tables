@@ -1,8 +1,10 @@
 import { describe, it, expect, assert, beforeAll } from "vitest";
-import { createWorld, getComponentValue } from "@latticexyz/recs";
+import { renderHook } from "@testing-library/react-hooks";
+
+// MUD
+import { Entity, createWorld, getComponentValue } from "@latticexyz/recs";
 import { encodeEntity, singletonEntity, syncToRecs } from "@latticexyz/store-sync/recs";
 import { wait } from "@latticexyz/common/utils";
-
 // src
 import { tinyBaseWrapper } from "@/index";
 import { SyncStep } from "@/constants";
@@ -273,13 +275,12 @@ describe("tinyBaseWrapper", () => {
     describe("native methods", () => {
       // Entities iterator
       it("entities()", async () => {
-        const { components, waitForSyncLive } = await init();
+        const { components, networkConfig, waitForSyncLive } = await init();
         assert(components);
 
+        const player = encodeEntity({ address: "address" }, { address: networkConfig.burnerAccount.address });
         const entityA = padHex(toHex("entityA"));
         const entityB = padHex(toHex("entityB"));
-
-        expect(components.Position.entities().next().value).toBeUndefined();
 
         await setPositionForEntity({ entity: entityA, x: 1, y: 1 });
         await setPositionForEntity({ entity: entityB, x: 1, y: 1 });
@@ -287,13 +288,47 @@ describe("tinyBaseWrapper", () => {
 
         const iterator = components.Position.entities();
 
-        expect(iterator.next()).toEqual({ done: false, value: entityA });
-        expect(iterator.next()).toEqual({ done: false, value: entityB });
+        // It _should_ already include the burner account from previous tests
+        // Since we're not sure about the order, we can just test the global output
+        const iterations = [iterator.next(), iterator.next(), iterator.next()];
+        expect(iterations.map((i) => i.value).sort()).toEqual([player, entityA, entityB].sort());
         expect(iterator.next()).toEqual({ done: true, value: undefined });
       });
     });
 
     /* -------------------------------- REACTIVE -------------------------------- */
-    // describe("reactive methods", () => {});
+    describe("reactive methods", () => {
+      const getRandomArgs = (entity: Entity) => {
+        const nums = getRandomNumbers(2);
+        return { entity, x: nums[0], y: nums[1] };
+      };
+
+      it("use()", async () => {
+        const { components, networkConfig, waitForBlockSynced } = await init();
+        const player = encodeEntity({ address: "address" }, { address: networkConfig.burnerAccount.address });
+        assert(components);
+
+        // > undefined
+        const { result } = renderHook(() => components.Position.use(player));
+
+        // Update position and wait for sync
+        const args = getRandomArgs(player);
+        const { blockNumber } = await setPositionForEntity(args);
+        await waitForBlockSynced(blockNumber, "Position", player);
+
+        // result should return the updated position
+        expect(result.current).toHaveProperty("x", args.x);
+        expect(result.current).toHaveProperty("y", args.y);
+
+        // Update the position again with different values
+        const argsB = getRandomArgs(player);
+        const { blockNumber: blockNumberB } = await setPositionForEntity(argsB);
+        await waitForBlockSynced(blockNumberB, "Position", player);
+
+        // result should return the updated position
+        expect(result.current).toHaveProperty("x", argsB.x);
+        expect(result.current).toHaveProperty("y", argsB.y);
+      });
+    });
   });
 });

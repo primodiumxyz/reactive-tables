@@ -4,6 +4,8 @@ import { Store as StoreConfig } from "@latticexyz/store";
 import { Table } from "@latticexyz/store/internal";
 import { Subject } from "rxjs";
 
+import { useEffect, useState } from "react";
+
 import { arrayToIterator, createComponentMethodsUtils } from "./utils";
 import { TinyBaseAdapter } from "@/adapter";
 import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
@@ -171,6 +173,34 @@ export const createComponentMethods = <
     setRaw({ ...currentValue, ...newValue }, entity);
   };
 
+  /* -------------------------------- USE VALUE ------------------------------- */
+  function useValue(entity?: Entity | undefined): ComponentValue<S> | undefined;
+  function useValue(entity: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S>): ComponentValue<S>;
+  function useValue(entity?: Entity, defaultValue?: ComponentValueSansMetadata<S>) {
+    entity = entity ?? singletonEntity;
+    const [value, setValue] = useState(!!entity ? get(entity) : undefined);
+
+    useEffect(() => {
+      // component or entity changed, update state to latest value
+      setValue(!!entity ? get(entity) : undefined);
+      if (!entity) return;
+
+      // Update state when the value for this entity changes
+      const subId = store.addRowListener(tableId, entity, () => {
+        // only if it's not paused
+        if (!paused.get(entity)) {
+          setValue(get(entity));
+        }
+      });
+
+      return () => {
+        store.delListener(subId);
+      };
+    }, [entity]);
+
+    return value ?? defaultValue;
+  }
+
   return {
     entities,
     update$,
@@ -186,7 +216,7 @@ export const createComponentMethods = <
     // clear,
     update,
     // has,
-    // use: useValue,
+    use: useValue,
     pauseUpdates,
     resumeUpdates,
   };

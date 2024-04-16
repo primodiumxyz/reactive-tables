@@ -64,6 +64,7 @@ export const setItems = async (args: { items: number[]; weights: number[]; total
   return await waitForTransactionReceipt(networkConfig.publicClient, { hash });
 };
 
+// Set the position of an entity
 export const setPositionForEntity = async (args: { entity: Hex; x: number; y: number }) => {
   const { entity, x, y } = args;
   const hash = await networkConfig.worldContract.write.moveWithArbitraryKey([entity, x, y], {

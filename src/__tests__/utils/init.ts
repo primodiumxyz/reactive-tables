@@ -1,4 +1,4 @@
-import { createBurnerAccount, transportObserver } from "@latticexyz/common";
+import { transportObserver, createBurnerAccount } from "@latticexyz/common";
 import { mudFoundry } from "@latticexyz/common/chains";
 import {
   Account,

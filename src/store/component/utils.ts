@@ -67,8 +67,10 @@ export const createComponentMethodsUtils = (store: Store, tableId: string) => {
   return { paused, pendingUpdate };
 };
 
+// TODO: the original one accumulates entities without filtering out duplicates; this doesn't seem like intended behavior?
 export const arrayToIterator = <T>(array: T[]): IterableIterator<T> => {
   let i = 0;
+
   const iterator: Iterator<T> = {
     next() {
       if (i >= array.length) return { done: true, value: undefined };
