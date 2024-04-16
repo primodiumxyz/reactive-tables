@@ -355,6 +355,13 @@ describe("tinyBaseWrapper", () => {
           randomArgs = getRandomArgs(entities[0]);
         }
         expect(components.Position.getAllWith({ x: randomArgs.x, y: randomArgs.y })).toEqual([]);
+
+        // Matching only a part of the args should not be enough for the entity to be included
+        let argsWithPartialEquality = getRandomArgs(entities[0]);
+        while (args.some((a) => a.x === argsWithPartialEquality.x)) {
+          argsWithPartialEquality = getRandomArgs(entities[0]);
+        }
+        expect(components.Position.getAllWith({ x: argsWithPartialEquality.x, y: args[0].y })).toEqual([]);
       });
 
       it("getAllWithout()", async () => {
@@ -377,54 +384,69 @@ describe("tinyBaseWrapper", () => {
         }
         expect(components.Position.getAllWithout({ x: randomArgs.x, y: randomArgs.y }).sort()).toEqual(entities.sort());
       });
+
+      it("clear()", async () => {
+        const { components, entities } = await preTest();
+        expect(components.Position.getAll().sort()).toEqual(entities.sort());
+
+        components.Position.clear();
+        expect(components.Position.getAll()).toEqual([]);
+      });
+
+      it("has()", async () => {
+        const { components, entities } = await preTest();
+
+        entities.forEach((entity) => {
+          expect(components.Position.has(entity)).toBe(true);
+        });
+
+        const unknownEntity = padHex(toHex("unknownEntity"));
+        expect(components.Position.has(unknownEntity)).toBe(false);
+      });
     });
 
     /* -------------------------------- REACTIVE -------------------------------- */
     describe("reactive methods", () => {
-      const preTest = async () => {
-        const { components, networkConfig, waitForBlockSynced } = await init();
-        const player = encodeEntity({ address: "address" }, { address: networkConfig.burnerAccount.address });
-        assert(components);
-
-        // > undefined
-        const { result } = renderHook(() => components.Position.use(player));
-
-        return { components, networkConfig, waitForBlockSynced, player, result };
-      };
-
       const getRandomArgs = (entity: Entity) => {
         const nums = getRandomNumbers(2);
         return { entity, x: nums[0], y: nums[1] };
       };
 
-      const updatePosition = async (playerAddress: Address, waitForBlockSynced: Function) => {
-        const player = encodeEntity({ address: "address" }, { address: playerAddress });
-        const args = getRandomArgs(player);
+      const updatePosition = async (entity: Entity, waitForBlockSynced: Function) => {
+        const args = getRandomArgs(entity);
         const { blockNumber } = await setPositionForEntity(args);
-        await waitForBlockSynced(blockNumber, "Position", player);
+        await waitForBlockSynced(blockNumber, "Position", entity);
 
         return { args };
       };
 
       it("use()", async () => {
-        const { networkConfig, waitForBlockSynced, result } = await preTest();
+        const { components, waitForBlockSynced, entities } = await init();
+        assert(components);
+        const player = entities[0];
+
+        const { result } = renderHook(() => components.Position.use(entities[0]));
 
         // Update the position
-        const { args } = await updatePosition(networkConfig.burnerAccount.address, waitForBlockSynced);
+        const { args } = await updatePosition(player, waitForBlockSynced);
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
 
         // Update the position again with different values
-        const { args: argsB } = await updatePosition(networkConfig.burnerAccount.address, waitForBlockSynced);
+        const { args: argsB } = await updatePosition(player, waitForBlockSynced);
         expect(result.current).toHaveProperty("x", argsB.x);
         expect(result.current).toHaveProperty("y", argsB.y);
       });
 
       it("pauseUpdates()", async () => {
-        const { components, networkConfig, waitForBlockSynced, player, result } = await preTest();
+        const { components, waitForBlockSynced, entities } = await init();
+        assert(components);
+        const player = entities[0];
+
+        const { result } = renderHook(() => components.Position.use(entities[0]));
 
         // Update the position
-        const { args } = await updatePosition(networkConfig.burnerAccount.address, waitForBlockSynced);
+        const { args } = await updatePosition(player, waitForBlockSynced);
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
 
@@ -432,7 +454,7 @@ describe("tinyBaseWrapper", () => {
         components.Position.pauseUpdates(player, args);
 
         // Update the position again with different values
-        await updatePosition(networkConfig.burnerAccount.address, waitForBlockSynced);
+        await updatePosition(player, waitForBlockSynced);
 
         // It should still have the same values
         expect(result.current).toHaveProperty("x", args.x);
@@ -440,10 +462,14 @@ describe("tinyBaseWrapper", () => {
       });
 
       it("resumeUpdates()", async () => {
-        const { components, networkConfig, player, waitForBlockSynced, result } = await preTest();
+        const { components, waitForBlockSynced, entities } = await init();
+        assert(components);
+        const player = entities[0];
+
+        const { result } = renderHook(() => components.Position.use(entities[0]));
 
         // Update the position
-        const { args } = await updatePosition(networkConfig.burnerAccount.address, waitForBlockSynced);
+        const { args } = await updatePosition(player, waitForBlockSynced);
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
 
@@ -451,7 +477,7 @@ describe("tinyBaseWrapper", () => {
         components.Position.pauseUpdates(player, args);
 
         // Update the position again with different values
-        const { args: argsB } = await updatePosition(networkConfig.burnerAccount.address, waitForBlockSynced);
+        const { args: argsB } = await updatePosition(player, waitForBlockSynced);
         // It should keep the old values
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
@@ -461,6 +487,98 @@ describe("tinyBaseWrapper", () => {
         // It should update to the new values
         expect(result.current).toHaveProperty("x", argsB.x);
         expect(result.current).toHaveProperty("y", argsB.y);
+      });
+
+      it("useAll()", async () => {
+        const { components, waitForBlockSynced, entities } = await init();
+        assert(components);
+
+        const { result } = renderHook(() => components.Position.useAll());
+
+        // Update the position for all entities
+        await Promise.all(entities.map(async (entity) => await updatePosition(entity, waitForBlockSynced)));
+        expect(result.current.sort()).toEqual(entities.sort());
+
+        // Clear the positions
+        components.Position.clear();
+        expect(result.current).toEqual([]);
+
+        // Update the position for a few entities
+        await Promise.all(entities.slice(0, 2).map(async (entity) => await updatePosition(entity, waitForBlockSynced)));
+        expect(result.current.sort()).toEqual(entities.slice(0, 2).sort());
+      });
+
+      it("useAllWith()", async () => {
+        const { components, waitForBlockSynced, entities } = await init();
+        assert(components);
+
+        const targetPos = { x: 10, y: 10 };
+        const { result } = renderHook(() => components.Position.useAllWith(targetPos));
+
+        // Update the position for all entities (not to the target position)
+        await Promise.all(
+          entities.map(async (entity) => {
+            let args = getRandomArgs(entity);
+            while (args.x === targetPos.x && args.y === targetPos.y) {
+              args = getRandomArgs(entity);
+            }
+
+            const { blockNumber } = await setPositionForEntity(args);
+            await waitForBlockSynced(blockNumber, "Position", entity);
+          }),
+        );
+
+        expect(result.current).toEqual([]);
+
+        // Update the position for a few entities to the target position
+        const { blockNumber: blockNumberB } = await setPositionForEntity({ ...targetPos, entity: entities[0] });
+        await waitForBlockSynced(blockNumberB, "Position", entities[0]);
+        expect(result.current).toEqual([entities[0]]);
+
+        const { blockNumber: blockNumberC } = await setPositionForEntity({ ...targetPos, entity: entities[1] });
+        await waitForBlockSynced(blockNumberC, "Position", entities[1]);
+        expect(result.current.sort()).toEqual([entities[0], entities[1]].sort());
+
+        // And with only part of the properties matching
+        const { blockNumber: blockNumberD } = await setPositionForEntity({ x: targetPos.x, y: 0, entity: entities[2] });
+        await waitForBlockSynced(blockNumberD, "Position", entities[2]);
+        expect(result.current.sort()).toEqual([entities[0], entities[1]].sort());
+      });
+
+      it("useAllWithout()", async () => {
+        const { components, waitForBlockSynced, entities } = await init();
+        assert(components);
+
+        const targetPos = { x: 10, y: 10 };
+        const { result } = renderHook(() => components.Position.useAllWithout(targetPos));
+
+        // Update the position for all entities (not to the target position)
+        await Promise.all(
+          entities.map(async (entity) => {
+            let args = getRandomArgs(entity);
+            while (args.x === targetPos.x && args.y === targetPos.y) {
+              args = getRandomArgs(entity);
+            }
+            const { blockNumber } = await setPositionForEntity(args);
+            await waitForBlockSynced(blockNumber, "Position", entity);
+          }),
+        );
+
+        expect(result.current.sort()).toEqual(entities.sort());
+
+        // Update the position for a few entities to the target position
+        const { blockNumber: blockNumberB } = await setPositionForEntity({ ...targetPos, entity: entities[0] });
+        await waitForBlockSynced(blockNumberB, "Position", entities[0]);
+        expect(result.current.sort()).toEqual(entities.slice(1).sort());
+
+        const { blockNumber: blockNumberC } = await setPositionForEntity({ ...targetPos, entity: entities[1] });
+        await waitForBlockSynced(blockNumberC, "Position", entities[1]);
+        expect(result.current.sort()).toEqual(entities.slice(2).sort());
+
+        // And with only part of the properties matching
+        const { blockNumber: blockNumberD } = await setPositionForEntity({ x: targetPos.x, y: 0, entity: entities[2] });
+        await waitForBlockSynced(blockNumberD, "Position", entities[2]);
+        expect(result.current.sort()).toEqual(entities.slice(2).sort());
       });
     });
   });

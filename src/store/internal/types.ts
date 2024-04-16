@@ -43,7 +43,6 @@ export type InternalTable = {
   schema: Schema;
 };
 
-// TODO: Internal components don't have keys, so methods have been adapted/removed; see if we wantto include it
 export type InternalComponentMethods<S extends Schema, T = unknown> = OriginalComponentMethods<S, T> & {
   get(): InternalComponentValue<S> | undefined;
   get(defaultValue?: InternalComponentValue<S>): InternalComponentValue<S>;

@@ -6,7 +6,7 @@ import { createStore } from "tinybase/store";
 import { createComponentMethods } from "@/store/component/createComponentMethods";
 import { setComponentTable } from "@/store/utils";
 import { CreateComponentsStoreOptions, CreateComponentsStoreResult } from "@/types";
-import { Components } from "@/store/component/types";
+import { ComponentTable, Components } from "@/store/component/types";
 import { createComponentTable } from "./component/createComponentTable";
 import { InternalComponents } from "./internal/types";
 

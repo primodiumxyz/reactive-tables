@@ -7,3 +7,5 @@ export const TinyBaseAdapter = {
   parse: decodeValueFromTinyBase,
   format: formatValueForTinyBase,
 };
+
+export { type TinyBaseFormattedType } from "./formatValueForTinyBase";
