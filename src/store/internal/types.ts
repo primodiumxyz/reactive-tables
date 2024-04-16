@@ -63,6 +63,6 @@ export type InternalComponentMethods<S extends Schema, T = unknown> = OriginalCo
   use(): InternalComponentValue<S> | undefined;
   use(defaultValue?: InternalComponentValue<S>): InternalComponentValue<S>;
 
-  pauseUpdates: (value?: InternalComponentValue<S, T>, skipUpdateStream?: boolean) => void;
-  resumeUpdates: (skipUpdateStream?: boolean) => void;
+  pauseUpdates: (value?: InternalComponentValue<S, T>) => void;
+  resumeUpdates: () => void;
 };

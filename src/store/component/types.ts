@@ -95,8 +95,8 @@ export type ComponentMethods<S extends Schema, T = unknown> = OriginalComponentM
   use(entity?: Entity | undefined): ComponentValue<S> | undefined;
   use(entity: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S>): ComponentValue<S>;
 
-  pauseUpdates: (entity: Entity, value?: ComponentValueSansMetadata<S, T>, skipUpdateStream?: boolean) => void;
-  resumeUpdates: (entity: Entity, skipUpdateStream?: boolean) => void;
+  pauseUpdates: (entity?: Entity, value?: ComponentValueSansMetadata<S, T>) => void;
+  resumeUpdates: (entity?: Entity) => void;
 };
 
 // export type ExtendedContractComponentMethods<
@@ -118,6 +118,5 @@ export type ComponentMethods<S extends Schema, T = unknown> = OriginalComponentM
 // };
 
 export type OriginalComponentMethods<S extends Schema, T = unknown> = {
-  update$: Subject<ComponentUpdate<S, T>> & { observers: any };
   entities: () => IterableIterator<Entity>;
 };

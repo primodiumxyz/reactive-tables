@@ -2,7 +2,7 @@ import { Entity, Metadata, OptionalTypes, Schema, getEntityString } from "@latti
 import { singletonEntity } from "@latticexyz/store-sync/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { Table } from "@latticexyz/store/internal";
-import { Subject } from "rxjs";
+import { createQueries } from "tinybase";
 
 import { useEffect, useState } from "react";
 
@@ -12,6 +12,7 @@ import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/t
 import { Component, ComponentValue, ComponentValueSansMetadata } from "@/store/component/types";
 import { InternalComponent, InternalTable } from "@/store/internal/types";
 import { TinyBaseFormattedType } from "@/adapter/formatValueForTinyBase";
+import { queryAllWithValue, queryAllWithoutValue } from "./queries";
 
 export type ComponentUpdate<S extends Schema = Schema, T = unknown> = {
   entity: Entity;
@@ -25,11 +26,6 @@ export type ComponentUpdate<S extends Schema = Schema, T = unknown> = {
   tableId: string; // TODO: ask Hank if we need the component or if it's just to identify (then tableId should be enough)
 };
 
-type ComponentMutationOptions = {
-  skipUpdateStream?: boolean;
-  bypassPausedCheck?: boolean;
-};
-
 export const createComponentMethods = <
   table extends Table | InternalTable,
   config extends StoreConfig,
@@ -41,6 +37,7 @@ export const createComponentMethods = <
   tableId,
 }: CreateComponentMethodsOptions<table>): CreateComponentMethodsResult<S, T> => {
   const { paused, pendingUpdate } = createComponentMethodsUtils(store, tableId);
+  const queries = createQueries(store);
 
   // TODO: register an entity?
 
@@ -48,92 +45,40 @@ export const createComponentMethods = <
   const entities = () => arrayToIterator(store.getRowIds(tableId));
 
   /* --------------------------------- STREAMS -------------------------------- */
-  // Original RECS component update stream
-  // In primodium it seems to be overriden when returning extended component context
-  // const _update$ = new Subject(); // TODO: do we need to keep this one?
-  // Update event stream that takes into account overridden entity values
-  const update$ = new Subject<ComponentUpdate<S, T>>();
-
   // Add a new override to some entity
-  const pauseUpdates = (entity: Entity, value?: ComponentValueSansMetadata<S, T>, skipUpdateStream = false) => {
+  const pauseUpdates = (entity?: Entity, value?: ComponentValueSansMetadata<S, T>) => {
+    entity = entity ?? singletonEntity;
+    if (entity === undefined) throw new Error(`[pauseUpdates ${entity} for ${tableId}] no entity registered`);
+
     paused.set(entity, true);
-    if (value) set(value, entity, { skipUpdateStream, bypassPausedCheck: true });
+    if (value) set(value, entity);
   };
 
   // Remove an override from an entity
-  const resumeUpdates = (entity: Entity, skipUpdateStream = false) => {
+  const resumeUpdates = (entity?: Entity) => {
+    entity = entity ?? singletonEntity;
+    if (entity === undefined) throw new Error(`[resumeUpdates ${entity} for ${tableId}] no entity registered`);
+
     if (!paused.get(entity)) return;
     paused.set(entity, false);
-
-    const update = pendingUpdate.getRaw(entity);
-    if (!update) return;
-
-    if (update.prev) setRaw(update.prev, entity, { skipUpdateStream: true });
-    if (update.current) setRaw(update.current, entity, { skipUpdateStream });
-    else remove(entity);
-
-    pendingUpdate.delete(entity);
   };
 
-  // Channel through update events from the original component if there are no overrides
-  // We shouldn't need this as we'll use our own update$, since we need to reimplement defineQuery, queries and hooks ourselves
-  // update$
-  //   .pipe(
-  //     filter((e) => !paused.get(e.entity)),
-  //     map((update) => ({ ...update, component }))
-  //   )
-  //   .subscribe(update$);
-
-  // component.update$
-  //   .pipe(
-  //     filter((e) => !!paused.get(e.entity)),
-  //     map((update) => {
-  //       pendingUpdate.set(update.entity, update);
-  //     })
-  //   )
-  //   .subscribe();
-
   /* ----------------------------------- SET ---------------------------------- */
-  // bypassPaused for internal use, when originally calling setComponent (second part of if/else)
-  const set = (value: ComponentValueSansMetadata<S, T>, entity?: Entity, options?: ComponentMutationOptions) => {
-    const { skipUpdateStream, bypassPausedCheck } = options ?? { skipUpdateStream: false, bypassPausedCheck: false };
-
+  const set = (value: ComponentValueSansMetadata<S, T>, entity?: Entity) => {
     entity = entity ?? singletonEntity;
     if (entity === undefined) throw new Error(`[set ${entity} for ${tableId}] no entity registered`);
 
-    // Encode the value because we'll need it in both cases
+    // Encode the value and set it in the store
     const valueFormatted = TinyBaseAdapter.format(Object.keys(value), Object.values(value));
-
-    if (!bypassPausedCheck && paused.get(entity)) {
-      const prevValue = pendingUpdate.getRaw(entity)?.current ?? getRaw(entity);
-      pendingUpdate.setRaw(entity, valueFormatted, prevValue);
-    } else {
-      // No need to get the prev value if we're skipping the update stream
-      const prevValue = skipUpdateStream ? undefined : get(entity);
-
-      store.setRow(tableId, entity, valueFormatted);
-
-      if (!skipUpdateStream) {
-        // TODO: if bug we might be using the wrong update stream (has original been memoized in original RECS setComponent?
-        // is it ok to ignore the original one? I'd guess so because we're also replacing hooks such as Has or useEntityQuery)
-        update$.next({ entity, value: { current: value, prev: prevValue }, tableId });
-      }
-    }
+    store.setRow(tableId, entity, valueFormatted);
   };
 
   // Utility function to save on computation when we want to set the formatted data directly
-  const setRaw = (value: TinyBaseFormattedType, entity: Entity, options?: ComponentMutationOptions) => {
-    const { skipUpdateStream } = options ?? { skipUpdateStream: false };
+  const setRaw = (value: TinyBaseFormattedType, entity: Entity) => {
     entity = entity ?? singletonEntity;
     if (entity === undefined) throw new Error(`[set ${entity} for ${tableId}] no entity registered`);
 
-    const prevValue = skipUpdateStream ? undefined : get(entity);
     store.setRow(tableId, entity, value);
-
-    if (!skipUpdateStream) {
-      const decoded = TinyBaseAdapter.parse(value) as ComponentValue<S, T> | ComponentValueSansMetadata<S, T>;
-      update$.next({ entity, value: { current: decoded, prev: prevValue }, tableId });
-    }
   };
 
   /* ----------------------------------- GET ---------------------------------- */
@@ -155,6 +100,40 @@ export const createComponentMethods = <
     return Object.entries(row).length > 0 ? row : undefined;
   };
 
+  /* --------------------------------- QUERIES -------------------------------- */
+  const getAll = () => {
+    return store.getRowIds(tableId);
+  };
+
+  // function useAll() {
+  //   const entitites = useEntityQuery([Has(component)]);
+  //   return [...entitites];
+  // }
+
+  const getAllWith = (value: Partial<ComponentValue<S>>) => {
+    return queryAllWithValue(queries, tableId, value);
+  };
+
+  // const useAllWith = (value: Partial<ComponentValue<S>>) => {
+  //   const entities = useEntityQuery([HasValue(component, value)]);
+  //   return [...entities];
+  // }
+
+  const getAllWithout = (value: Partial<ComponentValue<S>>) => {
+    return queryAllWithoutValue(queries, tableId, value);
+  };
+
+  // const useAllWithout = (value: Partial<ComponentValue<S>>) => {
+  //   const entities = useEntityQuery([NotValue(component, value)]);
+  //   return [...entities];
+  // }
+
+  /* ---------------------------------- CLEAR --------------------------------- */
+  // const clear = () => {
+  //   const entities = runQuery([Has(component)]);
+  //   entities.forEach((entity) => removeComponent(component, entity));
+  // }
+
   /* --------------------------------- REMOVE --------------------------------- */
   const remove = (entity?: Entity) => {
     entity = entity ?? singletonEntity;
@@ -173,6 +152,12 @@ export const createComponentMethods = <
     setRaw({ ...currentValue, ...newValue }, entity);
   };
 
+  /* ----------------------------------- HAS ---------------------------------- */
+  // const has = (entity?: Entity) => {
+  //   if (entity == undefined) return false;
+  //   return hasComponent(component, entity);
+  // }
+
   /* -------------------------------- USE VALUE ------------------------------- */
   function useValue(entity?: Entity | undefined): ComponentValue<S> | undefined;
   function useValue(entity: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S>): ComponentValue<S>;
@@ -181,20 +166,29 @@ export const createComponentMethods = <
     const [value, setValue] = useState(!!entity ? get(entity) : undefined);
 
     useEffect(() => {
-      // component or entity changed, update state to latest value
+      // entity changed, update state to latest value
       setValue(!!entity ? get(entity) : undefined);
       if (!entity) return;
 
       // Update state when the value for this entity changes
-      const subId = store.addRowListener(tableId, entity, () => {
+      const valueSubId = store.addRowListener(tableId, entity, () => {
         // only if it's not paused
         if (!paused.get(entity)) {
           setValue(get(entity));
         }
       });
 
+      // Update state when updates are unpaused
+      const pausedSubId = store.addValueListener(`paused__${tableId}__${entity}`, (_, __, paused) => {
+        // Meaning updates are being resumed
+        if (!paused) {
+          setValue(get(entity));
+        }
+      });
+
       return () => {
-        store.delListener(subId);
+        store.delListener(valueSubId);
+        store.delListener(pausedSubId);
       };
     }, [entity]);
 
@@ -203,12 +197,11 @@ export const createComponentMethods = <
 
   return {
     entities,
-    update$,
     get,
     set,
-    // getAll,
-    // getAllWith,
-    // getAllWithout,
+    getAll,
+    getAllWith,
+    getAllWithout,
     // useAll,
     // useAllWith,
     // useAllWithout,

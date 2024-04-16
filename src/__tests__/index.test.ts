@@ -18,7 +18,7 @@ import {
   setPositionForEntity,
 } from "@/__tests__/utils";
 import mockConfig from "@/__tests__/mocks/contracts/mud.config";
-import { padHex, toHex } from "viem";
+import { Address, padHex, toHex } from "viem";
 
 const FUZZ_ITERATIONS = 20;
 
@@ -57,6 +57,15 @@ const init = async (options: TestOptions = { useIndexer: true, startSync: true }
     indexerUrl: useIndexer ? networkConfig.indexerUrl : undefined,
   });
 
+  // Grab a few entities to use across tests (because each test will keep the state of the chain
+  // from previous runs)
+  const entities = [
+    encodeEntity({ address: "address" }, { address: networkConfig.burnerAccount.address }),
+    padHex(toHex("entityA")),
+    padHex(toHex("entityB")),
+    padHex(toHex("entityC")),
+  ];
+
   // We want to wait for both components systems to be in sync & live
   const waitForSyncLive = async () => {
     let synced = false;
@@ -90,6 +99,7 @@ const init = async (options: TestOptions = { useIndexer: true, startSync: true }
     sync,
     publicClient,
     recsComponents,
+    entities,
     networkConfig,
     waitForSyncLive,
     waitForBlockSynced,
@@ -118,8 +128,8 @@ describe("tinyBaseWrapper", () => {
 
   describe("sync: should properly sync similar values to RECS components", () => {
     const runTest = async (options: TestOptions) => {
-      const { components, recsComponents, networkConfig, waitForSyncLive } = await init(options);
-      const player = encodeEntity({ address: "address" }, { address: networkConfig.burnerAccount.address });
+      const { components, recsComponents, networkConfig, entities, waitForSyncLive } = await init(options);
+      const player = entities[0];
       assert(components);
 
       await waitForSyncLive();
@@ -188,8 +198,8 @@ describe("tinyBaseWrapper", () => {
     describe("basic methods", () => {
       // Init and return components and utils
       const preTest = async () => {
-        const { components, networkConfig, waitForBlockSynced } = await init();
-        const player = encodeEntity({ address: "address" }, { address: networkConfig.burnerAccount.address });
+        const { components, networkConfig, entities, waitForBlockSynced } = await init();
+        const player = entities[0];
         assert(components);
 
         // Generate random args
@@ -275,35 +285,103 @@ describe("tinyBaseWrapper", () => {
     describe("native methods", () => {
       // Entities iterator
       it("entities()", async () => {
-        const { components, networkConfig, waitForSyncLive } = await init();
+        const { components, entities, waitForSyncLive } = await init();
         assert(components);
 
-        const player = encodeEntity({ address: "address" }, { address: networkConfig.burnerAccount.address });
-        const entityA = padHex(toHex("entityA"));
-        const entityB = padHex(toHex("entityB"));
-
-        await setPositionForEntity({ entity: entityA, x: 1, y: 1 });
-        await setPositionForEntity({ entity: entityB, x: 1, y: 1 });
+        await Promise.all(entities.map(async (entity) => await setPositionForEntity({ entity, x: 1, y: 1 })));
         await waitForSyncLive();
 
         const iterator = components.Position.entities();
 
         // It _should_ already include the burner account from previous tests
         // Since we're not sure about the order, we can just test the global output
-        const iterations = [iterator.next(), iterator.next(), iterator.next()];
-        expect(iterations.map((i) => i.value).sort()).toEqual([player, entityA, entityB].sort());
+        const iterations = entities.map(() => iterator.next());
+        expect(iterations.map((i) => i.value).sort()).toEqual(entities.sort());
         expect(iterator.next()).toEqual({ done: true, value: undefined });
       });
     });
 
-    /* -------------------------------- REACTIVE -------------------------------- */
-    describe("reactive methods", () => {
+    /* --------------------------------- QUERIES -------------------------------- */
+    describe("query methods", () => {
       const getRandomArgs = (entity: Entity) => {
         const nums = getRandomNumbers(2);
         return { entity, x: nums[0], y: nums[1] };
       };
 
-      it("use()", async () => {
+      const updatePosition = async (entity: Entity, waitForBlockSynced: Function) => {
+        const args = getRandomArgs(entity);
+        const { blockNumber } = await setPositionForEntity(args);
+        await waitForBlockSynced(blockNumber, "Position", entity);
+
+        return { args };
+      };
+
+      const preTest = async () => {
+        const { components, networkConfig, entities, waitForSyncLive } = await init();
+        assert(components);
+
+        // 4 entities: A has a value, B has a different value, C & D have the same value
+        const argsA = getRandomArgs(entities[0]);
+        const argsB = getRandomArgs(entities[1]);
+        const argsC = getRandomArgs(entities[2]);
+        const argsD = { ...argsC, entity: entities[3] };
+
+        const args = [argsA, argsB, argsC, argsD];
+        await Promise.all(args.map(async (a) => await setPositionForEntity(a)));
+        await waitForSyncLive();
+
+        return { components, networkConfig, entities, args };
+      };
+
+      it("getAll()", async () => {
+        const { components, entities } = await preTest();
+
+        const allEntities = components.Position.getAll();
+        expect(allEntities.sort()).toEqual(entities.sort());
+      });
+
+      it("getAllWith()", async () => {
+        const { components, entities, args } = await preTest();
+
+        expect(components.Position.getAllWith({ x: args[0].x, y: args[0].y })).toEqual([entities[0]]);
+        expect(components.Position.getAllWith({ x: args[1].x, y: args[1].y })).toEqual([entities[1]]);
+        expect(components.Position.getAllWith({ x: args[2].x, y: args[2].y }).sort()).toEqual(
+          [entities[2], entities[3]].sort(),
+        );
+
+        // Test with args not included for any entity
+        let randomArgs = getRandomArgs(entities[0]);
+        while (args.some((a) => a.x === randomArgs.x && a.y === randomArgs.y)) {
+          randomArgs = getRandomArgs(entities[0]);
+        }
+        expect(components.Position.getAllWith({ x: randomArgs.x, y: randomArgs.y })).toEqual([]);
+      });
+
+      it("getAllWithout()", async () => {
+        const { components, entities, args } = await preTest();
+
+        expect(components.Position.getAllWithout({ x: args[0].x, y: args[0].y }).sort()).toEqual(
+          [entities[1], entities[2], entities[3]].sort(),
+        );
+        expect(components.Position.getAllWithout({ x: args[1].x, y: args[1].y }).sort()).toEqual(
+          [entities[0], entities[2], entities[3]].sort(),
+        );
+        expect(components.Position.getAllWithout({ x: args[2].x, y: args[2].y }).sort()).toEqual(
+          [entities[0], entities[1]].sort(),
+        );
+
+        // Test with args not included for any entity
+        let randomArgs = getRandomArgs(entities[0]);
+        while (args.some((a) => a.x === randomArgs.x && a.y === randomArgs.y)) {
+          randomArgs = getRandomArgs(entities[0]);
+        }
+        expect(components.Position.getAllWithout({ x: randomArgs.x, y: randomArgs.y }).sort()).toEqual(entities.sort());
+      });
+    });
+
+    /* -------------------------------- REACTIVE -------------------------------- */
+    describe("reactive methods", () => {
+      const preTest = async () => {
         const { components, networkConfig, waitForBlockSynced } = await init();
         const player = encodeEntity({ address: "address" }, { address: networkConfig.burnerAccount.address });
         assert(components);
@@ -311,21 +389,76 @@ describe("tinyBaseWrapper", () => {
         // > undefined
         const { result } = renderHook(() => components.Position.use(player));
 
-        // Update position and wait for sync
+        return { components, networkConfig, waitForBlockSynced, player, result };
+      };
+
+      const getRandomArgs = (entity: Entity) => {
+        const nums = getRandomNumbers(2);
+        return { entity, x: nums[0], y: nums[1] };
+      };
+
+      const updatePosition = async (playerAddress: Address, waitForBlockSynced: Function) => {
+        const player = encodeEntity({ address: "address" }, { address: playerAddress });
         const args = getRandomArgs(player);
         const { blockNumber } = await setPositionForEntity(args);
         await waitForBlockSynced(blockNumber, "Position", player);
 
-        // result should return the updated position
+        return { args };
+      };
+
+      it("use()", async () => {
+        const { networkConfig, waitForBlockSynced, result } = await preTest();
+
+        // Update the position
+        const { args } = await updatePosition(networkConfig.burnerAccount.address, waitForBlockSynced);
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
 
         // Update the position again with different values
-        const argsB = getRandomArgs(player);
-        const { blockNumber: blockNumberB } = await setPositionForEntity(argsB);
-        await waitForBlockSynced(blockNumberB, "Position", player);
+        const { args: argsB } = await updatePosition(networkConfig.burnerAccount.address, waitForBlockSynced);
+        expect(result.current).toHaveProperty("x", argsB.x);
+        expect(result.current).toHaveProperty("y", argsB.y);
+      });
 
-        // result should return the updated position
+      it("pauseUpdates()", async () => {
+        const { components, networkConfig, waitForBlockSynced, player, result } = await preTest();
+
+        // Update the position
+        const { args } = await updatePosition(networkConfig.burnerAccount.address, waitForBlockSynced);
+        expect(result.current).toHaveProperty("x", args.x);
+        expect(result.current).toHaveProperty("y", args.y);
+
+        // Pause updates
+        components.Position.pauseUpdates(player, args);
+
+        // Update the position again with different values
+        await updatePosition(networkConfig.burnerAccount.address, waitForBlockSynced);
+
+        // It should still have the same values
+        expect(result.current).toHaveProperty("x", args.x);
+        expect(result.current).toHaveProperty("y", args.y);
+      });
+
+      it("resumeUpdates()", async () => {
+        const { components, networkConfig, player, waitForBlockSynced, result } = await preTest();
+
+        // Update the position
+        const { args } = await updatePosition(networkConfig.burnerAccount.address, waitForBlockSynced);
+        expect(result.current).toHaveProperty("x", args.x);
+        expect(result.current).toHaveProperty("y", args.y);
+
+        // Pause updates
+        components.Position.pauseUpdates(player, args);
+
+        // Update the position again with different values
+        const { args: argsB } = await updatePosition(networkConfig.burnerAccount.address, waitForBlockSynced);
+        // It should keep the old values
+        expect(result.current).toHaveProperty("x", args.x);
+        expect(result.current).toHaveProperty("y", args.y);
+
+        // Resume updates
+        components.Position.resumeUpdates(player);
+        // It should update to the new values
         expect(result.current).toHaveProperty("x", argsB.x);
         expect(result.current).toHaveProperty("y", argsB.y);
       });
