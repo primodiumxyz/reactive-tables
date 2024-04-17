@@ -3,10 +3,11 @@ import { Store as StoreConfig } from "@latticexyz/store";
 import { MUDChain } from "@latticexyz/common/chains";
 import { ResolvedStoreConfig, Table as MUDTable, Tables as MUDTables } from "@latticexyz/store/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
+import { KeySchema } from "@latticexyz/protocol-parser/internal";
 import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 
-import { Components, ComponentMethods, Table, Tables } from "@/store/component/types";
+import { Components, ComponentMethods, Table, Tables, ContractComponentMethods } from "@/store/component/types";
 import { internalComponentsTables } from "./store/internal/internalComponents";
 
 import { storeTables, worldTables } from "@latticexyz/store-sync";
@@ -77,13 +78,12 @@ export type CreateComponentMethodsOptions<table extends Table> = {
   store: Store;
   table: table;
   tableId: string;
+  keySchema: KeySchema;
 };
 
-export type CreateComponentMethodsResult<S extends Schema, table extends Table, T = unknown> = ComponentMethods<
-  S,
-  table,
-  T
->;
+export type CreateComponentMethodsResult<VS extends Schema, KS extends Schema = Schema, T = unknown> =
+  | ComponentMethods<VS, T>
+  | (ComponentMethods<VS, T> & ContractComponentMethods<VS, KS, T>);
 
 export type CreateStoreOptions<config extends StoreConfig, tables extends Tables> = {
   tables: AllTables<config, tables>;

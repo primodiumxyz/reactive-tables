@@ -1,20 +1,28 @@
 import { Entity, Schema } from "@latticexyz/recs";
+import { KeySchema } from "@latticexyz/protocol-parser/internal";
 import { singletonEntity } from "@latticexyz/store-sync/recs";
 import { createQueries } from "tinybase";
 
 import { useEffect, useState } from "react";
 
 import { queryAllWithValue, queryAllWithoutValue, useAllWithValue, useAllWithoutValue } from "@/store/queries";
+import { createContractComponentMethods } from "./createContractComponentMethods";
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
 import { arrayToIterator, createComponentMethodsUtils } from "./utils";
 import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
 import { ComponentValue, ComponentValueSansMetadata, Table } from "@/store/component/types";
 
-export const createComponentMethods = <table extends Table, S extends Schema, T = unknown>({
+export const createComponentMethods = <
+  table extends Table,
+  S extends Schema,
+  TKeySchema extends KeySchema = KeySchema,
+  T = unknown,
+>({
   store,
   table,
   tableId,
-}: CreateComponentMethodsOptions<table>): CreateComponentMethodsResult<S, table, T> => {
+  keySchema,
+}: CreateComponentMethodsOptions<table>): CreateComponentMethodsResult<S, TKeySchema, T> => {
   const { paused } = createComponentMethodsUtils(store, tableId);
   const queries = createQueries(store);
 
@@ -39,7 +47,7 @@ export const createComponentMethods = <table extends Table, S extends Schema, T 
   };
 
   /* ----------------------------------- SET ---------------------------------- */
-  const set = (value: ComponentValueSansMetadata<S, T>, entity?: Entity) => {
+  const set = (value: ComponentValueSansMetadata<S, T> | ComponentValue<S, T>, entity?: Entity) => {
     entity = entity ?? singletonEntity;
 
     // Encode the value and set it in the store
@@ -174,7 +182,7 @@ export const createComponentMethods = <table extends Table, S extends Schema, T 
     return value ?? defaultValue;
   }
 
-  return {
+  const methods = {
     entities,
     get,
     set,
@@ -191,5 +199,13 @@ export const createComponentMethods = <table extends Table, S extends Schema, T 
     use: useValue,
     pauseUpdates,
     resumeUpdates,
+  };
+
+  // If it's an internal component, no need for contract methods
+  if (table.namespace === "internal") return methods;
+
+  return {
+    ...methods,
+    ...createContractComponentMethods({ ...methods, keySchema }),
   };
 };

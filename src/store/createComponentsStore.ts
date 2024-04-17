@@ -1,6 +1,7 @@
 import { Store as StoreConfig } from "@latticexyz/store";
 import { World } from "@latticexyz/recs";
 import { Tables } from "@latticexyz/store/internal";
+import { KeySchema } from "@latticexyz/protocol-parser/internal";
 import { createStore } from "tinybase/store";
 
 import { createComponentMethods } from "@/store/component/createComponentMethods";
@@ -36,6 +37,7 @@ export const createComponentsStore = <
       // @ts-expect-error same here
       table: table,
       tableId: table.tableId,
+      keySchema: table.keySchema as unknown as KeySchema,
     });
 
     // Register immutable data (basically formatted table) in the store for efficient access

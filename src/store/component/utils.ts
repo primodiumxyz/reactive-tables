@@ -1,5 +1,9 @@
-import { Entity } from "@latticexyz/recs";
+import { KeySchema, SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
+import { Entity, Schema } from "@latticexyz/recs";
+import { entityToHexKeyTuple, hexKeyTupleToEntity } from "@latticexyz/store-sync/recs";
+import { Hex, decodeAbiParameters, encodeAbiParameters } from "viem";
 import { Store } from "tinybase/store";
+import { ComponentKey } from "./types";
 
 export const createComponentMethodsUtils = (store: Store, tableId: string) => {
   const paused = {
@@ -32,4 +36,36 @@ export const arrayToIterator = <T>(array: T[]): IterableIterator<T> => {
   };
 
   return iterable;
+};
+
+export const encodeEntity = <S extends Schema, TKeySchema extends KeySchema>(
+  keySchema: TKeySchema,
+  key: ComponentKey<S>,
+) => {
+  if (Object.keys(keySchema).length !== Object.keys(key).length) {
+    throw new Error(
+      `key length ${Object.keys(key).length} does not match key schema length ${Object.keys(keySchema).length}`,
+    );
+  }
+  return hexKeyTupleToEntity(
+    Object.entries(keySchema).map(([keyName, type]) => encodeAbiParameters([{ type }], [key[keyName]])),
+  );
+};
+
+export const decodeEntity = <TKeySchema extends KeySchema>(
+  keySchema: TKeySchema,
+  entity: Entity,
+): SchemaToPrimitives<TKeySchema> => {
+  const hexKeyTuple = entityToHexKeyTuple(entity);
+  if (hexKeyTuple.length !== Object.keys(keySchema).length) {
+    throw new Error(
+      `entity key tuple length ${hexKeyTuple.length} does not match key schema length ${Object.keys(keySchema).length}`,
+    );
+  }
+  return Object.fromEntries(
+    Object.entries(keySchema).map(([key, type], index) => [
+      key,
+      decodeAbiParameters([{ type }], hexKeyTuple[index] as Hex)[0],
+    ]),
+  ) as SchemaToPrimitives<TKeySchema>;
 };
