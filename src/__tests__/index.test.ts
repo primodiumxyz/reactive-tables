@@ -64,7 +64,7 @@ const init = async (options: TestOptions = { useIndexer: true, startSync: true }
     padHex(toHex("entityA")),
     padHex(toHex("entityB")),
     padHex(toHex("entityC")),
-  ];
+  ] as Entity[];
 
   // We want to wait for both components systems to be in sync & live
   const waitForSyncLive = async () => {
@@ -140,7 +140,7 @@ describe("tinyBaseWrapper", () => {
 
       // Verify the equality
       for (const comp of componentKeys) {
-        const hasKey = Object.entries(components[comp].metadata.keySchema as Object).length > 0;
+        const hasKey = Object.entries(components[comp].metadata.keySchema ?? {}).length > 0;
         const tinyBaseComp = hasKey ? components[comp].get(player) : components[comp].get();
 
         const recsComp = hasKey
@@ -158,7 +158,7 @@ describe("tinyBaseWrapper", () => {
         }
 
         // Test value schema
-        const valueSchema = components[comp].metadata.valueSchema as Object;
+        const valueSchema = components[comp].metadata.valueSchema ?? {};
         for (const key of Object.keys(valueSchema)) {
           if (!(key in tinyBaseComp)) {
             expect(recsComp[key]).toBeUndefined();
@@ -220,7 +220,7 @@ describe("tinyBaseWrapper", () => {
       };
 
       // Get component value after a transaction was made
-      it("get()", async () => {
+      it("get(), getWithKeys()", async () => {
         const { components, player, getRandomArgs, waitForBlockSynced } = await preTest();
 
         // Set the items and wait for sync
@@ -229,11 +229,13 @@ describe("tinyBaseWrapper", () => {
         await waitForBlockSynced(blockNumber, "Inventory", player);
 
         const value = components.Inventory.get(player);
+        const valueWithKeys = components.Inventory.getWithKeys({ id: player });
         postTest({ ...args, block: blockNumber }, { ...value, block: value?.__lastSyncedAtBlock });
+        expect(value).toEqual(valueWithKeys);
       });
 
       // Set component value client-side
-      it("set()", async () => {
+      it("set(), setWithKeys", async () => {
         const { components, player, getRandomArgs } = await preTest();
 
         // Set the component manually
@@ -241,8 +243,10 @@ describe("tinyBaseWrapper", () => {
         components.Inventory.set(args, player);
 
         const value = components.Inventory.get(player);
+        const valueWithKeys = components.Inventory.getWithKeys({ id: player });
         assert(value);
         postTest(args, value);
+        expect(value).toEqual(valueWithKeys);
       });
 
       // Update component value client-side
@@ -305,14 +309,6 @@ describe("tinyBaseWrapper", () => {
       const getRandomArgs = (entity: Entity) => {
         const nums = getRandomNumbers(2);
         return { entity, x: nums[0], y: nums[1] };
-      };
-
-      const updatePosition = async (entity: Entity, waitForBlockSynced: Function) => {
-        const args = getRandomArgs(entity);
-        const { blockNumber } = await setPositionForEntity(args);
-        await waitForBlockSynced(blockNumber, "Position", entity);
-
-        return { args };
       };
 
       const preTest = async () => {
@@ -392,19 +388,21 @@ describe("tinyBaseWrapper", () => {
         expect(components.Position.getAll()).toEqual([]);
       });
 
-      it("has()", async () => {
+      it("has(), hasWithKeys()", async () => {
         const { components, entities } = await preTest();
 
         entities.forEach((entity) => {
           expect(components.Position.has(entity)).toBe(true);
+          expect(components.Position.hasWithKeys({ id: entity })).toBe(true);
         });
 
         const unknownEntity = padHex(toHex("unknownEntity"));
         expect(components.Position.has(unknownEntity)).toBe(false);
+        expect(components.Position.hasWithKeys({ id: unknownEntity })).toBe(false);
       });
     });
 
-    /* -------------------------------- REACTIVE -------------------------------- */
+    /* ---------------------------------- HOOKS --------------------------------- */
     describe("reactive methods", () => {
       const getRandomArgs = (entity: Entity) => {
         const nums = getRandomNumbers(2);
@@ -419,22 +417,25 @@ describe("tinyBaseWrapper", () => {
         return { args };
       };
 
-      it("use()", async () => {
+      it("use(), useWithKeys()", async () => {
         const { components, waitForBlockSynced, entities } = await init();
         assert(components);
         const player = entities[0];
 
-        const { result } = renderHook(() => components.Position.use(entities[0]));
+        const { result } = renderHook(() => components.Position.use(player));
+        const { result: resultWithKeys } = renderHook(() => components.Position.useWithKeys({ id: player }));
 
         // Update the position
         const { args } = await updatePosition(player, waitForBlockSynced);
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
+        expect(result.current).toEqual(resultWithKeys.current);
 
         // Update the position again with different values
         const { args: argsB } = await updatePosition(player, waitForBlockSynced);
         expect(result.current).toHaveProperty("x", argsB.x);
         expect(result.current).toHaveProperty("y", argsB.y);
+        expect(result.current).toEqual(resultWithKeys.current);
       });
 
       it("pauseUpdates()", async () => {
@@ -578,6 +579,19 @@ describe("tinyBaseWrapper", () => {
         const { blockNumber: blockNumberD } = await setPositionForEntity({ x: targetPos.x, y: 0, entity: entities[2] });
         await waitForBlockSynced(blockNumberD, "Position", entities[2]);
         expect(result.current.sort()).toEqual(entities.slice(2).sort());
+      });
+    });
+
+    /* ---------------------------------- KEYS ---------------------------------- */
+    describe("keys (contract-specific) methods", () => {
+      it("getEntityKeys()", async () => {
+        const { components, entities } = await init();
+        assert(components);
+
+        const player = entities[0];
+        const keys = components.Position.getEntityKeys(player);
+        console.log(keys);
+        expect(keys).toEqual({ id: player });
       });
     });
   });
