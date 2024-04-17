@@ -85,11 +85,11 @@ export const createComponentMethods = <
   };
 
   const getAllWith = (value: Partial<ComponentValue<S, T>>) => {
-    return queryAllWithValue(queries, tableId, value);
+    return queryAllWithValue({ queries, tableId, value }).entities;
   };
 
   const getAllWithout = (value: Partial<ComponentValue<S, T>>) => {
-    return queryAllWithoutValue(queries, tableId, value);
+    return queryAllWithoutValue({ queries, tableId, value }).entities;
   };
 
   /* ---------------------------------- HOOKS --------------------------------- */
