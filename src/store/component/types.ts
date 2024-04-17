@@ -1,12 +1,12 @@
 import { Entity, Metadata, Schema, Type, ValueType } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { ResourceLabel } from "@latticexyz/common";
-import { SchemaToPrimitives, KeySchema as ParsedKeySchema } from "@latticexyz/protocol-parser/internal";
-import { SchemaAbiType, SchemaAbiTypeToPrimitiveType } from "@latticexyz/schema-type/internal";
+import { SchemaAbiType } from "@latticexyz/schema-type/internal";
 import { KeySchema, Table as MUDTable, ValueSchema } from "@latticexyz/store/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 
 import { SchemaAbiTypeToRecsType } from "@/store/utils";
+import { CreateComponentSystemOptions, CreateComponentSystemResult } from "@/store/system/types";
 
 export type Components<tables extends Tables, config extends StoreConfig> = {
   [tableName in keyof tables]: Component<tables[tableName], config>;
@@ -130,6 +130,8 @@ export type ComponentMethods<S extends Schema, T = unknown> = OriginalComponentM
 
   pauseUpdates: (entity?: Entity, value?: ComponentValueSansMetadata<S, T>) => void;
   resumeUpdates: (entity?: Entity) => void;
+
+  createSystem: (options: Omit<CreateComponentSystemOptions<S, T>, "tableId" | "store">) => CreateComponentSystemResult;
 };
 
 export type ContractComponentMethods<VS extends Schema = Schema, KS extends Schema = Schema, T = unknown> = {

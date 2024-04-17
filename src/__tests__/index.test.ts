@@ -19,6 +19,7 @@ import {
 } from "@/__tests__/utils";
 import mockConfig from "@/__tests__/mocks/contracts/mud.config";
 import { Address, padHex, toHex } from "viem";
+import { ComponentSystemUpdate } from "@/store/system/types";
 
 const FUZZ_ITERATIONS = 20;
 
@@ -592,6 +593,66 @@ describe("tinyBaseWrapper", () => {
         const keys = components.Position.getEntityKeys(player);
         console.log(keys);
         expect(keys).toEqual({ id: player });
+      });
+    });
+  });
+
+  /* -------------------------------------------------------------------------- */
+  /*                              COMPONENT SYSTEMS                             */
+  /* -------------------------------------------------------------------------- */
+
+  describe("systems: should properly trigger systems with correct values", () => {
+    const getRandomArgs = (entity: Entity) => {
+      const nums = getRandomNumbers(2);
+      return { entity, x: nums[0], y: nums[1] };
+    };
+
+    const updatePosition = async (entity: Entity, waitForBlockSynced: Function) => {
+      const args = getRandomArgs(entity);
+      const { blockNumber } = await setPositionForEntity(args);
+      await waitForBlockSynced(blockNumber, "Position", entity);
+
+      return { args };
+    };
+
+    const preTest = async () => {
+      const { components, waitForSyncLive, waitForBlockSynced, entities } = await init();
+      assert(components);
+      const tableId = components.Position.id;
+      // Just wait for sync for the test to be accurate (no system trigger due to storing synced values)
+      await waitForSyncLive();
+
+      // Aggregate updates triggered by the system on component changes
+      let aggregator: ComponentSystemUpdate<typeof components.Position.schema>[] = [];
+      const system = (update: (typeof aggregator)[number]) => aggregator.push(update);
+      const { unsubscribe } = components.Position.createSystem({ options: { runOnInit: false }, system });
+      expect(aggregator).toEqual([]);
+
+      return { components, waitForBlockSynced, tableId, entities, aggregator, system, unsubscribe };
+    };
+
+    const wrapper = async (callback: (args: Awaited<ReturnType<typeof preTest>>) => Promise<void>) => {
+      const { components, waitForBlockSynced, tableId, entities, aggregator, system, unsubscribe } = await preTest();
+      await callback({ components, waitForBlockSynced, tableId, entities, aggregator, system, unsubscribe });
+      unsubscribe();
+    };
+
+    it.only("runOnInit = false", async () => {
+      await wrapper(async ({ components, waitForBlockSynced, tableId, entities, aggregator, system }) => {
+        // Update the position for the first entity and check if the system is triggered
+        const initialValue = components.Position.get(entities[0]);
+        await updatePosition(entities[0], waitForBlockSynced);
+        const postValueA = components.Position.get(entities[0]);
+
+        expect(aggregator).toHaveLength(1);
+        expect(aggregator[0]).toEqual({ tableId, entity: entities[0], value: [postValueA, initialValue] });
+
+        // Run again
+        await updatePosition(entities[0], waitForBlockSynced);
+        const postValueB = components.Position.get(entities[0]);
+
+        expect(aggregator).toHaveLength(2);
+        expect(aggregator[1]).toEqual({ tableId, entity: entities[0], value: [postValueB, postValueA] });
       });
     });
   });

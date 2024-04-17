@@ -6,18 +6,18 @@ import { ComponentValue, Table } from "@/store/component/types";
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
 
 export const createComponentSystem = <
-  table extends Table = Table,
-  config extends StoreConfig = StoreConfig,
+  // table extends Table = Table,
+  // config extends StoreConfig = StoreConfig,
   S extends Schema = Schema,
-  M extends Metadata = Metadata,
+  // M extends Metadata = Metadata,
   T = unknown,
 >({
-  component,
+  // TODO: or do we want to pass the whole component? do we need it?
+  tableId,
   system,
   store,
-  options = { runOnInit: true },
-}: CreateComponentSystemOptions<table, config, S, M, T>): CreateComponentSystemResult => {
-  const tableId = component.id;
+  options = { runOnInit: true, affectAllEntities: false, affectIfChangedUndefined: true },
+}: CreateComponentSystemOptions<S, T>): CreateComponentSystemResult => {
   // TODO: is the first solution better?
   // Here we have two possible ways to implement the listener:
   // 1. Use a cell listener, so we can get the old + new values, and provide every information about the update
@@ -27,12 +27,21 @@ export const createComponentSystem = <
   // -> this is the chosed implementation; it will cost slightly more to get all cells, but won't react individually to each cell change
   const subId = store.addRowListener(tableId, null, (_, __, entity, getCellChange) => {
     let newValueRaw = store.getRow(tableId, entity) as TinyBaseFormattedType;
-    let oldValueRaw = newValueRaw;
+    let oldValueRaw = { ...newValueRaw }; // we just want the keys
+
+    let hasEntityChanged: boolean | undefined = false;
 
     // If we can get the change, populate the old and new value objects
     if (getCellChange) {
       for (const key of Object.keys(oldValueRaw)) {
-        const [changed, oldCellValue] = getCellChange(tableId, entity, key);
+        const [changed, oldCellValue, newCellValue] = getCellChange(tableId, entity, key);
+        // Set the flag depending on if the entity has changed
+        if (changed) {
+          hasEntityChanged = true; // ony need one change for the entity to be considered changed
+        } else if (changed === undefined) {
+          hasEntityChanged = undefined; // we want to know if we can't figure out if the entity has changed or not
+        }
+
         // If it's undefined, no need to go further as the value is tampered
         if (oldCellValue === undefined) {
           oldValueRaw = {};
@@ -50,12 +59,21 @@ export const createComponentSystem = <
     const newValue =
       Object.keys(newValueRaw).length > 0 ? (TinyBaseAdapter.parse(newValueRaw) as ComponentValue<S, T>) : undefined;
 
-    // Trigger system
-    system({
-      tableId, // TODO: or do we want to pass the whole component? do we need it?
-      entity,
-      value: [newValue, oldValue],
-    });
+    // Trigger system:
+    if (
+      // if the entity has changed
+      hasEntityChanged ||
+      // or if we want to affect all entities
+      options.affectAllEntities ||
+      // or if we can't figure out if the entity has changed(undefined) so we want to trigger it just in case
+      (options.affectIfChangedUndefined && hasEntityChanged === undefined)
+    ) {
+      system({
+        tableId,
+        entity,
+        value: [newValue, oldValue],
+      });
+    }
   });
 
   if (options?.runOnInit) {

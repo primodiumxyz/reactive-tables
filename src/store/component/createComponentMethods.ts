@@ -11,6 +11,8 @@ import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
 import { arrayToIterator, createComponentMethodsUtils } from "./utils";
 import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
 import { ComponentValue, ComponentValueSansMetadata, Table } from "@/store/component/types";
+import { CreateComponentSystemOptions } from "../system/types";
+import { createComponentSystem } from "../system";
 
 export const createComponentMethods = <
   table extends Table,
@@ -182,6 +184,11 @@ export const createComponentMethods = <
     return value ?? defaultValue;
   }
 
+  /* --------------------------------- SYSTEM --------------------------------- */
+  // Call with createSystem({ system: (update) => { ... }, options: { runOnInit: true/false })
+  const createSystem = (options: Omit<CreateComponentSystemOptions<S, T>, "tableId" | "store">) =>
+    createComponentSystem({ tableId, store, ...options });
+
   const methods = {
     entities,
     get,
@@ -199,6 +206,7 @@ export const createComponentMethods = <
     use: useValue,
     pauseUpdates,
     resumeUpdates,
+    createSystem,
   };
 
   // If it's an internal component, no need for contract methods
