@@ -1,6 +1,6 @@
 import { Entity, Schema } from "@latticexyz/recs";
 import { singletonEntity } from "@latticexyz/store-sync/recs";
-import { KeySchema, SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
+import { KeySchema } from "@latticexyz/store/internal";
 
 import { decodeEntity, encodeEntity } from "./utils";
 import {
@@ -12,7 +12,7 @@ import {
   OriginalComponentMethods,
 } from "./types";
 
-export const createContractComponentMethods = <VS extends Schema, KS extends Schema, T = unknown>({
+export const createContractComponentMethods = <VS extends Schema, KS extends Schema = Schema, T = unknown>({
   keySchema,
   ...methods
 }: { keySchema: KeySchema } & ComponentMethods<VS, T> & OriginalComponentMethods): ContractComponentMethods<
@@ -49,7 +49,7 @@ export const createContractComponentMethods = <VS extends Schema, KS extends Sch
   };
 
   const getEntityKeys = (entity: Entity) => {
-    return decodeEntity(keySchema, entity) as ComponentKey<KS, T>;
+    return decodeEntity(keySchema, entity) as unknown as ComponentKey<KS, T>;
   };
 
   return {

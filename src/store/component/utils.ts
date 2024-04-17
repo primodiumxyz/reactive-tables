@@ -1,4 +1,5 @@
 import { KeySchema, SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
+import { KeySchema as UnparsedKeySchema } from "@latticexyz/store/internal";
 import { Entity, Schema } from "@latticexyz/recs";
 import { entityToHexKeyTuple, hexKeyTupleToEntity } from "@latticexyz/store-sync/recs";
 import { Hex, decodeAbiParameters, encodeAbiParameters } from "viem";
@@ -38,7 +39,7 @@ export const arrayToIterator = <T>(array: T[]): IterableIterator<T> => {
   return iterable;
 };
 
-export const encodeEntity = <S extends Schema, TKeySchema extends KeySchema>(
+export const encodeEntity = <S extends Schema, TKeySchema extends UnparsedKeySchema>(
   keySchema: TKeySchema,
   key: ComponentKey<S>,
 ) => {
@@ -48,14 +49,14 @@ export const encodeEntity = <S extends Schema, TKeySchema extends KeySchema>(
     );
   }
   return hexKeyTupleToEntity(
-    Object.entries(keySchema).map(([keyName, type]) => encodeAbiParameters([{ type }], [key[keyName]])),
+    Object.entries(keySchema).map(([keyName, type]) => encodeAbiParameters([{ type: type.type }], [key[keyName]])),
   );
 };
 
-export const decodeEntity = <TKeySchema extends KeySchema>(
+export const decodeEntity = <TKeySchema extends UnparsedKeySchema>(
   keySchema: TKeySchema,
   entity: Entity,
-): SchemaToPrimitives<TKeySchema> => {
+): SchemaToPrimitives<TKeySchema["type"]> => {
   const hexKeyTuple = entityToHexKeyTuple(entity);
   if (hexKeyTuple.length !== Object.keys(keySchema).length) {
     throw new Error(
@@ -65,7 +66,7 @@ export const decodeEntity = <TKeySchema extends KeySchema>(
   return Object.fromEntries(
     Object.entries(keySchema).map(([key, type], index) => [
       key,
-      decodeAbiParameters([{ type }], hexKeyTuple[index] as Hex)[0],
+      decodeAbiParameters([{ type: type.type }], hexKeyTuple[index] as Hex)[0],
     ]),
-  ) as SchemaToPrimitives<TKeySchema>;
+  ) as SchemaToPrimitives<TKeySchema["type"]>;
 };
