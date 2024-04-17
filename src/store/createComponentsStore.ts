@@ -3,6 +3,7 @@ import { World } from "@latticexyz/recs";
 import { Tables } from "@latticexyz/store/internal";
 import { KeySchema } from "@latticexyz/protocol-parser/internal";
 import { createStore } from "tinybase/store";
+import { createQueries } from "tinybase/queries";
 
 import { createComponentMethods } from "@/store/component/createComponentMethods";
 import { setComponentTable } from "@/store/utils";
@@ -18,8 +19,9 @@ export const createComponentsStore = <
   world,
   tables,
 }: CreateComponentsStoreOptions<world, config, extraTables>): CreateComponentsStoreResult<config, extraTables> => {
-  // Create the TinyBase store
+  // Create the TinyBase store & queries
   const store = createStore();
+  const queries = createQueries(store);
 
   /* ------------------------------- COMPONENTS ------------------------------- */
   // Resolve tables into components (including internal tables)
@@ -34,6 +36,7 @@ export const createComponentsStore = <
 
     const methods = createComponentMethods({
       store,
+      queries,
       // @ts-expect-error same here
       table: table,
       tableId: table.tableId,
@@ -53,5 +56,5 @@ export const createComponentsStore = <
     return acc;
   }, {}) as Components<typeof tables, config>;
 
-  return { components, store };
+  return { components, store, queries };
 };

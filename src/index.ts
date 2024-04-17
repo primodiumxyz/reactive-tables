@@ -44,7 +44,7 @@ export const tinyBaseWrapper = <
   } as unknown as AllTables<config, extraTables>;
 
   /* ------------------------------- COMPONENTS ------------------------------- */
-  const { components, store } = createComponentsStore({ world, tables });
+  const { components, store, queries } = createComponentsStore({ world, tables });
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create custom writer, and setup sync
@@ -55,5 +55,5 @@ export const tinyBaseWrapper = <
     world.registerDisposer(sync.unsubscribe);
   }
 
-  return { components, tables, store, sync, publicClient: client };
+  return { components, tables, store, queries, sync, publicClient: client };
 };

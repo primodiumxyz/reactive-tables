@@ -6,6 +6,7 @@ import { storeToV1 } from "@latticexyz/store/config/v2";
 import { KeySchema } from "@latticexyz/protocol-parser/internal";
 import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
+import { Queries } from "tinybase/queries";
 
 import { Components, ComponentMethods, Table, Tables, ContractComponentMethods } from "@/store/component/types";
 import { internalComponentsTables } from "./store/internal/internalComponents";
@@ -44,6 +45,7 @@ export type TinyBaseWrapperResult<config extends StoreConfig, tables extends Tab
   components: AllComponents<config, tables>;
   tables: AllTables<config, tables>;
   store: Store;
+  queries: Queries;
   sync: CreateSyncResult;
   publicClient: PublicClient;
 };
@@ -72,10 +74,12 @@ export type CreateComponentsStoreOptions<
 export type CreateComponentsStoreResult<config extends StoreConfig, extraTables extends Tables | undefined> = {
   components: AllComponents<config, extraTables>;
   store: Store;
+  queries: Queries;
 };
 
 export type CreateComponentMethodsOptions<table extends Table> = {
   store: Store;
+  queries: Queries;
   table: table;
   tableId: string;
   keySchema: KeySchema;

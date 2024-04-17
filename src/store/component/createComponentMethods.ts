@@ -1,7 +1,6 @@
 import { Entity, Schema } from "@latticexyz/recs";
 import { KeySchema } from "@latticexyz/protocol-parser/internal";
 import { singletonEntity } from "@latticexyz/store-sync/recs";
-import { createQueries } from "tinybase";
 
 import { useEffect, useState } from "react";
 
@@ -21,12 +20,12 @@ export const createComponentMethods = <
   T = unknown,
 >({
   store,
+  queries,
   table,
   tableId,
   keySchema,
 }: CreateComponentMethodsOptions<table>): CreateComponentMethodsResult<S, TKeySchema, T> => {
   const { paused } = createComponentMethodsUtils(store, tableId);
-  const queries = createQueries(store);
 
   // Native RECS entities iterator
   const entities = () => arrayToIterator(store.getRowIds(tableId));
