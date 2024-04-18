@@ -4,7 +4,7 @@ import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Tables, resolveConfig } from "@latticexyz/store/internal";
 
 import { createComponentsStore } from "@/store";
-import { createSync } from "@/sync";
+import { createStorageAdapter } from "@/store/sync";
 import { createPublicClient } from "@/utils";
 import { TinyBaseWrapperOptions, NetworkConfig, TinyBaseWrapperResult, AllTables } from "@/types";
 
@@ -22,14 +22,7 @@ export const tinyBaseWrapper = <
   networkConfig,
   otherTables,
   publicClient,
-  startSync = true, // start sync immediately?
-  onSync = {
-    progress: (_, __, progress) => console.log(`Syncing: ${(progress * 100).toFixed()}%`),
-    complete: (blockNumber) => console.log("Sync complete, latest block:", blockNumber?.toString() ?? "unknown"),
-    error: (err) => console.error("Sync error", err),
-  },
-
-  // TODO: initialQueries
+  // TODO: internalComponents
 }: TinyBaseWrapperOptions<world, config, networkConfig, extraTables>): TinyBaseWrapperResult<config, extraTables> => {
   const client = publicClient ?? createPublicClient(networkConfig);
 
@@ -47,13 +40,8 @@ export const tinyBaseWrapper = <
   const { components, store, queries } = createComponentsStore({ world, tables });
 
   /* ---------------------------------- SYNC ---------------------------------- */
-  // Create custom writer, and setup sync
-  // @ts-ignore union too complex to represent
-  const sync = createSync({ components, store, networkConfig, publicClient: client, onSync });
-  if (startSync) {
-    sync.start();
-    world.registerDisposer(sync.unsubscribe);
-  }
+  // Create storage adapter (custom writer, see @primodiumxyz/sync-stack)
+  const storageAdapter = createStorageAdapter({ store });
 
-  return { components, tables, store, queries, sync, publicClient: client };
+  return { components, tables, store, queries, storageAdapter, publicClient: client };
 };

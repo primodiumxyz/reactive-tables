@@ -1,7 +1,8 @@
 import { Store as StoreConfig } from "@latticexyz/store";
 import { Tables } from "@latticexyz/store/internal";
 
-import { AllComponents, NetworkConfig, OnSyncCallbacks, Sync as SyncType } from "@/types";
+import { AllComponents, NetworkConfig } from "@/types";
+import { OnSyncCallbacks, Sync as SyncType } from "@/__tests__/utils/sync/types";
 import { SyncSourceType, SyncStep } from "@/constants";
 
 export type HandleSync<config extends StoreConfig, tables extends Tables> = (

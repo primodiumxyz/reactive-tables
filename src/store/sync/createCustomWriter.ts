@@ -10,8 +10,10 @@ import { TinyBaseAdapter } from "@/adapter";
 import { getComponentTable } from "@/store/utils";
 import { debug } from "@/utils";
 
+export type CustomWriter = ReturnType<typeof createCustomWriter>;
+
 // in order to store it in the table, at component creation
-export const createCustomWriter = <config extends StoreConfig>({ store }: { store: Store }) => {
+export const createCustomWriter = ({ store }: { store: Store }) => {
   const processLog = (log: StorageAdapterLog) => {
     const { namespace, name } = hexToResource(log.args.tableId);
     const entity = hexKeyTupleToEntity(log.args.keyTuple);

@@ -1,13 +1,16 @@
 import { describe, it, expect, assert, beforeAll } from "vitest";
 import { renderHook } from "@testing-library/react-hooks";
 
-// MUD
+// libs
 import { Entity, createWorld, getComponentValue } from "@latticexyz/recs";
 import { encodeEntity, singletonEntity, syncToRecs } from "@latticexyz/store-sync/recs";
 import { wait } from "@latticexyz/common/utils";
+import { padHex, toHex } from "viem";
+
 // src
 import { tinyBaseWrapper } from "@/index";
 import { SyncStep } from "@/constants";
+import { TableQueryUpdate } from "@/store/queries";
 // mocks
 import {
   fuzz,
@@ -18,8 +21,7 @@ import {
   setPositionForEntity,
 } from "@/__tests__/utils";
 import mockConfig from "@/__tests__/mocks/contracts/mud.config";
-import { Address, padHex, toHex } from "viem";
-import { ComponentSystemUpdate } from "@/store/system/types";
+import { createSync } from "@/__tests__/utils/sync";
 
 const FUZZ_ITERATIONS = 20;
 
@@ -37,16 +39,30 @@ const init = async (options: TestOptions = { useIndexer: true, startSync: true }
   const world = createWorld();
   const networkConfig = getMockNetworkConfig();
 
-  // Initialize & sync with the wrapper
-  const { components, tables, store, queries, sync, publicClient } = tinyBaseWrapper({
+  // Initialize wrapper
+  const { components, tables, store, queries, storageAdapter, publicClient } = tinyBaseWrapper({
     world,
     mudConfig: mockConfig,
     networkConfig: {
       ...networkConfig,
       indexerUrl: useIndexer ? networkConfig.indexerUrl : undefined,
     },
-    startSync,
   });
+
+  // Sync components with the chain
+  const sync = createSync({
+    components,
+    store,
+    networkConfig,
+    publicClient,
+    onSync: {
+      progress: (_, __, progress) => console.log(`Syncing: ${(progress * 100).toFixed()}%`),
+      complete: (blockNumber) => `Synced to block ${blockNumber?.toString()}`,
+      error: (err) => console.error(err),
+    },
+  });
+  sync.start();
+  world.registerDisposer(sync.unsubscribe);
 
   // Sync RECS components for comparison
   const { components: recsComponents } = await syncToRecs({
@@ -646,7 +662,7 @@ describe("tinyBaseWrapper", () => {
       await waitForSyncLive();
 
       // Aggregate updates triggered by the system on component changes
-      let aggregator: ComponentSystemUpdate<typeof components.Position.schema>[] = [];
+      let aggregator: TableQueryUpdate<typeof components.Position.schema>[] = [];
       const onChange = (update: (typeof aggregator)[number]) => aggregator.push(update);
 
       return { components, queries, tableId, waitForBlockSynced, entities, onChange, aggregator };

@@ -2,14 +2,14 @@ import { Store as StoreConfig } from "@latticexyz/store";
 import { Tables } from "@latticexyz/store/internal";
 import { Read, Sync } from "@primodiumxyz/sync-stack";
 
-import { createCustomWriter } from "@/sync/createCustomWriter";
+import { createStorageAdapter } from "@/store/sync";
 import {
   CreateSyncOptions,
   CreateIndexerSyncOptions,
   CreateRpcSyncOptions,
   CreateSyncResult,
   Sync as SyncType,
-} from "@/types";
+} from "@/__tests__/utils/sync/types";
 
 import { hydrateFromIndexer, hydrateFromRpc, subToRpc } from "./handleSync";
 
@@ -96,7 +96,7 @@ const createIndexerSync = <config extends StoreConfig, extraTables extends Table
       indexerUrl: indexerUrl!,
       filter: { address: worldAddress, filters: logFilters },
     }),
-    writer: createCustomWriter({ store }),
+    writer: createStorageAdapter({ store }),
   });
 };
 
@@ -123,7 +123,7 @@ const createRpcSync = <config extends StoreConfig, extraTables extends Tables | 
         fromBlock: startBlock,
         toBlock: endBlock,
       }),
-      writer: createCustomWriter({ store }),
+      writer: createStorageAdapter({ store }),
     }),
     live: Sync.withCustom({
       reader: Read.fromRPC.subscribe({
@@ -131,7 +131,7 @@ const createRpcSync = <config extends StoreConfig, extraTables extends Tables | 
         publicClient,
         logFilter: logFilters,
       }),
-      writer: createCustomWriter({ store }),
+      writer: createStorageAdapter({ store }),
     }),
   };
 };
