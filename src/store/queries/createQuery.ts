@@ -32,13 +32,6 @@ export type CreateQueryResult = {
   unsubscribe: () => void;
 };
 
-// 1. Pass value schema (so we need schema for all components)
-// 2. Get the keys
-// 3. On change, getCellChange for each key, and get the current value
-// 4. Figure out when getCellChange is undefined
-// 5. Init type = updatetype or undefined
-// 6. Set type depending on the values (new row undefined means exit, old row undefined means enter, both defined means change, getCellChange undefined means??) and set values as well
-
 /* ---------------------------------- QUERY --------------------------------- */
 // Create a listener associated with a query for a given table (or not), and run callbacks on enter, exit, and change
 export const createQuery = <S extends Schema, T = unknown>({
