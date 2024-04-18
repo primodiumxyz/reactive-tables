@@ -1,5 +1,4 @@
 import { Store as StoreConfig } from "@latticexyz/store";
-import { Tables } from "@latticexyz/store/internal";
 import { Read, Sync } from "@primodiumxyz/sync-stack";
 
 import { createStorageAdapter } from "@/adapter";
@@ -12,12 +11,13 @@ import {
 } from "@/__tests__/utils/sync/types";
 
 import { hydrateFromIndexer, hydrateFromRpc, subToRpc } from "./handleSync";
+import { ExtraTables } from "@/types";
 
 /* -------------------------------------------------------------------------- */
 /*                                   GLOBAL                                   */
 /* -------------------------------------------------------------------------- */
 
-export const createSync = <config extends StoreConfig, extraTables extends Tables | undefined>({
+export const createSync = <config extends StoreConfig, extraTables extends ExtraTables>({
   components,
   store,
   networkConfig,
@@ -27,8 +27,7 @@ export const createSync = <config extends StoreConfig, extraTables extends Table
   const { complete: onComplete } = onSync;
   const { indexerUrl, initialBlockNumber } = networkConfig;
 
-  // TODO: pass filters when creating wrapper, opt in/out of some tables, e.g. store, world, base
-  const logFilters = Object.values(store.getTables()).map((table) => ({ tableId: table.metadata.id as string }));
+  const logFilters = Object.values(components).map((table) => ({ tableId: table.id as string }));
 
   let unsubs: (() => void)[] = [];
   const startSync = () => {
@@ -67,12 +66,12 @@ export const createSync = <config extends StoreConfig, extraTables extends Table
     unsubs.push(rpcSync.historical.unsubscribe);
     unsubs.push(rpcSync.live.unsubscribe);
 
-    hydrateFromRpc(components, networkConfig, rpcSync.historical, {
+    hydrateFromRpc(components, rpcSync.historical, {
       ...onSync,
       // Once historical sync is complete, subscribe to new blocks
       complete: (blockNumber) => {
         onComplete(blockNumber);
-        subToRpc(components, networkConfig, rpcSync.live, onSync);
+        subToRpc(components, rpcSync.live);
       },
     });
   };
@@ -84,7 +83,7 @@ export const createSync = <config extends StoreConfig, extraTables extends Table
 /*                                   INDEXER                                  */
 /* -------------------------------------------------------------------------- */
 
-const createIndexerSync = <config extends StoreConfig, extraTables extends Tables | undefined>({
+const createIndexerSync = <config extends StoreConfig, extraTables extends ExtraTables>({
   store,
   networkConfig,
   logFilters,
@@ -104,7 +103,7 @@ const createIndexerSync = <config extends StoreConfig, extraTables extends Table
 /*                                     RPC                                    */
 /* -------------------------------------------------------------------------- */
 
-const createRpcSync = <config extends StoreConfig, extraTables extends Tables | undefined>({
+const createRpcSync = <config extends StoreConfig, extraTables extends ExtraTables>({
   store,
   networkConfig,
   publicClient,

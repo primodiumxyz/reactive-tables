@@ -1,18 +1,15 @@
 import { Store as StoreConfig } from "@latticexyz/store";
-import { Tables } from "@latticexyz/store/internal";
 
-import { AllComponents, NetworkConfig } from "@/types";
+import { AllComponents, ExtraTables, NetworkConfig } from "@/types";
 import { OnSyncCallbacks, Sync as SyncType } from "@/__tests__/utils/sync/types";
 import { SyncSourceType, SyncStep } from "@/constants";
 
-export type HandleSync<config extends StoreConfig, tables extends Tables> = (
+export const hydrateFromIndexer = <config extends StoreConfig, tables extends ExtraTables>(
   components: AllComponents<config, tables>,
   networkConfig: NetworkConfig,
   sync: SyncType,
   onSync: OnSyncCallbacks,
-) => void;
-
-export const hydrateFromIndexer: HandleSync<StoreConfig, Tables> = (components, networkConfig, sync, onSync) => {
+) => {
   const { SyncSource, SyncStatus } = components;
   const { progress: onProgress, complete: onComplete, error: onError } = onSync;
 
@@ -37,7 +34,11 @@ export const hydrateFromIndexer: HandleSync<StoreConfig, Tables> = (components, 
   }, onError);
 };
 
-export const hydrateFromRpc: HandleSync<StoreConfig, Tables> = (components, networkConfig, sync, onSync) => {
+export const hydrateFromRpc = <config extends StoreConfig, tables extends ExtraTables>(
+  components: AllComponents<config, tables>,
+  sync: SyncType,
+  onSync: OnSyncCallbacks,
+) => {
   const { SyncStatus, SyncSource } = components;
   const { progress: onProgress, complete: onComplete, error: onError } = onSync;
 
@@ -76,7 +77,10 @@ export const hydrateFromRpc: HandleSync<StoreConfig, Tables> = (components, netw
   );
 };
 
-export const subToRpc: HandleSync<StoreConfig, Tables> = (components, _, sync) => {
+export const subToRpc = <config extends StoreConfig, tables extends ExtraTables>(
+  components: AllComponents<config, tables>,
+  sync: SyncType,
+) => {
   const { SyncStatus } = components;
   sync.start(
     (_, blockNumber) => {

@@ -18,7 +18,6 @@ import {
   getMockNetworkConfig,
   getRandomBigInts,
   getRandomNumbers,
-  mockFunctions,
   setItems,
   setPositionForEntity,
 } from "@/__tests__/utils";
@@ -36,8 +35,8 @@ type TestOptions = {
 /*                                    INIT                                    */
 /* -------------------------------------------------------------------------- */
 
-const init = async (options: TestOptions = { useIndexer: true, startSync: true }) => {
-  const { useIndexer, startSync } = options;
+const init = async (options: TestOptions = { useIndexer: false }) => {
+  const { useIndexer } = options;
   const world = createWorld();
   const networkConfig = getMockNetworkConfig();
 
@@ -55,7 +54,10 @@ const init = async (options: TestOptions = { useIndexer: true, startSync: true }
   const sync = createSync({
     components,
     store,
-    networkConfig,
+    networkConfig: {
+      ...networkConfig,
+      indexerUrl: useIndexer ? networkConfig.indexerUrl : undefined,
+    },
     publicClient,
     onSync: {
       progress: (_, __, progress) => console.log(`Syncing: ${(progress * 100).toFixed()}%`),
@@ -153,7 +155,7 @@ describe("tinyBaseWrapper", () => {
     };
 
     // Initialize wrapper
-    const { components, tables, store, queries, storageAdapter, publicClient } = tinyBaseWrapper({
+    const { components } = tinyBaseWrapper({
       world,
       mudConfig: mockConfig,
       networkConfig,
@@ -165,7 +167,6 @@ describe("tinyBaseWrapper", () => {
 
     expect(components.A.get()).toHaveProperty("x", 1);
     expect(components.A.get()).toHaveProperty("y", 1);
-    console.log(components.B.get());
     expect(components.B.get()).toHaveProperty("bool", true);
     expect(components.B.get()).toHaveProperty("array", [singletonEntity]);
   });
@@ -236,14 +237,9 @@ describe("tinyBaseWrapper", () => {
       await runTest({ useIndexer: true }, txs);
     });
 
-    // TODO: FIX issue with RPC only indexing the first transaction
-    // Probably because it's subscribing to RPC on block 0, then no update at all
-    // Managed to fix this issue before but really with nothing specific so no idea what is is/was
-    it.skip("using RPC", async () => {
-      // const txs = await fuzz(FUZZ_ITERATIONS);
-      const { blockNumber } = await mockFunctions.storeItems();
-      // await runTest({ useIndexer: false }, txs);
-      await runTest({ useIndexer: false }, { Inventory: blockNumber });
+    it("using RPC", async () => {
+      const txs = await fuzz(FUZZ_ITERATIONS);
+      await runTest({ useIndexer: false }, txs);
     });
   });
 

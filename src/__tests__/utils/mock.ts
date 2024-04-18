@@ -72,8 +72,7 @@ export const mockFunctions = {
   // Add elements to the inventory array
   storeItems: async () => {
     const hash = await networkConfig.worldContract.write.storeItems(
-      // [Array.from({ length: 5 }, () => random(1, 100)), Array.from({ length: 5 }, () => random(1, 100))],
-      [[1], [1]],
+      [Array.from({ length: 5 }, () => random(1, 100)), Array.from({ length: 5 }, () => random(1, 100))],
       {
         chain: networkConfig.chain,
         account: networkConfig.burnerAccount.address,
