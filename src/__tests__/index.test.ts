@@ -38,7 +38,7 @@ const init = async (options: TestOptions = { useIndexer: true, startSync: true }
   const networkConfig = getMockNetworkConfig();
 
   // Initialize & sync with the wrapper
-  const { components, tables, store, sync, publicClient } = tinyBaseWrapper({
+  const { components, tables, store, queries, sync, publicClient } = tinyBaseWrapper({
     world,
     mudConfig: mockConfig,
     networkConfig: {
@@ -96,6 +96,7 @@ const init = async (options: TestOptions = { useIndexer: true, startSync: true }
     components,
     tables,
     store,
+    queries,
     sync,
     publicClient,
     recsComponents,
@@ -112,12 +113,13 @@ describe("tinyBaseWrapper", () => {
   /* -------------------------------------------------------------------------- */
 
   it("should properly initialize and return expected objects", async () => {
-    const { components, tables, publicClient, sync, store } = await init({ startSync: false });
+    const { components, tables, publicClient, sync, store, queries } = await init({ startSync: false });
 
     // Verify the existence of the result
     expect(components).toBeDefined();
     expect(tables).toBeDefined();
     expect(store).toBeDefined();
+    expect(queries).toBeDefined();
     expect(sync).toBeDefined();
     expect(publicClient).toBeDefined();
   });
@@ -437,6 +439,11 @@ describe("tinyBaseWrapper", () => {
         expect(result.current).toHaveProperty("x", argsB.x);
         expect(result.current).toHaveProperty("y", argsB.y);
         expect(result.current).toEqual(resultWithKeys.current);
+
+        // Remove an entity
+        components.Position.remove(player);
+        expect(result.current).toBeUndefined();
+        expect(resultWithKeys.current).toBeUndefined();
       });
 
       it("pauseUpdates()", async () => {
@@ -507,6 +514,10 @@ describe("tinyBaseWrapper", () => {
         // Update the position for a few entities
         await Promise.all(entities.slice(0, 2).map(async (entity) => await updatePosition(entity, waitForBlockSynced)));
         expect(result.current.sort()).toEqual(entities.slice(0, 2).sort());
+
+        // Remove an entity
+        components.Position.remove(entities[0]);
+        expect(result.current).toEqual([entities[1]]);
       });
 
       it("useAllWith()", async () => {
@@ -544,6 +555,10 @@ describe("tinyBaseWrapper", () => {
         const { blockNumber: blockNumberD } = await setPositionForEntity({ x: targetPos.x, y: 0, entity: entities[2] });
         await waitForBlockSynced(blockNumberD, "Position", entities[2]);
         expect(result.current.sort()).toEqual([entities[0], entities[1]].sort());
+
+        // Remove an entity
+        components.Position.remove(entities[0]);
+        expect(result.current).toEqual([entities[1]]);
       });
 
       it("useAllWithout()", async () => {
@@ -580,6 +595,10 @@ describe("tinyBaseWrapper", () => {
         const { blockNumber: blockNumberD } = await setPositionForEntity({ x: targetPos.x, y: 0, entity: entities[2] });
         await waitForBlockSynced(blockNumberD, "Position", entities[2]);
         expect(result.current.sort()).toEqual(entities.slice(2).sort());
+
+        // Remove an entity
+        components.Position.remove(entities[2]);
+        expect(result.current).toEqual(entities.slice(3));
       });
     });
 
@@ -591,17 +610,16 @@ describe("tinyBaseWrapper", () => {
 
         const player = entities[0];
         const keys = components.Position.getEntityKeys(player);
-        console.log(keys);
         expect(keys).toEqual({ id: player });
       });
     });
   });
 
   /* -------------------------------------------------------------------------- */
-  /*                              COMPONENT SYSTEMS                             */
+  /*                                   QUERIES                                  */
   /* -------------------------------------------------------------------------- */
 
-  describe("systems: should properly trigger systems with correct values", () => {
+  describe("queries: should emit appropriate update events with the correct data", () => {
     const getRandomArgs = (entity: Entity) => {
       const nums = getRandomNumbers(2);
       return { entity, x: nums[0], y: nums[1] };
@@ -615,8 +633,13 @@ describe("tinyBaseWrapper", () => {
       return { args };
     };
 
+    const updatePositionTo = async (entity: Entity, x: number, y: number, waitForBlockSynced: Function) => {
+      const { blockNumber } = await setPositionForEntity({ entity, x, y });
+      await waitForBlockSynced(blockNumber, "Position", entity);
+    };
+
     const preTest = async () => {
-      const { components, waitForSyncLive, waitForBlockSynced, entities } = await init();
+      const { components, queries, waitForSyncLive, waitForBlockSynced, entities } = await init();
       assert(components);
       const tableId = components.Position.id;
       // Just wait for sync for the test to be accurate (no system trigger due to storing synced values)
@@ -624,36 +647,139 @@ describe("tinyBaseWrapper", () => {
 
       // Aggregate updates triggered by the system on component changes
       let aggregator: ComponentSystemUpdate<typeof components.Position.schema>[] = [];
-      const system = (update: (typeof aggregator)[number]) => aggregator.push(update);
-      const { unsubscribe } = components.Position.createSystem({ options: { runOnInit: false }, system });
+      const onChange = (update: (typeof aggregator)[number]) => aggregator.push(update);
+
+      return { components, queries, tableId, waitForBlockSynced, entities, onChange, aggregator };
+    };
+
+    it("createQueryWrapper(): without query", async () => {
+      const { components, queries, tableId, waitForBlockSynced, entities, onChange, aggregator } = await preTest();
+      const { unsubscribe } = components.Position.createQuery({
+        queries,
+        tableId,
+        schema: components.Position.schema,
+        onChange,
+        options: { runOnInit: false },
+      });
       expect(aggregator).toEqual([]);
 
-      return { components, waitForBlockSynced, tableId, entities, aggregator, system, unsubscribe };
-    };
+      // Update the position for an entity (and enter the table)
+      const valueA = components.Position.get(entities[0]);
+      await updatePosition(entities[0], waitForBlockSynced);
+      const valueB = components.Position.get(entities[0]);
 
-    const wrapper = async (callback: (args: Awaited<ReturnType<typeof preTest>>) => Promise<void>) => {
-      const { components, waitForBlockSynced, tableId, entities, aggregator, system, unsubscribe } = await preTest();
-      await callback({ components, waitForBlockSynced, tableId, entities, aggregator, system, unsubscribe });
+      expect(aggregator).toEqual([
+        { tableId, entity: entities[0], value: { current: valueB, prev: valueA }, type: valueA ? "change" : "enter" },
+      ]);
+
+      // Update entity[1]
+      const valueC = components.Position.get(entities[1]);
+      await updatePosition(entities[1], waitForBlockSynced);
+      const valueD = components.Position.get(entities[1]);
+      // Exit entity[0]
+      components.Position.remove(entities[0]);
+      // Enter again entity[0]
+      await updatePosition(entities[0], waitForBlockSynced);
+      const valueE = components.Position.get(entities[0]);
+
+      expect(aggregator).toEqual([
+        { tableId, entity: entities[0], value: { current: valueB, prev: valueA }, type: valueA ? "change" : "enter" },
+        { tableId, entity: entities[1], value: { current: valueD, prev: valueC }, type: valueC ? "change" : "enter" },
+        { tableId, entity: entities[0], value: { current: undefined, prev: valueB }, type: "exit" },
+        { tableId, entity: entities[0], value: { current: valueE, prev: undefined }, type: "enter" },
+      ]);
+
       unsubscribe();
-    };
+    });
 
-    it.only("runOnInit = false", async () => {
-      await wrapper(async ({ components, waitForBlockSynced, tableId, entities, aggregator, system }) => {
-        // Update the position for the first entity and check if the system is triggered
-        const initialValue = components.Position.get(entities[0]);
-        await updatePosition(entities[0], waitForBlockSynced);
-        const postValueA = components.Position.get(entities[0]);
+    it("createQueryWrapper(): run on init", async () => {
+      const { components, queries, tableId, waitForBlockSynced, entities, onChange, aggregator } = await preTest();
 
-        expect(aggregator).toHaveLength(1);
-        expect(aggregator[0]).toEqual({ tableId, entity: entities[0], value: [postValueA, initialValue] });
+      // Enter entities
+      await Promise.all(entities.map(async (entity) => await updatePosition(entity, waitForBlockSynced)));
 
-        // Run again
-        await updatePosition(entities[0], waitForBlockSynced);
-        const postValueB = components.Position.get(entities[0]);
-
-        expect(aggregator).toHaveLength(2);
-        expect(aggregator[1]).toEqual({ tableId, entity: entities[0], value: [postValueB, postValueA] });
+      const { unsubscribe } = components.Position.createQuery({
+        queries,
+        tableId,
+        schema: components.Position.schema,
+        onChange,
+        options: { runOnInit: true },
       });
+      expect(aggregator).toHaveLength(entities.length);
+
+      unsubscribe();
+    });
+
+    it("createQueryWrapper(): with query", async () => {
+      const { components, queries, tableId, waitForBlockSynced, entities, onChange, aggregator } = await preTest();
+      const matchQuery = (x: number) => x > 5 && x < 15;
+
+      const { unsubscribe } = components.Position.createQuery({
+        queries,
+        tableId,
+        schema: components.Position.schema,
+        onChange,
+        options: { runOnInit: false },
+        query: ({ select, where }) => {
+          // We need to make one select for the row to be included
+          select("x");
+          // Where x is between 5 and 15
+          where((getCell) => matchQuery(Number(getCell("x"))));
+        },
+      });
+
+      // Query didn't run on init so it should be empty
+      expect(aggregator).toEqual([]);
+
+      // Move an entity inside the query condition
+      const valueA = components.Position.get(entities[0]);
+      await updatePositionTo(entities[0], 9, 9, waitForBlockSynced);
+      const valueB = components.Position.get(entities[0]);
+
+      expect(aggregator).toEqual([
+        {
+          tableId,
+          entity: entities[0],
+          value: { current: valueB, prev: valueA },
+          type: "enter", // because we didn't run on init so it's necessarily an enter
+        },
+      ]);
+
+      // Update entity[1] inside the query condition
+      const valueC = components.Position.get(entities[1]);
+      await updatePositionTo(entities[1], 10, 10, waitForBlockSynced);
+      const valueD = components.Position.get(entities[1]);
+
+      expect(aggregator[1]).toEqual({
+        tableId,
+        entity: entities[1],
+        value: { current: valueD, prev: valueC },
+        type: "enter",
+      });
+
+      // Exit entity[0]
+      components.Position.remove(entities[0]);
+
+      expect(aggregator[2]).toEqual({
+        tableId,
+        entity: entities[0],
+        value: { current: undefined, prev: valueB },
+        type: "exit",
+      });
+
+      // Move out entity[1] from the query condition
+      await updatePositionTo(entities[1], 20, 20, waitForBlockSynced);
+      const valueE = components.Position.get(entities[1]);
+
+      expect(aggregator).toHaveLength(4);
+      expect(aggregator[3]).toEqual({
+        tableId,
+        entity: entities[1],
+        value: { current: valueE, prev: valueD },
+        type: "exit",
+      });
+
+      unsubscribe();
     });
   });
 });
