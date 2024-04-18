@@ -1,7 +1,7 @@
 import { Schema, World } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { MUDChain } from "@latticexyz/common/chains";
-import { ResolvedStoreConfig, Table as MUDTable, Tables as MUDTables } from "@latticexyz/store/internal";
+import { ResolvedStoreConfig, Tables as MUDTables } from "@latticexyz/store/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { KeySchema } from "@latticexyz/protocol-parser/internal";
 import { Address, PublicClient } from "viem";

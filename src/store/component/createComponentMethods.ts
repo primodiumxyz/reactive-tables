@@ -4,19 +4,24 @@ import { singletonEntity } from "@latticexyz/store-sync/recs";
 
 import { useEffect, useState } from "react";
 
-import { queryAllWithValue, queryAllWithoutValue, useAllWithValue, useAllWithoutValue } from "@/store/queries";
+import {
+  CreateQueryWrapperOptions,
+  createQueryWrapper,
+  queryAllWithValue,
+  queryAllWithoutValue,
+  useAllWithValue,
+  useAllWithoutValue,
+} from "@/store/queries";
 import { createContractComponentMethods } from "./createContractComponentMethods";
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
 import { arrayToIterator, createComponentMethodsUtils } from "./utils";
 import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
 import { ComponentValue, ComponentValueSansMetadata, Table } from "@/store/component/types";
-import { CreateComponentSystemOptions } from "../system/types";
-import { createComponentSystem } from "../system";
 
 export const createComponentMethods = <
   table extends Table,
-  S extends Schema,
-  TKeySchema extends KeySchema = KeySchema,
+  VS extends Schema,
+  KS extends Schema = Schema,
   T = unknown,
 >({
   store,
@@ -24,7 +29,7 @@ export const createComponentMethods = <
   table,
   tableId,
   keySchema,
-}: CreateComponentMethodsOptions<table>): CreateComponentMethodsResult<S, TKeySchema, T> => {
+}: CreateComponentMethodsOptions<table>): CreateComponentMethodsResult<VS, KS, T> => {
   const { paused } = createComponentMethodsUtils(store, tableId);
 
   // Native RECS entities iterator
@@ -32,7 +37,7 @@ export const createComponentMethods = <
 
   /* --------------------------------- STREAMS -------------------------------- */
   // Pause updates for an entity (don't react to changes in the store)
-  const pauseUpdates = (entity?: Entity, value?: ComponentValueSansMetadata<S, T>) => {
+  const pauseUpdates = (entity?: Entity, value?: ComponentValueSansMetadata<VS, T>) => {
     entity = entity ?? singletonEntity;
 
     paused.set(entity, true);
@@ -48,7 +53,7 @@ export const createComponentMethods = <
   };
 
   /* ----------------------------------- SET ---------------------------------- */
-  const set = (value: ComponentValueSansMetadata<S, T> | ComponentValue<S, T>, entity?: Entity) => {
+  const set = (value: ComponentValueSansMetadata<VS, T> | ComponentValue<VS, T>, entity?: Entity) => {
     entity = entity ?? singletonEntity;
 
     // Encode the value and set it in the store
@@ -63,15 +68,15 @@ export const createComponentMethods = <
   };
 
   /* ----------------------------------- GET ---------------------------------- */
-  function get(): ComponentValue<S, T> | undefined;
-  function get(entity: Entity | undefined): ComponentValue<S, T> | undefined;
-  function get(entity?: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S, T>): ComponentValue<S, T>;
-  function get(entity?: Entity, defaultValue?: ComponentValueSansMetadata<S, T>) {
+  function get(): ComponentValue<VS, T> | undefined;
+  function get(entity: Entity | undefined): ComponentValue<VS, T> | undefined;
+  function get(entity?: Entity | undefined, defaultValue?: ComponentValueSansMetadata<VS, T>): ComponentValue<VS, T>;
+  function get(entity?: Entity, defaultValue?: ComponentValueSansMetadata<VS, T>) {
     entity = entity ?? singletonEntity;
     const row = store.getRow(tableId, entity);
 
     const decoded = Object.entries(row).length > 0 ? TinyBaseAdapter.parse(row) : undefined; // empty object should be undefined
-    return (decoded ?? defaultValue) as ComponentValue<S, T>;
+    return (decoded ?? defaultValue) as ComponentValue<VS, T>;
   }
   // Utility function to save on computation when we're only interested in the raw data (to set again directly)
   const getRaw = (entity: Entity) => {
@@ -81,14 +86,14 @@ export const createComponentMethods = <
 
   /* --------------------------------- QUERIES -------------------------------- */
   const getAll = () => {
-    return store.getRowIds(tableId);
+    return store.getRowIds(tableId) as Entity[];
   };
 
-  const getAllWith = (value: Partial<ComponentValue<S, T>>) => {
+  const getAllWith = (value: Partial<ComponentValue<VS, T>>) => {
     return queryAllWithValue({ queries, tableId, value }).entities;
   };
 
-  const getAllWithout = (value: Partial<ComponentValue<S, T>>) => {
+  const getAllWithout = (value: Partial<ComponentValue<VS, T>>) => {
     return queryAllWithoutValue({ queries, tableId, value }).entities;
   };
 
@@ -110,11 +115,11 @@ export const createComponentMethods = <
     return entities;
   }
 
-  const useAllWith = (value: Partial<ComponentValue<S, T>>) => {
+  const useAllWith = (value: Partial<ComponentValue<VS, T>>) => {
     return useAllWithValue(queries, tableId, value);
   };
 
-  const useAllWithout = (value: Partial<ComponentValue<S, T>>) => {
+  const useAllWithout = (value: Partial<ComponentValue<VS, T>>) => {
     return useAllWithoutValue(queries, tableId, value);
   };
 
@@ -130,7 +135,7 @@ export const createComponentMethods = <
   };
 
   /* --------------------------------- UPDATE --------------------------------- */
-  const update = (value: Partial<ComponentValue<S, T>>, entity?: Entity) => {
+  const update = (value: Partial<ComponentValue<VS, T>>, entity?: Entity) => {
     entity = entity ?? singletonEntity;
     const currentValue = getRaw(entity);
 
@@ -145,9 +150,12 @@ export const createComponentMethods = <
   };
 
   /* -------------------------------- USE VALUE ------------------------------- */
-  function useValue(entity?: Entity | undefined): ComponentValue<S, T> | undefined;
-  function useValue(entity: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S, T>): ComponentValue<S, T>;
-  function useValue(entity?: Entity, defaultValue?: ComponentValueSansMetadata<S, T>) {
+  function useValue(entity?: Entity | undefined): ComponentValue<VS, T> | undefined;
+  function useValue(
+    entity: Entity | undefined,
+    defaultValue?: ComponentValueSansMetadata<VS, T>,
+  ): ComponentValue<VS, T>;
+  function useValue(entity?: Entity, defaultValue?: ComponentValueSansMetadata<VS, T>) {
     entity = entity ?? singletonEntity;
     const [value, setValue] = useState(get(entity));
 
@@ -184,9 +192,14 @@ export const createComponentMethods = <
   }
 
   /* --------------------------------- SYSTEM --------------------------------- */
-  // Call with createSystem({ system: (update) => { ... }, options: { runOnInit: true/false })
-  const createSystem = (options: Omit<CreateComponentSystemOptions<S, T>, "tableId" | "store">) =>
-    createComponentSystem({ tableId, store, ...options });
+  // Create a query tied to this component, with callbacks on change, enter & exit from the query conditions
+  const createQuery = (options: Omit<CreateQueryWrapperOptions<VS, T>, "queries" | "tableId" | "schema">) =>
+    createQueryWrapper({
+      queries,
+      tableId,
+      schema: table.schema as VS,
+      ...options,
+    });
 
   const methods = {
     entities,
@@ -205,7 +218,7 @@ export const createComponentMethods = <
     use: useValue,
     pauseUpdates,
     resumeUpdates,
-    createSystem,
+    createQuery,
   };
 
   // If it's an internal component, no need for contract methods

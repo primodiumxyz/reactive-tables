@@ -1,6 +1,9 @@
 import { DynamicPrimitiveType, StaticPrimitiveType } from "@latticexyz/schema-type/internal";
-import { TinyBaseFormattedType } from "./formatValueForTinyBase";
 import { Hex } from "viem";
+
+import { TinyBaseFormattedType } from "./formatValueForTinyBase";
+
+import { encodedDataKeys } from "@/constants";
 
 type DecodedTinyBaseType =
   | {
@@ -8,7 +11,6 @@ type DecodedTinyBaseType =
     }
   | undefined;
 
-const encodedDataKeys = ["__staticData", "__encodedLengths", "__dynamicData", "__lastSyncedAtBlock"];
 const ignoreKey = (key: string) => encodedDataKeys.includes(key) || key.startsWith("type__");
 
 export const decodeValueFromTinyBase = (formattedData: TinyBaseFormattedType): DecodedTinyBaseType => {

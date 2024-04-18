@@ -6,7 +6,7 @@ import { KeySchema, Table as MUDTable, ValueSchema } from "@latticexyz/store/int
 import { storeToV1 } from "@latticexyz/store/config/v2";
 
 import { SchemaAbiTypeToRecsType } from "@/store/utils";
-import { CreateComponentSystemOptions, CreateComponentSystemResult } from "@/store/system/types";
+import { CreateQueryResult, CreateQueryWrapperOptions } from "../queries";
 
 export type Components<tables extends Tables, config extends StoreConfig> = {
   [tableName in keyof tables]: Component<tables[tableName], config>;
@@ -71,16 +71,16 @@ export type ContractTable = BaseTable & {
 
 export type InternalTable = BaseTable & {
   readonly namespace: "internal";
-  readonly schema: Schema;
 };
 
 export type BaseTable = {
+  readonly namespace: string;
   readonly tableId: string;
-  namespace: string;
   readonly name: string;
+  readonly schema: Schema;
 };
 
-export type Table = ContractTable | InternalTable | MUDTable;
+export type Table = ContractTable | InternalTable;
 export type Tables = {
   readonly [k: string]: Table;
 };
@@ -131,7 +131,7 @@ export type ComponentMethods<S extends Schema, T = unknown> = OriginalComponentM
   pauseUpdates: (entity?: Entity, value?: ComponentValueSansMetadata<S, T>) => void;
   resumeUpdates: (entity?: Entity) => void;
 
-  createSystem: (options: Omit<CreateComponentSystemOptions<S, T>, "tableId" | "store">) => CreateComponentSystemResult;
+  createQuery: (options: CreateQueryWrapperOptions<S, T>) => CreateQueryResult;
 };
 
 export type ContractComponentMethods<VS extends Schema = Schema, KS extends Schema = Schema, T = unknown> = {

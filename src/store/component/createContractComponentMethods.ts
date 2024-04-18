@@ -38,13 +38,13 @@ export const createContractComponentMethods = <VS extends Schema, KS extends Sch
     return has(entity);
   };
 
-  const useWithKeys = (key?: ComponentKey<KS, T>, defaultValue?: ComponentValueSansMetadata<VS, T>) => {
-    const entity = key ? encodeEntity(keySchema, key) : singletonEntity;
+  const useWithKeys = (keys?: ComponentKey<KS, T>, defaultValue?: ComponentValueSansMetadata<VS, T>) => {
+    const entity = keys ? encodeEntity(keySchema, keys) : singletonEntity;
     return use(entity, defaultValue);
   };
 
-  const setWithKeys = (value: ComponentValue<VS, T>, key: ComponentKey<KS, T>) => {
-    const entity = key ? encodeEntity(keySchema, key) : singletonEntity;
+  const setWithKeys = (value: ComponentValue<VS, T>, keys: ComponentKey<KS, T>) => {
+    const entity = keys ? encodeEntity(keySchema, keys) : singletonEntity;
     return set(value, entity);
   };
 
