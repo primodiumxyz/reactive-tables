@@ -106,6 +106,9 @@ devDependencies:
   typescript:
     specifier: ^5.4.4
     version: 5.4.5
+  vite:
+    specifier: ^5.2.9
+    version: 5.2.9(@types/node@18.19.31)
   vitest:
     specifier: ^1.4.0
     version: 1.5.0(@types/node@18.19.31)(happy-dom@14.7.1)(jsdom@24.0.0)

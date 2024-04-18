@@ -1,5 +1,4 @@
 import { Entity, Schema } from "@latticexyz/recs";
-import { KeySchema } from "@latticexyz/protocol-parser/internal";
 import { singletonEntity } from "@latticexyz/store-sync/recs";
 
 import { useEffect, useState } from "react";
@@ -201,26 +200,37 @@ export const createComponentMethods = <
       ...options,
     });
 
-  const methods = {
+  const baseMethods = {
     entities,
     get,
     set,
     getAll,
     getAllWith,
     getAllWithout,
-    useAll,
-    useAllWith,
-    useAllWithout,
     remove,
     clear,
     update,
     has,
-    use: useValue,
     pauseUpdates,
     resumeUpdates,
     createQuery,
   };
 
+  // Add hooks only if not in a node environment
+  let hookMethods = { useAll, useAllWith, useAllWithout, use: useValue };
+  if (typeof window === "undefined") {
+    Object.keys(hookMethods).forEach((key) => {
+      hookMethods[key as keyof typeof hookMethods] = () => {
+        console.warn(`${key} is only available in the browser`);
+        return undefined as any;
+      };
+    });
+  }
+
+  const methods = {
+    ...baseMethods,
+    ...hookMethods,
+  };
   // If it's an internal component, no need for contract methods
   if (table.namespace === "internal") return methods;
 
