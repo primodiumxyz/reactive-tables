@@ -10,7 +10,7 @@ import { Store } from "tinybase/store";
 import { Queries } from "tinybase/queries";
 
 import { Components, ComponentMethods, Table, Tables, ContractComponentMethods } from "@/store/component/types";
-import { StorageAdapter } from "@/store/sync";
+import { StorageAdapter } from "@/adapter";
 import { internalComponentsTables } from "@/store/internal/internalComponents";
 
 export type ExtraTables = Tables | MUDTables | undefined;

@@ -37,12 +37,12 @@ export type ComponentTable<
   metadata: M & {
     componentName: table["name"];
     tableName: ResourceLabel<storeToV1<config>["namespace"], string>;
-    keySchema: table extends ContractTable
-      ? { [name in keyof table["keySchema"] & string]: table["keySchema"][name]["type"] }
-      : undefined;
-    valueSchema: table extends ContractTable
-      ? { [name in keyof table["valueSchema"] & string]: table["valueSchema"][name]["type"] }
-      : undefined;
+    keySchema: table["namespace"] extends "internal"
+      ? undefined
+      : { [name in keyof table["keySchema"] & string]: table["keySchema"][name]["type"] };
+    valueSchema: table["namespace"] extends "internal"
+      ? undefined
+      : { [name in keyof table["valueSchema"] & string]: table["valueSchema"][name]["type"] };
   };
 };
 

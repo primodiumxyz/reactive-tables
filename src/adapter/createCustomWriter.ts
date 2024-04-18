@@ -1,4 +1,3 @@
-import { Store as StoreConfig } from "@latticexyz/store";
 import { hexToResource, spliceHex } from "@latticexyz/common";
 import { StorageAdapterLog } from "@latticexyz/store-sync";
 import { hexKeyTupleToEntity } from "@latticexyz/store-sync/recs";

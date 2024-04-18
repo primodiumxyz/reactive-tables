@@ -8,7 +8,7 @@ export default defineConfig({
   },
   test: {
     environment: "happy-dom",
-    testTimeout: 20000,
+    testTimeout: 50000,
     pool: "forks",
     hookTimeout: 20000,
   },

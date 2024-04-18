@@ -3,12 +3,11 @@ import { Type as RecsType } from "@latticexyz/recs";
 import { SchemaAbiType } from "@latticexyz/schema-type/internal";
 import { Store } from "tinybase/store";
 
-import { ComponentTable } from "@/store/component/types";
-import { Table } from "@latticexyz/store/internal";
+import { ComponentTable, ContractTable } from "@/store/component/types";
 
 // Format component's table so it can fit TinyBase tabular data structure
 // We want this to be able to access a component efficiently using TinyBase, instead of mapping through all components
-export const setComponentTable = <table extends Table, config extends StoreConfig>(
+export const setComponentTable = <table extends ContractTable, config extends StoreConfig>(
   store: Store,
   componentTable: Omit<ComponentTable<table, config>, "schema">,
 ) => {
@@ -17,6 +16,7 @@ export const setComponentTable = <table extends Table, config extends StoreConfi
       id: componentTable.id,
       componentName: componentTable.metadata.componentName,
       tableName: componentTable.metadata.tableName,
+      namespace: componentTable.namespace,
     },
     keySchema: componentTable.metadata.keySchema!, // we won't pass an internal table (missing schemas)
     valueSchema: componentTable.metadata.valueSchema!,
@@ -25,7 +25,7 @@ export const setComponentTable = <table extends Table, config extends StoreConfi
 
 // Retrieve a component's table from TinyBase in the RECS compatible Component format
 // This won't include values, as those are stored in their own table (at `componentTable.id`)
-export const getComponentTable = <table extends Table, config extends StoreConfig>(
+export const getComponentTable = <table extends ContractTable, config extends StoreConfig>(
   store: Store,
   tableId: string,
 ): Omit<ComponentTable<table, config>, "schema"> => {
@@ -34,6 +34,7 @@ export const getComponentTable = <table extends Table, config extends StoreConfi
 
   return {
     id: table.metadata.id as ComponentTable<table, config>["id"],
+    namespace: table.metadata.namespace as ComponentTable<table, config>["namespace"],
     // schema: table.schema as ComponentTable<table, config>["schema"],
     metadata: {
       componentName: table.metadata.componentName as ComponentTable<table, config>["metadata"]["componentName"],

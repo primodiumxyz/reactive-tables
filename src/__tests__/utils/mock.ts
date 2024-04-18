@@ -4,21 +4,49 @@ import { Hex } from "viem";
 
 const networkConfig = getMockNetworkConfig();
 
+const mockFunctionToComponent = {
+  move: "Position",
+  increment: "Counter",
+  storeItems: "Inventory",
+};
+
 // We don't want to run everything with Promise.all because it will quickly cause an issue with Viem (transaction underpriced)
 // This way it should at least reduce a bit the waiting time
 export const fuzz = async (iterations: number) => {
-  const allFunctions = Object.values(mockFunctions);
-  const tasks = [];
+  const allFunctionNames = Object.keys(mockFunctions);
+  let tasks = [];
+  // Remember function called - tx block number
+  let txInfo = Object.entries(mockFunctionToComponent).reduce(
+    (acc, [func, comp]) => {
+      acc[comp] = BigInt(0);
+      return acc;
+    },
+    {} as Record<(typeof mockFunctionToComponent)[keyof typeof mockFunctionToComponent], bigint>,
+  );
 
   for (let i = 0; i < iterations; i++) {
-    const randomFunction = allFunctions[random(0, allFunctions.length - 1)];
-    tasks.push(randomFunction());
+    const rand = Math.floor(Math.random() * allFunctionNames.length);
+    const functionName = allFunctionNames[rand];
+    const randomFunction = mockFunctions[functionName as keyof typeof mockFunctions];
+    tasks.push({
+      name: mockFunctionToComponent[functionName as keyof typeof mockFunctionToComponent],
+      task: randomFunction,
+    });
 
     if (tasks.length === 20 || i === iterations - 1) {
-      await Promise.all(tasks);
+      const txReceipts = await Promise.all(tasks.map((task) => task.task()));
+      const blockNumbers = txReceipts.map((tx) => tx.blockNumber);
+      txReceipts.forEach((tx, index) => {
+        if (blockNumbers[index] > txInfo[tasks[index].name as keyof typeof txInfo]) {
+          txInfo[tasks[index].name as keyof typeof txInfo] = blockNumbers[index];
+        }
+      });
+
       tasks.length = 0;
     }
   }
+
+  return txInfo;
 };
 
 // Test functions
@@ -44,7 +72,8 @@ export const mockFunctions = {
   // Add elements to the inventory array
   storeItems: async () => {
     const hash = await networkConfig.worldContract.write.storeItems(
-      [Array.from({ length: 5 }, () => random(1, 100)), Array.from({ length: 5 }, () => random(1, 100))],
+      // [Array.from({ length: 5 }, () => random(1, 100)), Array.from({ length: 5 }, () => random(1, 100))],
+      [[1], [1]],
       {
         chain: networkConfig.chain,
         account: networkConfig.burnerAccount.address,

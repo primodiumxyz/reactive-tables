@@ -4,7 +4,7 @@ import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Tables, resolveConfig } from "@latticexyz/store/internal";
 
 import { createComponentsStore } from "@/store";
-import { createStorageAdapter } from "@/store/sync";
+import { createStorageAdapter } from "@/adapter";
 import { createPublicClient } from "@/utils";
 import { TinyBaseWrapperOptions, NetworkConfig, TinyBaseWrapperResult, AllTables } from "@/types";
 

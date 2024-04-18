@@ -2,7 +2,7 @@ import { Store as StoreConfig } from "@latticexyz/store";
 import { Tables } from "@latticexyz/store/internal";
 import { Read, Sync } from "@primodiumxyz/sync-stack";
 
-import { createStorageAdapter } from "@/store/sync";
+import { createStorageAdapter } from "@/adapter";
 import {
   CreateSyncOptions,
   CreateIndexerSyncOptions,
