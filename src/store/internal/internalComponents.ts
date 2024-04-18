@@ -1,6 +1,6 @@
 import { Type } from "@latticexyz/recs";
 
-import { createInternalComponent, createInternalNumberComponent } from "@/store/internal/createInternalComponent";
+import { createInternalComponent, createInternalNumberComponent } from "@/store/internal/";
 
 export type InternalComponentsTables = typeof internalComponentsTables;
 export const internalComponentsTables = {

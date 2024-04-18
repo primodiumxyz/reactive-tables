@@ -1,8 +1,8 @@
 import { hexToResource, spliceHex } from "@latticexyz/common";
 import { StorageAdapterLog } from "@latticexyz/store-sync";
 import { hexKeyTupleToEntity } from "@latticexyz/store-sync/recs";
-import { Write } from "@primodiumxyz/sync-stack";
 import { Hex, size } from "viem";
+import { Write } from "@primodiumxyz/sync-stack";
 import { Store } from "tinybase/store";
 
 import { TinyBaseAdapter } from "@/adapter";

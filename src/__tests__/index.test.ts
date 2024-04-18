@@ -2,15 +2,16 @@ import { describe, it, expect, assert, beforeAll } from "vitest";
 import { renderHook } from "@testing-library/react-hooks";
 
 // libs
-import { Entity, createWorld, getComponentValue } from "@latticexyz/recs";
+import { Entity, Type, createWorld, getComponentValue } from "@latticexyz/recs";
 import { encodeEntity, singletonEntity, syncToRecs } from "@latticexyz/store-sync/recs";
 import { wait } from "@latticexyz/common/utils";
 import { padHex, toHex } from "viem";
 
 // src
 import { tinyBaseWrapper } from "@/index";
-import { SyncStep } from "@/constants";
+import { createInternalComponent, createInternalCoordComponent } from "@/store/internal";
 import { TableQueryUpdate } from "@/store/queries";
+import { SyncStep } from "@/constants";
 // mocks
 import {
   fuzz,
@@ -140,6 +141,33 @@ describe("tinyBaseWrapper", () => {
     expect(queries).toBeDefined();
     expect(storageAdapter).toBeDefined();
     expect(publicClient).toBeDefined();
+  });
+
+  it("should be able to create components from internal tables passed during initialization", async () => {
+    const world = createWorld();
+    const networkConfig = getMockNetworkConfig();
+
+    const customComponents = {
+      A: createInternalCoordComponent({ id: "A" }),
+      B: createInternalComponent({ bool: Type.Boolean, array: Type.EntityArray }),
+    };
+
+    // Initialize wrapper
+    const { components, tables, store, queries, storageAdapter, publicClient } = tinyBaseWrapper({
+      world,
+      mudConfig: mockConfig,
+      networkConfig,
+      otherTables: customComponents,
+    });
+
+    components.A.set({ x: 1, y: 1 });
+    components.B.set({ bool: true, array: [singletonEntity] });
+
+    expect(components.A.get()).toHaveProperty("x", 1);
+    expect(components.A.get()).toHaveProperty("y", 1);
+    console.log(components.B.get());
+    expect(components.B.get()).toHaveProperty("bool", true);
+    expect(components.B.get()).toHaveProperty("array", [singletonEntity]);
   });
 
   /* -------------------------------------------------------------------------- */

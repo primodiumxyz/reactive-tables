@@ -35,6 +35,8 @@ export const decodeValueFromTinyBase = (formattedData: TinyBaseFormattedType): D
         decoded[key] = JSON.parse(value as string).map(Number);
       } else if (type === "boolean[]") {
         decoded[key] = JSON.parse(value as string).map((v: string) => v === "true");
+      } else if (type === "string[]") {
+        decoded[key] = JSON.parse(value as string);
       } else if (type === "undefined[]") {
         // Fallbacks just in case
         decoded[key] = JSON.parse(value as string).map(() => undefined);

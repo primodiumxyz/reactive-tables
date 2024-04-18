@@ -1,28 +1,27 @@
 import { Store as StoreConfig } from "@latticexyz/store";
 import { World } from "@latticexyz/recs";
 import { storeToV1 } from "@latticexyz/store/config/v2";
-import { Tables, resolveConfig } from "@latticexyz/store/internal";
+import { resolveConfig } from "@latticexyz/store/internal";
 
 import { createComponentsStore } from "@/store";
 import { createStorageAdapter } from "@/adapter";
 import { createPublicClient } from "@/utils";
-import { TinyBaseWrapperOptions, NetworkConfig, TinyBaseWrapperResult, AllTables } from "@/types";
+import { TinyBaseWrapperOptions, NetworkConfig, TinyBaseWrapperResult, AllTables, ExtraTables } from "@/types";
 
 import { storeTables, worldTables } from "@latticexyz/store-sync";
-import { internalComponentsTables } from "@/store/internal/internalComponents";
+import { internalComponentsTables } from "@/store/internal";
 
 export const tinyBaseWrapper = <
   world extends World,
   config extends StoreConfig,
   networkConfig extends NetworkConfig,
-  extraTables extends Tables | undefined,
+  extraTables extends ExtraTables,
 >({
   world,
   mudConfig,
   networkConfig,
   otherTables,
   publicClient,
-  // TODO: internalComponents
 }: TinyBaseWrapperOptions<world, config, networkConfig, extraTables>): TinyBaseWrapperResult<config, extraTables> => {
   const client = publicClient ?? createPublicClient(networkConfig);
 

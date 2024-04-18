@@ -1,17 +1,17 @@
 import { Schema, World } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
+import { KeySchema } from "@latticexyz/store/internal";
 import { storeTables, worldTables } from "@latticexyz/store-sync";
 import { MUDChain } from "@latticexyz/common/chains";
 import { ResolvedStoreConfig, Tables as MUDTables } from "@latticexyz/store/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
-import { KeySchema } from "@latticexyz/protocol-parser/internal";
 import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 import { Queries } from "tinybase/queries";
 
 import { Components, ComponentMethods, Table, Tables, ContractComponentMethods } from "@/store/component/types";
 import { StorageAdapter } from "@/adapter";
-import { internalComponentsTables } from "@/store/internal/internalComponents";
+import { internalComponentsTables } from "@/store/internal";
 
 export type ExtraTables = Tables | MUDTables | undefined;
 export type AllTables<config extends StoreConfig, extraTables extends ExtraTables> = ResolvedStoreConfig<
@@ -38,7 +38,6 @@ export type TinyBaseWrapperOptions<
   networkConfig: networkConfig;
   otherTables?: extraTables;
   publicClient?: PublicClient;
-  // TODO: internalComponents
 };
 
 export type TinyBaseWrapperResult<config extends StoreConfig, tables extends ExtraTables> = {
@@ -89,7 +88,7 @@ export type CreateComponentMethodsResult<VS extends Schema, KS extends Schema = 
   | ComponentMethods<VS, T>
   | (ComponentMethods<VS, T> & ContractComponentMethods<VS, KS, T>);
 
-export type CreateStoreOptions<config extends StoreConfig, tables extends Tables> = {
+export type CreateStoreOptions<config extends StoreConfig, tables extends ExtraTables> = {
   tables: AllTables<config, tables>;
 };
 

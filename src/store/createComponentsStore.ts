@@ -1,20 +1,19 @@
 import { Store as StoreConfig } from "@latticexyz/store";
 import { World } from "@latticexyz/recs";
-import { Tables } from "@latticexyz/store/internal";
-import { KeySchema } from "@latticexyz/protocol-parser/internal";
+import { KeySchema } from "@latticexyz/store/internal";
 import { createStore } from "tinybase/store";
 import { createQueries } from "tinybase/queries";
 
 import { createComponentMethods } from "@/store/component/createComponentMethods";
+import { createComponentTable, createInternalComponentTable } from "@/store/component/createComponentTable";
 import { setComponentTable } from "@/store/utils";
-import { CreateComponentsStoreOptions, CreateComponentsStoreResult } from "@/types";
+import { CreateComponentsStoreOptions, CreateComponentsStoreResult, ExtraTables } from "@/types";
 import { Components } from "@/store/component/types";
-import { createComponentTable, createInternalComponentTable } from "./component/createComponentTable";
 
 export const createComponentsStore = <
   world extends World,
   config extends StoreConfig,
-  extraTables extends Tables | undefined,
+  extraTables extends ExtraTables,
 >({
   world,
   tables,
@@ -40,7 +39,7 @@ export const createComponentsStore = <
       // @ts-expect-error same here
       table: table,
       tableId: table.tableId,
-      keySchema: table.keySchema as unknown as KeySchema,
+      keySchema: table.keySchema as KeySchema,
     });
 
     // Register immutable data (basically formatted table) in the store for efficient access

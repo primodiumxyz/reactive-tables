@@ -12,9 +12,12 @@ export type TinyBaseFormattedType = {
     | "number"
     | "boolean"
     | "bigint"
+    | "string[]"
     | "number[]"
     | "boolean[]"
-    | "bigint[]";
+    | "bigint[]"
+    | "undefined"
+    | "undefined[]";
 };
 
 // We want to encode the original type as well when dealing with client components, because we
