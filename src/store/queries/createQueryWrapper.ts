@@ -35,7 +35,8 @@ export const createQueryWrapper = <S extends Schema, T = unknown>({
 }: CreateQueryWrapperOptions<S, T>): CreateQueryResult => {
   // If a query is provided, define it and create the listener
   if (query) {
-    const queryId = uuid();
+    // const queryId = uuid();
+    const queryId = "query";
     queries.setQueryDefinition(queryId, tableId, query);
     return createQuery({ queries, queryId, tableId, schema, onChange, onEnter, onExit, options });
   }

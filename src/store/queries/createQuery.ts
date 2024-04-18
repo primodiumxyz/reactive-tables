@@ -55,20 +55,43 @@ export const createQuery = <S extends Schema, T = unknown>({
   // Get the keys to be able to aggregate the full value from each cell
   const keys = Object.keys(schema);
 
+  // Remember the previous entities matching the query to figure out if it's an enter or an exit
+  // This is a trick we need because we can't listen to entire row changes within the query when only some cells have changed
+  let previousEntities: Entity[] = [];
+
   // Init listener
-  const listenerId = queries.addResultRowListener(queryId, null, (_, __, entity: Entity, getCellChange) => {
-    console.log("CHANGED");
-    // Gather the value and type of the change
-    const args = getValueAndTypeFromRowChange(getCellChange, keys, tableId, entity) as TableQueryUpdate<S, T>;
+  // Unfortunatly `addResultRowListener()` won't work here as it's not triggered for cell changes
+  // So we need to use a regular listener associated with the query instead
+  const listenerId = store.addRowListener(tableId, null, (_, __, entity: Entity, getCellChange) => {
+    if (!getCellChange) return;
+
+    // Get the entities matching the query
+    const matchingEntities = queries.getResultRowIds(queryId);
+
+    // Figure out if it's an enter or an exit
+    let type = "change" as UpdateType;
+    const inPrev = previousEntities.includes(entity);
+    const inCurrent = matchingEntities.includes(entity);
+
+    if (!inPrev && !inCurrent) return; // not in the query, we're not interested
+
+    // Gather the previous and current values
+    let args = getValueAndTypeFromRowChange(getCellChange, keys, tableId, entity) as TableQueryUpdate<S, T>;
 
     // Run the callbacks
-    if (args.type === "enter") {
-      onEnter?.(args);
-    } else if (args.type === "exit") {
-      onExit?.(args);
+    if (!inPrev && inCurrent) {
+      type = "enter";
+      onEnter?.({ ...args, type });
+
+      previousEntities.push(entity);
+    } else if (inPrev && !inCurrent) {
+      type = "exit";
+      onExit?.({ ...args, type });
+
+      previousEntities = previousEntities.filter((e) => e !== entity);
     }
 
-    onChange?.(args);
+    onChange?.({ ...args, type });
   });
 
   if (options.runOnInit) {
