@@ -232,7 +232,7 @@ export const createComponentMethods = <
     ...hookMethods,
   };
   // If it's an internal component, no need for contract methods
-  if (table.namespace === "internal") return methods;
+  if (table.namespace === "internal" || !keySchema) return methods;
 
   return {
     ...methods,

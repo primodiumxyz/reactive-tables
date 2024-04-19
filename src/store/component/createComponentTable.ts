@@ -38,15 +38,3 @@ export const createComponentTable = <table extends ContractTable | MUDTable, con
     },
   } as const satisfies ComponentTable<table, config>;
 };
-
-export const createInternalComponentTable = <table extends InternalTable, config extends StoreConfig>(table: table) => {
-  return {
-    id: table.tableId,
-    namespace: table.namespace,
-    schema: table.schema,
-    metadata: {
-      componentName: table.name,
-      tableName: resourceToLabel(table) as ResourceLabel<storeToV1<config>["namespace"], string>,
-    },
-  } as const satisfies ComponentTable<table, config>;
-};

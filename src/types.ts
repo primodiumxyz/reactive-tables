@@ -9,10 +9,17 @@ import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 import { Queries } from "tinybase/queries";
 
-import { Components, ComponentMethods, Table, Tables, ContractComponentMethods } from "@/store/component/types";
+import {
+  Components,
+  ComponentMethods,
+  Table,
+  Tables,
+  ContractComponentMethods,
+  ContractTables,
+} from "@/store/component/types";
 import { StorageAdapter } from "@/adapter";
 
-export type ExtraTables = Tables | MUDTables | undefined;
+export type ExtraTables = ContractTables | MUDTables | undefined;
 export type AllTables<config extends StoreConfig, extraTables extends ExtraTables> = ResolvedStoreConfig<
   storeToV1<config>
 >["tables"] &
@@ -79,7 +86,7 @@ export type CreateComponentMethodsOptions<table extends Table> = {
   queries: Queries;
   table: table;
   tableId: string;
-  keySchema: KeySchema;
+  keySchema?: KeySchema;
 };
 
 export type CreateComponentMethodsResult<VS extends Schema, KS extends Schema = Schema, T = unknown> =

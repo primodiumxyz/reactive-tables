@@ -68,9 +68,15 @@ export type ContractTable = BaseTable & {
   readonly keySchema: KeySchema;
   readonly valueSchema: ValueSchema;
 };
+export type ContractTables = {
+  readonly [k: string]: ContractTable;
+};
 
 export type InternalTable = BaseTable & {
   readonly namespace: "internal";
+};
+export type InternalTables = {
+  readonly [k: string]: InternalTable;
 };
 
 export type BaseTable = {
