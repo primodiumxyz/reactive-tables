@@ -10,6 +10,7 @@ import { padHex, toHex } from "viem";
 // src
 import { tinyBaseWrapper } from "@/index";
 import { createInternalComponent, createInternalCoordComponent } from "@/store/internal";
+import { createInternalComponents } from "@/store/internal/templates";
 import { TableQueryUpdate } from "@/store/queries";
 import { SyncStep } from "@/constants";
 // mocks
@@ -41,7 +42,14 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
   const networkConfig = getMockNetworkConfig();
 
   // Initialize wrapper
-  const { components, tables, store, queries, storageAdapter, publicClient } = tinyBaseWrapper({
+  const {
+    components: contractComponents,
+    tables,
+    store,
+    queries,
+    storageAdapter,
+    publicClient,
+  } = tinyBaseWrapper({
     world,
     mudConfig: mockConfig,
     networkConfig: {
@@ -49,6 +57,7 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
       indexerUrl: useIndexer ? networkConfig.indexerUrl : undefined,
     },
   });
+  const components = { ...contractComponents, ...createInternalComponents(store) };
 
   // Sync components with the chain
   const sync = createSync({
@@ -149,18 +158,17 @@ describe("tinyBaseWrapper", () => {
     const world = createWorld();
     const networkConfig = getMockNetworkConfig();
 
-    const customComponents = {
-      A: createInternalCoordComponent({ id: "A" }),
-      B: createInternalComponent({ bool: Type.Boolean, array: Type.EntityArray }),
-    };
-
     // Initialize wrapper
-    const { components } = tinyBaseWrapper({
+    const { store } = tinyBaseWrapper({
       world,
       mudConfig: mockConfig,
       networkConfig,
-      otherTables: customComponents,
     });
+
+    const components = {
+      A: createInternalCoordComponent(store, { id: "A" }),
+      B: createInternalComponent(store, { bool: Type.Boolean, array: Type.EntityArray }),
+    };
 
     components.A.set({ x: 1, y: 1 });
     components.B.set({ bool: true, array: [singletonEntity] });

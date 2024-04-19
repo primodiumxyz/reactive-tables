@@ -7,7 +7,7 @@ import { Store } from "tinybase/store";
 import { createQueries } from "tinybase/queries";
 
 import { createComponentMethods } from "@/store/component/createComponentMethods";
-import { Component } from "@/store/component/types";
+import { Component, ComponentMethods, InternalTable } from "@/store/component/types";
 
 // These components will be created alongside the contract components, in a different process,
 // but aggregated into the same store to be used the exact same way to reduce complexity and computation
@@ -16,6 +16,20 @@ export type CreateInternalComponentOptions<M extends Metadata> = {
   metadata?: M;
   indexed?: boolean;
 };
+
+export type InternalComponentTable<S extends Schema, M extends Metadata> = {
+  id: string;
+  tableId: string;
+  namespace: "internal";
+  name: string;
+  schema: S;
+  metadata: M & {
+    componentName: string;
+    tableName: ResourceLabel<"internal", string>;
+  };
+};
+export type InternalComponent<table extends InternalTable, S extends Schema, M extends Metadata, T> = table &
+  ComponentMethods<S, T>;
 
 export const createInternalComponent = <S extends Schema, M extends Metadata = Metadata, T = unknown>(
   store: Store,
@@ -37,14 +51,14 @@ export const createInternalComponent = <S extends Schema, M extends Metadata = M
       componentName: id,
       tableName: resourceToLabel({ namespace: "internal", name: id }) as ResourceLabel<"internal", string>,
     },
-  };
+  } satisfies InternalComponentTable<S, M>;
 
   const methods = createComponentMethods({ store, queries: createQueries(store), table, tableId: table.id });
 
   return {
     ...table,
     ...methods,
-  } as unknown as Component<typeof table, StoreConfig, (typeof table)["schema"], M, T>;
+  } as unknown as InternalComponent<InternalComponentTable<S, M>, S, M, T>;
 };
 
 // Modified from primodium
