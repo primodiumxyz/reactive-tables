@@ -10,7 +10,7 @@ import {
   UpdateType,
   createQuery,
   getValueAndTypeFromRowChange,
-} from "./createQuery";
+} from "@/store/queries/createQuery";
 import { ComponentValue } from "@/store/component/types";
 
 /* ---------------------------------- TYPES --------------------------------- */

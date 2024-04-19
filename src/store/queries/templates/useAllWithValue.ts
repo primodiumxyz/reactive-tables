@@ -4,8 +4,8 @@ import { Queries } from "tinybase/queries";
 import { useEffect, useMemo, useState } from "react";
 
 import { TinyBaseAdapter } from "@/adapter";
+import { queryAllWithValue } from "@/store/queries/templates/queryAllWithValue";
 import { ComponentValue } from "@/store/component/types";
-import { queryAllWithValue } from "./queryAllWithValue";
 
 // Listen to all entities inside a given table that have a specific value (or partial value)
 export const useAllWithValue = <S extends Schema>(

@@ -1,1 +1,1 @@
-export * from "./internalComponents";
+export * from "@/store/internal/templates/internalComponents";

@@ -13,7 +13,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "rootDir": "src",
+    "outDir": "dist",
+    "declarationDir": "dist/types"
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

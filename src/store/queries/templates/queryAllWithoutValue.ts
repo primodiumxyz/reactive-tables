@@ -1,7 +1,7 @@
 import { Entity, Schema } from "@latticexyz/recs";
 
 import { TinyBaseAdapter } from "@/adapter";
-import { QueryOptions, QueryResult } from "./types";
+import { QueryOptions, QueryResult } from "@/store/queries/templates/types";
 
 // Query all entities for a given table that DON'T have a specific value (or partial value)
 export const queryAllWithoutValue = <S extends Schema>({

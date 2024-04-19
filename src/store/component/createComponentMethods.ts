@@ -11,9 +11,9 @@ import {
   useAllWithValue,
   useAllWithoutValue,
 } from "@/store/queries";
-import { createContractComponentMethods } from "./createContractComponentMethods";
+import { createContractComponentMethods } from "@/store/component/createContractComponentMethods";
+import { arrayToIterator, createComponentMethodsUtils } from "@/store/component/utils";
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
-import { arrayToIterator, createComponentMethodsUtils } from "./utils";
 import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
 import { ComponentValue, ComponentValueSansMetadata, Table } from "@/store/component/types";
 

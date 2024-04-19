@@ -4,8 +4,8 @@ import { Queries } from "tinybase/queries";
 import { useEffect, useMemo, useState } from "react";
 
 import { TinyBaseAdapter } from "@/adapter";
+import { queryAllWithoutValue } from "@/store/queries/templates/queryAllWithoutValue";
 import { ComponentValue } from "@/store/component/types";
-import { queryAllWithoutValue } from "./queryAllWithoutValue";
 
 // Listen to all entities inside a given table that DON'T have a specific value (or partial value)
 export const useAllWithoutValue = <S extends Schema>(

@@ -1,9 +1,12 @@
-export { createCustomWriter as createStorageAdapter, CustomWriter as StorageAdapter } from "./createCustomWriter";
-export { type TinyBaseFormattedType } from "./formatValueForTinyBase";
+export {
+  createCustomWriter as createStorageAdapter,
+  CustomWriter as StorageAdapter,
+} from "@/adapter/createCustomWriter";
+export { type TinyBaseFormattedType } from "@/adapter/formatValueForTinyBase";
 
-import { decodeValueArgs } from "./decodeValueArgs";
-import { decodeValueFromTinyBase } from "./decodeValueFromTinyBase";
-import { formatValueForTinyBase } from "./formatValueForTinyBase";
+import { decodeValueArgs } from "@/adapter/decodeValueArgs";
+import { decodeValueFromTinyBase } from "@/adapter/decodeValueFromTinyBase";
+import { formatValueForTinyBase } from "@/adapter/formatValueForTinyBase";
 
 export const TinyBaseAdapter = {
   decodeArgs: decodeValueArgs,

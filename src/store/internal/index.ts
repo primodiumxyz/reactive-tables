@@ -1,1 +1,1 @@
-export * from "./createInternalComponent";
+export * from "@/store/internal/createInternalComponent";

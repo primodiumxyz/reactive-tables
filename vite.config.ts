@@ -1,9 +1,34 @@
 import { defineConfig } from "vitest/config";
+// lib
+import tsconfigPaths from "vite-tsconfig-paths";
+import dts from "vite-plugin-dts";
+import { resolve } from "path";
 
 export default defineConfig({
+  plugins: [
+    tsconfigPaths(),
+    dts({
+      insertTypesEntry: true,
+    }),
+  ],
+  build: {
+    lib: {
+      entry: "src/index.ts",
+      name: "tinybase-state-manager",
+      fileName: (format) => `tinybaseStateManager.${format}.js`,
+    },
+    rollupOptions: {
+      external: /^react/,
+      output: {
+        globals: {
+          react: "React",
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
-      "@": "/src",
+      "@": resolve(__dirname, "src"),
     },
   },
   test: {

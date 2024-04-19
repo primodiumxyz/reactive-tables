@@ -2,11 +2,11 @@ import { Entity, Metadata, Schema, Type, ValueType } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { ResourceLabel } from "@latticexyz/common";
 import { SchemaAbiType } from "@latticexyz/schema-type/internal";
-import { KeySchema, Table as MUDTable, ValueSchema } from "@latticexyz/store/internal";
+import { KeySchema, ValueSchema } from "@latticexyz/store/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 
+import { CreateQueryResult, CreateQueryWrapperOptions } from "@/store/queries";
 import { SchemaAbiTypeToRecsType } from "@/store/utils";
-import { CreateQueryResult, CreateQueryWrapperOptions } from "../queries";
 
 export type Components<tables extends Tables, config extends StoreConfig> = {
   [tableName in keyof tables]: Component<tables[tableName], config>;

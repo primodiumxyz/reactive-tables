@@ -1,3 +1,3 @@
-export * from "./templates";
-export * from "./createQuery";
-export * from "./createQueryWrapper";
+export * from "@/store/queries/templates";
+export * from "@/store/queries/createQuery";
+export * from "@/store/queries/createQueryWrapper";

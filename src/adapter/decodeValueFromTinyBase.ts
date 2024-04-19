@@ -1,7 +1,7 @@
 import { DynamicPrimitiveType, StaticPrimitiveType } from "@latticexyz/schema-type/internal";
 import { Hex } from "viem";
 
-import { TinyBaseFormattedType } from "./formatValueForTinyBase";
+import { TinyBaseFormattedType } from "@/adapter/formatValueForTinyBase";
 
 import { encodedDataKeys } from "@/constants";
 

@@ -1,5 +1,4 @@
 import { ResourceLabel, resourceToLabel } from "@latticexyz/common";
-import { Store as StoreConfig } from "@latticexyz/store";
 import { Metadata, Schema, Type } from "@latticexyz/recs";
 import { uuid } from "@latticexyz/utils";
 import { keccak256, toHex } from "viem";
@@ -7,7 +6,7 @@ import { Store } from "tinybase/store";
 import { createQueries } from "tinybase/queries";
 
 import { createComponentMethods } from "@/store/component/createComponentMethods";
-import { Component, ComponentMethods, InternalTable } from "@/store/component/types";
+import { ComponentMethods } from "@/store/component/types";
 
 // These components will be created alongside the contract components, in a different process,
 // but aggregated into the same store to be used the exact same way to reduce complexity and computation
@@ -28,14 +27,14 @@ export type InternalComponentTable<S extends Schema, M extends Metadata> = {
     tableName: ResourceLabel<"internal", string>;
   };
 };
-export type InternalComponent<table extends InternalTable, S extends Schema, M extends Metadata, T> = table &
+export type InternalComponent<S extends Schema, M extends Metadata, T> = InternalComponentTable<S, M> &
   ComponentMethods<S, T>;
 
 export const createInternalComponent = <S extends Schema, M extends Metadata = Metadata, T = unknown>(
   store: Store,
   schema: S,
   options?: CreateInternalComponentOptions<M>,
-) => {
+): InternalComponent<S, M, T> => {
   // TODO: support indexed
   const { id, indexed } = options ?? { id: uuid() };
 
@@ -58,7 +57,7 @@ export const createInternalComponent = <S extends Schema, M extends Metadata = M
   return {
     ...table,
     ...methods,
-  } as unknown as InternalComponent<InternalComponentTable<S, M>, S, M, T>;
+  } as unknown as InternalComponent<S, M, T>;
 };
 
 // Modified from primodium
