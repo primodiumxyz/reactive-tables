@@ -11,7 +11,6 @@ import { Queries } from "tinybase/queries";
 
 import { Components, ComponentMethods, Table, Tables, ContractComponentMethods } from "@/store/component/types";
 import { StorageAdapter } from "@/adapter";
-import { internalComponentsTables } from "@/store/internal";
 
 export type ExtraTables = Tables | MUDTables | undefined;
 export type AllTables<config extends StoreConfig, extraTables extends ExtraTables> = ResolvedStoreConfig<
@@ -19,8 +18,7 @@ export type AllTables<config extends StoreConfig, extraTables extends ExtraTable
 >["tables"] &
   (extraTables extends Tables ? extraTables : {}) &
   typeof storeTables &
-  typeof worldTables &
-  typeof internalComponentsTables;
+  typeof worldTables;
 
 export type AllComponents<config extends StoreConfig, tables extends ExtraTables> = Components<
   AllTables<config, tables>,

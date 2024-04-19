@@ -9,7 +9,6 @@ import { createPublicClient } from "@/utils";
 import { TinyBaseWrapperOptions, NetworkConfig, TinyBaseWrapperResult, AllTables, ExtraTables } from "@/types";
 
 import { storeTables, worldTables } from "@latticexyz/store-sync";
-import { internalComponentsTables } from "@/store/internal";
 
 export const tinyBaseWrapper = <
   world extends World,
@@ -32,7 +31,6 @@ export const tinyBaseWrapper = <
     ...(otherTables ?? {}),
     ...storeTables,
     ...worldTables,
-    ...internalComponentsTables,
   } as unknown as AllTables<config, extraTables>;
 
   /* ------------------------------- COMPONENTS ------------------------------- */
