@@ -191,13 +191,24 @@ export const createComponentMethods = <
 
   /* --------------------------------- SYSTEM --------------------------------- */
   // Create a query tied to this component, with callbacks on change, enter & exit from the query conditions
-  const createQuery = (options: Omit<CreateQueryWrapperOptions<VS, T>, "queries" | "tableId" | "schema">) =>
-    createQueryWrapper({
+  const createQuery = (options: Omit<CreateQueryWrapperOptions<VS, T>, "queries" | "tableId" | "schema">) => {
+    // Add a `select` on top of the query to abstract selecting at least a cell from the value => selecting all entities
+    // This is required with TinyQL to at least select a cell so it considers all rows
+    const query: CreateQueryWrapperOptions<VS, T>["query"] = options.query
+      ? (keywords) => {
+          keywords.select(Object.keys(table.schema)[0]);
+          options.query!(keywords);
+        }
+      : undefined;
+
+    return createQueryWrapper({
       queries,
       tableId,
       schema: table.schema as VS,
       ...options,
+      query,
     });
+  };
 
   const baseMethods = {
     entities,

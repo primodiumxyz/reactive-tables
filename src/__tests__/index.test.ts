@@ -768,14 +768,11 @@ describe("tinyBaseWrapper", () => {
       const { unsubscribe } = components.Position.createQuery({
         onChange,
         options: { runOnInit: false },
-        query: ({ select, where }) => {
-          // We need to make one select for the row to be included
-          select("x");
+        query: ({ where }) => {
           // Where x is between 5 and 15
           where((getCell) => matchQuery(Number(getCell("x"))));
         },
       });
-
       // Query didn't run on init so it should be empty
       expect(aggregator).toEqual([]);
 
@@ -830,44 +827,33 @@ describe("tinyBaseWrapper", () => {
       unsubscribe();
     });
 
-    it.only("query() (queryAllMatching)", async () => {
+    it("query() (queryAllMatching)", async () => {
       const { components, store, waitForBlockSynced, entities } = await init();
+      const [player, A, B, C] = entities;
 
-      // Get additional entities
-      const [player, A, B, C, D, E, F, G, H, I] = [
-        entities[0],
-        ...["A", "B", "C", "D", "E", "F", "G", "H", "I"].map((id) => padHex(toHex(`entity${id}`))),
-      ] as Entity[];
-      // Prepare them
+      // Prepare entities
       components.Position.set({ x: 10, y: 10 }, player);
       components.Position.set({ x: 5, y: 5 }, A);
       components.Position.set({ x: 10, y: 10 }, B);
-      components.Position.set({ x: 15, y: 15 }, C);
-      components.Position.set({ x: 20, y: 20 }, D);
-      components.Position.set({ x: 10, y: 10 }, E);
-      components.Position.set({ x: 10, y: 10 }, F);
-      components.Position.set({ x: 15, y: 10 }, G);
+      components.Position.set({ x: 15, y: 10 }, C);
       components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6) }, player);
-      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6) }, E);
-      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3) }, F);
-      components.Inventory.set({ items: [1, 2, 4], weights: [1, 2, 3], totalWeight: BigInt(6) }, G);
-      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6) }, H);
-      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6) }, I);
+      components.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6) }, A);
+      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3) }, B);
 
       // Entities inside the Position component
       expect(
         query(store, {
           inside: [components.Position],
         }).sort(),
-      ).toEqual([player, A, B, C, D, E, F, G].sort());
+      ).toEqual([player, A, B, C].sort());
 
-      // Entities inside the Inventory component but not inside the Position component
+      // Entities inside the Position component but not inside the Inventory component
       expect(
         query(store, {
-          inside: [components.Inventory],
-          notInside: [components.Position],
-        }).sort(),
-      ).toEqual([H, I].sort());
+          inside: [components.Position],
+          notInside: [components.Inventory],
+        }),
+      ).toEqual([C]);
 
       // Entities with a specific value inside the Inventory component, and without a specific value inside the Position component
       expect(
@@ -881,11 +867,29 @@ describe("tinyBaseWrapper", () => {
           without: [
             {
               component: components.Position,
-              value: { x: 15, y: 10 },
+              value: { x: 5, y: 5 },
             },
           ],
-        }).sort(),
-      ).toEqual([player, E, H, I].sort());
+        }),
+      ).toEqual([player]);
+
+      // Entities with a specific value inside the Inventory component, not another one
+      expect(
+        query(store, {
+          with: [
+            {
+              component: components.Inventory,
+              value: { totalWeight: BigInt(6) },
+            },
+          ],
+          without: [
+            {
+              component: components.Inventory,
+              value: { weights: [1, 2, 3] },
+            },
+          ],
+        }),
+      ).toEqual([A]);
     });
   });
 });
