@@ -86,7 +86,6 @@ export type CreateComponentMethodsOptions<table extends Table> = {
   queries: Queries;
   table: table;
   tableId: string;
-  keySchema?: KeySchema;
 };
 
 export type CreateComponentMethodsResult<VS extends Schema, KS extends Schema = Schema, T = unknown> =

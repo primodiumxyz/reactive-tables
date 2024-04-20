@@ -37,15 +37,11 @@ export const createComponentsStore = <
     const methods = createComponentMethods({
       store,
       queries,
-      // @ts-expect-error same here
-      table: table,
+      // @ts-expect-error table not compatible
+      table: { ...table, ...componentTable },
       tableId: table.tableId,
-      keySchema: table.keySchema as KeySchema,
     });
 
-    // Register immutable data (basically formatted table) in the store for efficient access
-    // TODO: same as above
-    // @ts-expect-error table misinterpreted as non-compatible type
     setComponentTable(store, componentTable);
 
     // @ts-expect-error component is generic and can only be indexed for reading.

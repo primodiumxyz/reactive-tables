@@ -16,17 +16,22 @@ export type TableQueryUpdate<S extends Schema, T = unknown> = {
   type: UpdateType;
 };
 
+// At least one callback has to be provided
+// We can't successfully typecheck complex union types with at least one required key
+export type TableQueryCallbacks<S extends Schema, T = unknown> = Partial<{
+  onChange: (update: TableQueryUpdate<S, T>) => void;
+  onEnter: (update: TableQueryUpdate<S, T>) => void;
+  onExit: (update: TableQueryUpdate<S, T>) => void;
+}>;
+
 export type CreateQueryOptions<S extends Schema, T = unknown> = {
   queries: Queries;
   queryId: string;
   tableId: string;
   schema: S;
-  // Opt in to any callback
-  onChange?: (update: TableQueryUpdate<S, T>) => void;
-  onEnter?: (update: TableQueryUpdate<S, T>) => void;
-  onExit?: (update: TableQueryUpdate<S, T>) => void;
   options?: { runOnInit?: boolean };
-};
+  // Opt in to any callback
+} & TableQueryCallbacks<S, T>;
 
 export type CreateQueryResult = {
   unsubscribe: () => void;
@@ -44,6 +49,10 @@ export const createQuery = <S extends Schema, T = unknown>({
   onExit,
   options = { runOnInit: true },
 }: CreateQueryOptions<S, T>) => {
+  if (!onChange && !onEnter && !onExit) {
+    throw new Error("At least one callback has to be provided");
+  }
+
   const store = queries.getStore();
   // Get the keys to be able to aggregate the full value from each cell
   const keys = Object.keys(schema);

@@ -27,7 +27,6 @@ export const createComponentMethods = <
   queries,
   table,
   tableId,
-  keySchema,
 }: CreateComponentMethodsOptions<table>): CreateComponentMethodsResult<VS, KS, T> => {
   const { paused } = createComponentMethodsUtils(store, tableId);
 
@@ -232,10 +231,10 @@ export const createComponentMethods = <
     ...hookMethods,
   };
   // If it's an internal component, no need for contract methods
-  if (table.namespace === "internal" || !keySchema) return methods;
+  if (table.namespace === "internal" || !("keySchema" in table)) return methods;
 
   return {
     ...methods,
-    ...createContractComponentMethods({ ...methods, keySchema }),
+    ...createContractComponentMethods({ ...methods, keySchema: table.keySchema }),
   };
 };

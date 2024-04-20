@@ -29,7 +29,6 @@ export const queryAllWithValue = <S extends Schema>({
   let entities: Entity[] = [];
   // Retrieve all ids of the rows matching the query (entities)
   queries.forEachResultRow(queryId, (rowId) => entities.push(rowId));
-  // queries.delQueryDefinition("queryAllWithValue");
 
   return { id: queryId, entities };
 };

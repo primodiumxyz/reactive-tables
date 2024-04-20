@@ -11,7 +11,7 @@ import { padHex, toHex } from "viem";
 import { tinyBaseWrapper } from "@/index";
 import { createInternalComponent, createInternalCoordComponent } from "@/store/internal";
 import { createInternalComponents } from "@/store/internal/templates";
-import { TableQueryUpdate } from "@/store/queries";
+import { TableQueryUpdate, query } from "@/store/queries";
 import { SyncStep } from "@/constants";
 // mocks
 import {
@@ -91,9 +91,7 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
   // from previous runs)
   const entities = [
     encodeEntity({ address: "address" }, { address: networkConfig.burnerAccount.address }),
-    padHex(toHex("entityA")),
-    padHex(toHex("entityB")),
-    padHex(toHex("entityC")),
+    ...["A", "B", "C"].map((id) => padHex(toHex(`entity${id}`))),
   ] as Entity[];
 
   // We want to wait for both components systems to be in sync & live
@@ -115,7 +113,6 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
 
     while (!synced) {
       await wait(1000);
-
       const lastSyncedBlock = components?.[componentKey].get(key)?.__lastSyncedAtBlock;
       synced = lastSyncedBlock >= txBlock;
     }
@@ -715,9 +712,6 @@ describe("tinyBaseWrapper", () => {
     it("createQueryWrapper(): without query", async () => {
       const { components, queries, tableId, waitForBlockSynced, entities, onChange, aggregator } = await preTest();
       const { unsubscribe } = components.Position.createQuery({
-        queries,
-        tableId,
-        schema: components.Position.schema,
         onChange,
         options: { runOnInit: false },
       });
@@ -759,9 +753,6 @@ describe("tinyBaseWrapper", () => {
       await Promise.all(entities.map(async (entity) => await updatePosition(entity, waitForBlockSynced)));
 
       const { unsubscribe } = components.Position.createQuery({
-        queries,
-        tableId,
-        schema: components.Position.schema,
         onChange,
         options: { runOnInit: true },
       });
@@ -775,9 +766,6 @@ describe("tinyBaseWrapper", () => {
       const matchQuery = (x: number) => x > 5 && x < 15;
 
       const { unsubscribe } = components.Position.createQuery({
-        queries,
-        tableId,
-        schema: components.Position.schema,
         onChange,
         options: { runOnInit: false },
         query: ({ select, where }) => {
@@ -840,6 +828,64 @@ describe("tinyBaseWrapper", () => {
       });
 
       unsubscribe();
+    });
+
+    it.only("query() (queryAllMatching)", async () => {
+      const { components, store, waitForBlockSynced, entities } = await init();
+
+      // Get additional entities
+      const [player, A, B, C, D, E, F, G, H, I] = [
+        entities[0],
+        ...["A", "B", "C", "D", "E", "F", "G", "H", "I"].map((id) => padHex(toHex(`entity${id}`))),
+      ] as Entity[];
+      // Prepare them
+      components.Position.set({ x: 10, y: 10 }, player);
+      components.Position.set({ x: 5, y: 5 }, A);
+      components.Position.set({ x: 10, y: 10 }, B);
+      components.Position.set({ x: 15, y: 15 }, C);
+      components.Position.set({ x: 20, y: 20 }, D);
+      components.Position.set({ x: 10, y: 10 }, E);
+      components.Position.set({ x: 10, y: 10 }, F);
+      components.Position.set({ x: 15, y: 10 }, G);
+      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6) }, player);
+      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6) }, E);
+      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3) }, F);
+      components.Inventory.set({ items: [1, 2, 4], weights: [1, 2, 3], totalWeight: BigInt(6) }, G);
+      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6) }, H);
+      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6) }, I);
+
+      // Entities inside the Position component
+      expect(
+        query(store, {
+          inside: [components.Position],
+        }).sort(),
+      ).toEqual([player, A, B, C, D, E, F, G].sort());
+
+      // Entities inside the Inventory component but not inside the Position component
+      expect(
+        query(store, {
+          inside: [components.Inventory],
+          notInside: [components.Position],
+        }).sort(),
+      ).toEqual([H, I].sort());
+
+      // Entities with a specific value inside the Inventory component, and without a specific value inside the Position component
+      expect(
+        query(store, {
+          with: [
+            {
+              component: components.Inventory,
+              value: { totalWeight: BigInt(6) },
+            },
+          ],
+          without: [
+            {
+              component: components.Position,
+              value: { x: 15, y: 10 },
+            },
+          ],
+        }).sort(),
+      ).toEqual([player, E, H, I].sort());
     });
   });
 });

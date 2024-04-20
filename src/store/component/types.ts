@@ -64,7 +64,6 @@ export type ComponentValueSansMetadata<S extends Schema, T = unknown> = {
 };
 
 export type ContractTable = BaseTable & {
-  readonly namespace: "contract";
   readonly keySchema: KeySchema;
   readonly valueSchema: ValueSchema;
 };
@@ -137,7 +136,7 @@ export type ComponentMethods<S extends Schema, T = unknown> = OriginalComponentM
   pauseUpdates: (entity?: Entity, value?: ComponentValueSansMetadata<S, T>) => void;
   resumeUpdates: (entity?: Entity) => void;
 
-  createQuery: (options: CreateQueryWrapperOptions<S, T>) => CreateQueryResult;
+  createQuery: (options: Omit<CreateQueryWrapperOptions<S, T>, "queries" | "tableId" | "schema">) => CreateQueryResult;
 };
 
 export type ContractComponentMethods<VS extends Schema = Schema, KS extends Schema = Schema, T = unknown> = {
