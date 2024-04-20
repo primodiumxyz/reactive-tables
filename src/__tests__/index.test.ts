@@ -696,9 +696,8 @@ describe("tinyBaseWrapper", () => {
     };
 
     const preTest = async () => {
-      const { components, queries, waitForSyncLive, waitForBlockSynced, entities } = await init();
+      const { components, waitForSyncLive, waitForBlockSynced, entities } = await init();
       assert(components);
-      const tableId = components.Position.id;
       // Just wait for sync for the test to be accurate (no system trigger due to storing synced values)
       await waitForSyncLive();
 
@@ -706,11 +705,11 @@ describe("tinyBaseWrapper", () => {
       let aggregator: TableQueryUpdate<typeof components.Position.schema>[] = [];
       const onChange = (update: (typeof aggregator)[number]) => aggregator.push(update);
 
-      return { components, queries, tableId, waitForBlockSynced, entities, onChange, aggregator };
+      return { components, waitForBlockSynced, entities, onChange, aggregator };
     };
 
     it("createQueryWrapper(): without query", async () => {
-      const { components, queries, tableId, waitForBlockSynced, entities, onChange, aggregator } = await preTest();
+      const { components, waitForBlockSynced, entities, onChange, aggregator } = await preTest();
       const { unsubscribe } = components.Position.createQuery({
         onChange,
         options: { runOnInit: false },
@@ -723,7 +722,7 @@ describe("tinyBaseWrapper", () => {
       const valueB = components.Position.get(entities[0]);
 
       expect(aggregator).toEqual([
-        { tableId, entity: entities[0], value: { current: valueB, prev: valueA }, type: valueA ? "change" : "enter" },
+        { entity: entities[0], value: { current: valueB, prev: valueA }, type: valueA ? "change" : "enter" },
       ]);
 
       // Update entity[1]
@@ -737,17 +736,17 @@ describe("tinyBaseWrapper", () => {
       const valueE = components.Position.get(entities[0]);
 
       expect(aggregator).toEqual([
-        { tableId, entity: entities[0], value: { current: valueB, prev: valueA }, type: valueA ? "change" : "enter" },
-        { tableId, entity: entities[1], value: { current: valueD, prev: valueC }, type: valueC ? "change" : "enter" },
-        { tableId, entity: entities[0], value: { current: undefined, prev: valueB }, type: "exit" },
-        { tableId, entity: entities[0], value: { current: valueE, prev: undefined }, type: "enter" },
+        { entity: entities[0], value: { current: valueB, prev: valueA }, type: valueA ? "change" : "enter" },
+        { entity: entities[1], value: { current: valueD, prev: valueC }, type: valueC ? "change" : "enter" },
+        { entity: entities[0], value: { current: undefined, prev: valueB }, type: "exit" },
+        { entity: entities[0], value: { current: valueE, prev: undefined }, type: "enter" },
       ]);
 
       unsubscribe();
     });
 
     it("createQueryWrapper(): run on init", async () => {
-      const { components, queries, tableId, waitForBlockSynced, entities, onChange, aggregator } = await preTest();
+      const { components, waitForBlockSynced, entities, onChange, aggregator } = await preTest();
 
       // Enter entities
       await Promise.all(entities.map(async (entity) => await updatePosition(entity, waitForBlockSynced)));
@@ -762,7 +761,7 @@ describe("tinyBaseWrapper", () => {
     });
 
     it("createQueryWrapper(): with query", async () => {
-      const { components, queries, tableId, waitForBlockSynced, entities, onChange, aggregator } = await preTest();
+      const { components, waitForBlockSynced, entities, onChange, aggregator } = await preTest();
       const matchQuery = (x: number) => x > 5 && x < 15;
 
       const { unsubscribe } = components.Position.createQuery({
@@ -783,7 +782,6 @@ describe("tinyBaseWrapper", () => {
 
       expect(aggregator).toEqual([
         {
-          tableId,
           entity: entities[0],
           value: { current: valueB, prev: valueA },
           type: "enter", // because we didn't run on init so it's necessarily an enter
@@ -796,7 +794,6 @@ describe("tinyBaseWrapper", () => {
       const valueD = components.Position.get(entities[1]);
 
       expect(aggregator[1]).toEqual({
-        tableId,
         entity: entities[1],
         value: { current: valueD, prev: valueC },
         type: "enter",
@@ -806,7 +803,6 @@ describe("tinyBaseWrapper", () => {
       components.Position.remove(entities[0]);
 
       expect(aggregator[2]).toEqual({
-        tableId,
         entity: entities[0],
         value: { current: undefined, prev: valueB },
         type: "exit",
@@ -818,7 +814,6 @@ describe("tinyBaseWrapper", () => {
 
       expect(aggregator).toHaveLength(4);
       expect(aggregator[3]).toEqual({
-        tableId,
         entity: entities[1],
         value: { current: valueE, prev: valueD },
         type: "exit",
@@ -828,7 +823,7 @@ describe("tinyBaseWrapper", () => {
     });
 
     it("query() (queryAllMatching)", async () => {
-      const { components, store, waitForBlockSynced, entities } = await init();
+      const { components, store, entities } = await init();
       const [player, A, B, C] = entities;
 
       // Prepare entities
