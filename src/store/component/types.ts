@@ -21,7 +21,7 @@ export type Component<
 > = ComponentTable<table, config, S, M> &
   ComponentMethods<GetSchema<table, S>, T> &
   (table["namespace"] extends "internal"
-    ? {}
+    ? Record<string, never>
     : ContractComponentMethods<ContractValueSchema<table>, ContractKeySchema<table>, T>);
 
 // Base component structure containing information about its table & schemas

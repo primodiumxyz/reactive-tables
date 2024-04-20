@@ -1,15 +1,10 @@
-import { Entity, Schema } from "@latticexyz/recs";
+import { Entity } from "@latticexyz/recs";
 
 import { TinyBaseAdapter } from "@/adapter";
 import { QueryOptions, QueryResult } from "@/store/queries/templates/types";
 
 // Query all entities for a given table that have a specific value (or partial value)
-export const queryAllWithValue = <S extends Schema>({
-  queries,
-  tableId,
-  value,
-  formattedValue,
-}: QueryOptions): QueryResult => {
+export const queryAllWithValue = ({ queries, tableId, value, formattedValue }: QueryOptions): QueryResult => {
   const queryId = "internal__queryAllWithValue";
 
   // Format the value for TinyBase storage to compare it with the stored values

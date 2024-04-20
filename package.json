@@ -1,6 +1,6 @@
 {
   "name": "@primodiumxyz/tinybase-state-manager",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "",
   "license": "MIT",
   "repository": {
@@ -13,6 +13,7 @@
     "dev:indexer": "pnpm clean-local-docker-indexer && pnpm local-docker-indexer",
     "contracts:build": "cd src/__tests__/mocks/contracts && pnpm run build",
     "dev": "concurrently -n node,contracts,indexer -c yellow,cyan,red \"cd src/__tests__/mocks/contracts && pnpm run devnode\" \"cd src/__tests__/mocks/contracts && pnpm run deploy:local\" \"pnpm dev:indexer\"",
+    "build": "pnpm vite build",
     "test": "vitest"
   },
   "lint-staged": {

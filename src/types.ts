@@ -23,7 +23,7 @@ export type ExtraTables = ContractTables | MUDTables | undefined;
 export type AllTables<config extends StoreConfig, extraTables extends ExtraTables> = ResolvedStoreConfig<
   storeToV1<config>
 >["tables"] &
-  (extraTables extends Tables ? extraTables : {}) &
+  (extraTables extends Tables ? extraTables : Record<string, never>) &
   typeof storeTables &
   typeof worldTables;
 
