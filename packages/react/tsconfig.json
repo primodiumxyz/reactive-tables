@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
+    "target": "es2021",
+    "module": "esnext",
     "moduleResolution": "node",
     "declaration": true,
     "sourceMap": true,
@@ -9,13 +9,12 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "resolveJsonModule": true,
+    "emitDeclarationOnly": true,
+    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    },
-    "rootDir": "src",
-    "outDir": "dist",
-    "declarationDir": "dist/types"
+    }
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist"]

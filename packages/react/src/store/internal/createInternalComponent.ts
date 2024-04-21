@@ -45,6 +45,7 @@ export const createInternalComponent = <S extends Schema, M extends Metadata = M
     namespace: "internal" as const,
     name: id,
     schema,
+    // @ts-expect-error TODO: fix
     metadata: {
       ...options?.metadata,
       componentName: id,

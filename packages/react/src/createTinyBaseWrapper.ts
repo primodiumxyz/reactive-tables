@@ -1,5 +1,5 @@
-import { Store as StoreConfig } from "@latticexyz/store";
 import { World } from "@latticexyz/recs";
+import { Store as StoreConfig } from "@latticexyz/store";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { resolveConfig } from "@latticexyz/store/internal";
 
@@ -13,7 +13,7 @@ import worldConfig from "@latticexyz/world/mud.config";
 export const storeTables = resolveConfig(storeToV1(storeConfig)).tables;
 export const worldTables = resolveConfig(storeToV1(worldConfig)).tables;
 
-export const tinyBaseWrapper = <
+export const createTinyBaseWrapper = <
   world extends World,
   config extends StoreConfig,
   networkConfig extends NetworkConfig,

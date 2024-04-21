@@ -1,0 +1,62 @@
+{
+  "name": "@primodiumxyz/tinybase-state-manager-react",
+  "version": "0.0.0",
+  "private": true,
+  "description": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/primodiumxyz/tiny-base-integration"
+  },
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev:indexer": "pnpm clean-local-docker-indexer && pnpm local-docker-indexer",
+    "contracts:build": "cd src/__tests__/mocks/contracts && pnpm run build",
+    "dev": "concurrently -n node,contracts,indexer -c yellow,cyan,red \"cd src/__tests__/mocks/contracts && pnpm run devnode\" \"cd src/__tests__/mocks/contracts && pnpm run deploy:local\" \"pnpm dev:indexer\"",
+    "test": "vitest",
+    "build": "pnpm run build:js",
+    "build:js": "tsup",
+    "clean": "pnpm run clean:js",
+    "clean:js": "rimraf dist"
+  },
+  "devDependencies": {
+    "@primodiumxyz/pg-indexer-reader": "^0.6.0",
+    "@testing-library/react": "^15.0.2",
+    "@testing-library/react-hooks": "^8.0.1",
+    "@types/debug": "^4.1.12",
+    "@types/node": "^18.19.30",
+    "@types/react": "^18.2.78",
+    "happy-dom": "^14.7.1",
+    "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "^24.0.0",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.0.2",
+    "vite": "^5.2.9",
+    "vitest": "^1.4.0"
+  },
+  "dependencies": {
+    "@latticexyz/common": "2.0.6",
+    "@latticexyz/protocol-parser": "2.0.6",
+    "@latticexyz/recs": "2.0.6",
+    "@latticexyz/schema-type": "2.0.6",
+    "@latticexyz/store": "2.0.6",
+    "@latticexyz/utils": "2.0.6",
+    "@latticexyz/world": "2.0.6",
+    "@primodiumxyz/sync-stack": "^0.6.3",
+    "debug": "^4.3.4",
+    "react": "^18.2.0",
+    "tinybase": "^4.8.0",
+    "viem": "2.7.12"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}

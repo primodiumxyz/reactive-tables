@@ -8,8 +8,8 @@ import { Store } from "tinybase/store";
 import { Queries } from "tinybase/queries";
 
 // Ease integration as these are returned from the main entry point
-export { Store } from "tinybase/store";
-export { Queries } from "tinybase/queries";
+export type TinyBaseStore = Store;
+export type TinyBaseQueries = Queries;
 
 import {
   Components,
@@ -52,8 +52,8 @@ export type TinyBaseWrapperOptions<
 export type TinyBaseWrapperResult<config extends StoreConfig, tables extends ExtraTables> = {
   components: AllComponents<config, tables>;
   tables: AllTables<config, tables>;
-  store: Store;
-  queries: Queries;
+  store: TinyBaseStore;
+  queries: TinyBaseQueries;
   storageAdapter: StorageAdapter;
   publicClient: PublicClient;
 };
@@ -81,13 +81,13 @@ export type CreateComponentsStoreOptions<
 
 export type CreateComponentsStoreResult<config extends StoreConfig, extraTables extends ExtraTables> = {
   components: AllComponents<config, extraTables>;
-  store: Store;
-  queries: Queries;
+  store: TinyBaseStore;
+  queries: TinyBaseQueries;
 };
 
 export type CreateComponentMethodsOptions<table extends Table> = {
-  store: Store;
-  queries: Queries;
+  store: TinyBaseStore;
+  queries: TinyBaseQueries;
   table: table;
   tableId: string;
 };
@@ -100,4 +100,4 @@ export type CreateStoreOptions<config extends StoreConfig, tables extends ExtraT
   tables: AllTables<config, tables>;
 };
 
-export type CreateStoreResult = Store;
+export type CreateStoreResult = TinyBaseStore;

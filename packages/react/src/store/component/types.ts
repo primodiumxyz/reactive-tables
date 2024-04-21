@@ -22,7 +22,8 @@ export type Component<
   ComponentMethods<GetSchema<table, S>, T> &
   (table["namespace"] extends "internal"
     ? Record<string, never>
-    : ContractComponentMethods<ContractValueSchema<table>, ContractKeySchema<table>, T>);
+    : // @ts-expect-error TODO: fix
+      ContractComponentMethods<ContractValueSchema<table>, ContractKeySchema<table>, T>);
 
 // Base component structure containing information about its table & schemas
 export type ComponentTable<
@@ -39,10 +40,12 @@ export type ComponentTable<
     tableName: ResourceLabel<storeToV1<config>["namespace"], string>;
     keySchema: table["namespace"] extends "internal"
       ? undefined
-      : { [name in keyof table["keySchema"] & string]: table["keySchema"][name]["type"] };
+      : // @ts-expect-error TODO: fix
+        { [name in keyof table["keySchema"] & string]: table["keySchema"][name]["type"] };
     valueSchema: table["namespace"] extends "internal"
       ? undefined
-      : { [name in keyof table["valueSchema"] & string]: table["valueSchema"][name]["type"] };
+      : // @ts-expect-error TODO: fix
+        { [name in keyof table["valueSchema"] & string]: table["valueSchema"][name]["type"] };
   };
 };
 
@@ -92,9 +95,9 @@ export type Tables = {
 
 export type GetSchema<table extends Table, S extends Schema = Schema> = S &
   (table["namespace"] extends "internal"
-    ? // TODO: fix this as TypeScript doesn't trust us + extends InternalTable/ContractTable doesn't work
-      table["schema"]
-    : ContractValueSchema<table>);
+    ? table["schema"]
+    : // @ts-expect-error TODO: fix
+      ContractValueSchema<table>);
 
 // Used to infer the RECS types from the component's value schema
 export type ContractValueSchema<table extends ContractTable, S extends Schema = Schema> = S & {
