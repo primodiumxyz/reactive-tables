@@ -8,7 +8,7 @@ import { wait } from "@latticexyz/common/utils";
 import { padHex, toHex } from "viem";
 
 // src
-import { createTinyBaseWrapper } from "@/index";
+import { createTinyBaseWrapper, useQuery } from "@/index";
 import { createInternalComponent, createInternalCoordComponent } from "@/store/internal";
 import { createInternalComponents } from "@/store/internal/templates";
 import { TableQueryUpdate, query } from "@/store/queries";
@@ -898,6 +898,51 @@ describe("tinyBaseWrapper", () => {
           ],
         }),
       ).toEqual([A]);
+    });
+
+    it("useQuery() (useQueryAllMatching)", async () => {
+      const { components, store, entities } = await init();
+      const [player, A, B, C] = entities;
+
+      // Prepare entities
+      components.Position.set({ x: 10, y: 10 }, player);
+      components.Position.set({ x: 5, y: 5 }, A);
+      components.Position.set({ x: 10, y: 10 }, B);
+      components.Position.set({ x: 15, y: 10 }, C);
+      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6) }, player);
+      components.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6) }, A);
+      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3) }, B);
+
+      const { result } = renderHook(() =>
+        useQuery(store, {
+          inside: [components.Position],
+          with: [
+            {
+              component: components.Inventory,
+              value: { totalWeight: BigInt(6) },
+            },
+          ],
+        }),
+      );
+
+      expect(result.current.sort()).toEqual([player, A].sort());
+
+      // Update the totalWeight of player
+      components.Inventory.update({ totalWeight: BigInt(3) }, player);
+      expect(result.current).toEqual([A]);
+
+      // Update the totalWeight of A
+      components.Inventory.update({ totalWeight: BigInt(3) }, A);
+      expect(result.current).toEqual([]);
+
+      // Update the totalWeight of B & C
+      components.Inventory.update({ totalWeight: BigInt(6) }, B);
+      components.Inventory.update({ totalWeight: BigInt(6) }, C);
+      expect(result.current).toEqual([B, C].sort());
+
+      // Remove B
+      components.Inventory.remove(B);
+      expect(result.current).toEqual([C]);
     });
   });
 });
