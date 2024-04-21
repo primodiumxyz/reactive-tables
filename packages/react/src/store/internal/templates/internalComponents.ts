@@ -3,6 +3,18 @@ import { Store } from "tinybase/store";
 
 import { createInternalComponent, createInternalNumberComponent } from "@/store/internal/";
 
+export enum SyncSourceType {
+  Indexer,
+  RPC,
+}
+
+export enum SyncStep {
+  Syncing,
+  Error,
+  Complete,
+  Live,
+}
+
 export type InternalComponents = ReturnType<typeof createInternalComponents>;
 export const createInternalComponents = (store: Store) => ({
   SyncSource: createInternalNumberComponent(store, {

@@ -63,8 +63,9 @@ export const createQuery = <S extends Schema, T = unknown>({
   // Init listener
   // Unfortunatly `addResultRowListener()` won't work here as it's not triggered for cell changes
   // So we need to use a regular listener associated with the query instead
-  const listenerId = store.addRowListener(tableId, null, (_, __, entity: Entity, getCellChange) => {
+  const listenerId = store.addRowListener(tableId, null, (_, __, entityKey, getCellChange) => {
     if (!getCellChange) return;
+    const entity = entityKey as Entity;
 
     // Get the entities matching the query
     const matchingEntities = queries.getResultRowIds(queryId);
@@ -77,7 +78,7 @@ export const createQuery = <S extends Schema, T = unknown>({
     if (!inPrev && !inCurrent) return; // not in the query, we're not interested
 
     // Gather the previous and current values
-    let args = getValueAndTypeFromRowChange(getCellChange, keys, tableId, entity) as TableQueryUpdate<S, T>;
+    const args = getValueAndTypeFromRowChange(getCellChange, keys, tableId, entity) as TableQueryUpdate<S, T>;
 
     // Run the callbacks
     if (!inPrev && inCurrent) {
@@ -102,7 +103,11 @@ export const createQuery = <S extends Schema, T = unknown>({
     queries.forEachResultRow(queryId, (entity) => {
       const value = TinyBaseAdapter.parse(rows[entity]) as ComponentValue<S, T>;
 
-      const args = { entity, value: { current: value, prev: undefined }, type: "enter" as UpdateType };
+      const args = {
+        entity: entity as Entity,
+        value: { current: value, prev: undefined },
+        type: "enter" as UpdateType,
+      };
       onEnter?.(args);
       onChange?.(args);
     });
@@ -129,9 +134,9 @@ export const getValueAndTypeFromRowChange = <S extends Schema, T = unknown>(
     .concat(internalKeys);
 
   // Get the old and new rows
-  let { current: newRow, prev: previousRow } = keys.reduce(
+  const { current: newRow, prev: previousRow } = keys.reduce(
     (acc, key) => {
-      const [_, oldValueAtKey, newValueAtKey] = getCellChange(tableId, entity, key);
+      const [, oldValueAtKey, newValueAtKey] = getCellChange(tableId, entity, key);
       acc.current[key] = newValueAtKey as ResultRow[typeof key];
       acc.prev[key] = oldValueAtKey as ResultRow[typeof key];
 

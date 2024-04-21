@@ -36,7 +36,7 @@ export const createInternalComponent = <S extends Schema, M extends Metadata = M
   options?: CreateInternalComponentOptions<M>,
 ): InternalComponent<S, M, T> => {
   // TODO: support indexed
-  const { id, indexed } = options ?? { id: uuid() };
+  const { id } = options ?? { id: uuid() };
 
   // TODO: we need to add id because confusion around base table & ComponentTable, which might not be necessary at all (remove it)
   const table = {

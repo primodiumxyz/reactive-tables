@@ -5,7 +5,7 @@ import { Table as MUDTable } from "@latticexyz/store/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 
 import { schemaAbiTypeToRecsType } from "@/store/utils";
-import { ComponentTable, ContractTable, InternalTable } from "@/store/component/types";
+import { ComponentTable, ContractTable } from "@/store/component/types";
 
 export const createComponentTable = <table extends ContractTable | MUDTable, config extends StoreConfig>(
   table: table,
@@ -27,11 +27,11 @@ export const createComponentTable = <table extends ContractTable | MUDTable, con
     metadata: {
       componentName: table.name,
       tableName: resourceToLabel(table) as ResourceLabel<storeToV1<config>["namespace"], string>,
-      // @ts-expect-error
+      // @ts-expect-error one keySchema is more specific than the other
       keySchema: Object.fromEntries(
         Object.entries(table.keySchema).map(([fieldName, schemaAbiType]) => [fieldName, schemaAbiType["type"]]),
       ),
-      // @ts-expect-error
+      // @ts-expect-error one keySchema is more specific than the other
       valueSchema: Object.fromEntries(
         Object.entries(table.valueSchema).map(([fieldName, schemaAbiType]) => [fieldName, schemaAbiType["type"]]),
       ),

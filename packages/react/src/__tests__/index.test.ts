@@ -12,7 +12,7 @@ import { createTinyBaseWrapper, useQuery } from "@/index";
 import { createInternalComponent, createInternalCoordComponent } from "@/store/internal";
 import { createInternalComponents } from "@/store/internal/templates";
 import { TableQueryUpdate, query } from "@/store/queries";
-import { SyncStep } from "@/constants";
+import { SyncStep } from "@/store/internal/templates/internalComponents";
 // mocks
 import {
   fuzz,

@@ -46,9 +46,10 @@ export const createQueryWrapper = <S extends Schema, T = unknown>({
   const keys = Object.keys(schema);
 
   // This will be triggered on any change to a row/cell (meaning a value or a single value key)
-  const listenerId = store.addRowListener(tableId, null, (_, __, entity: Entity, getCellChange) => {
+  const listenerId = store.addRowListener(tableId, null, (_, __, entityKey, getCellChange) => {
     // If `getCellChange` is undefined, it means that `store.callListener()` was called
     if (!getCellChange) return;
+    const entity = entityKey as Entity;
 
     // Gather the value and type of the change
     const args = getValueAndTypeFromRowChange(getCellChange, keys, tableId, entity) as TableQueryUpdate<S, T>;
@@ -70,7 +71,11 @@ export const createQueryWrapper = <S extends Schema, T = unknown>({
     Object.entries(rows).forEach(([entity, rawValue]) => {
       const value = TinyBaseAdapter.parse(rawValue) as ComponentValue<S, T>;
 
-      const args = { entity, value: { current: value, prev: undefined }, type: "enter" as UpdateType };
+      const args = {
+        entity: entity as Entity,
+        value: { current: value, prev: undefined },
+        type: "enter" as UpdateType,
+      };
       onEnter?.(args);
       onChange?.(args);
     });

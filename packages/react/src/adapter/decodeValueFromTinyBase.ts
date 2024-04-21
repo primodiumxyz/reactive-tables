@@ -15,7 +15,7 @@ const ignoreKey = (key: string) => encodedDataKeys.includes(key) || key.startsWi
 
 export const decodeValueFromTinyBase = (formattedData: TinyBaseFormattedType): DecodedTinyBaseType => {
   if (Object.keys(formattedData).length === 0) return undefined;
-  let decoded: DecodedTinyBaseType = {};
+  const decoded: DecodedTinyBaseType = {};
 
   Object.entries(formattedData).forEach(([key, value]) => {
     // Return encoded keys as is and ignore type keys

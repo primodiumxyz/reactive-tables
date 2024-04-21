@@ -227,12 +227,13 @@ export const createComponentMethods = <
   };
 
   // Add hooks only if not in a node environment
-  let hookMethods = { useAll, useAllWith, useAllWithout, use: useValue };
+  const hookMethods = { useAll, useAllWith, useAllWithout, use: useValue };
   if (typeof window === "undefined") {
     Object.keys(hookMethods).forEach((key) => {
+      // @ts-expect-error undefined is not expected here, but we're doing that until we separate core/react libs
       hookMethods[key as keyof typeof hookMethods] = () => {
         console.warn(`${key} is only available in the browser`);
-        return undefined as any;
+        return undefined;
       };
     });
   }

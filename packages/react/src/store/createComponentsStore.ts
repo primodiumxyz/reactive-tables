@@ -1,6 +1,5 @@
 import { Store as StoreConfig } from "@latticexyz/store";
 import { World } from "@latticexyz/recs";
-import { KeySchema } from "@latticexyz/store/internal";
 import { createStore } from "tinybase/store";
 import { createQueries } from "tinybase/queries";
 
@@ -28,16 +27,11 @@ export const createComponentsStore = <
     if (table.namespace !== "internal" && Object.keys(table.valueSchema).length === 0)
       throw new Error("Component schema must have at least one key");
 
-    const componentTable =
-      // TODO: fix table incompatible because of inconsistency between MUDTable & ContractTable KeySchema/ValueSchema
-      // we probably actually can't pass a MUDTable because there is the additional { type: ... }
-      // @ts-expect-error table misinterpreted as non-compatible type
-      createComponentTable(table);
+    const componentTable = createComponentTable(table);
 
     const methods = createComponentMethods({
       store,
       queries,
-      // @ts-expect-error table not compatible
       table: { ...table, ...componentTable },
       tableId: table.tableId,
     });

@@ -19,14 +19,12 @@ export type TinyBaseFormattedType = {
     | "undefined"
     | "undefined[]";
 };
+export type ValuesArray = readonly (StaticPrimitiveType | DynamicPrimitiveType | undefined)[];
 
 // We want to encode the original type as well when dealing with client components, because we
 // don't have a schema to rely on. And we don't care that much about the schema, because that's TypeScript types we want.
-export const formatValueForTinyBase = (
-  keys: string[],
-  values: readonly (StaticPrimitiveType | DynamicPrimitiveType | undefined)[] = [],
-): TinyBaseFormattedType => {
-  let formatted: TinyBaseFormattedType = {};
+export const formatValueForTinyBase = (keys: string[], values: ValuesArray = []): TinyBaseFormattedType => {
+  const formatted: TinyBaseFormattedType = {};
 
   values.forEach((value, i) => {
     const key = keys[i];

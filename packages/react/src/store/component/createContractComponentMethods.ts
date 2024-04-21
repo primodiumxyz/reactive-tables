@@ -55,12 +55,13 @@ export const createContractComponentMethods = <VS extends Schema, KS extends Sch
   return {
     getWithKeys,
     hasWithKeys,
+    // @ts-expect-error undefined is not expected here, but we're doing that until we separate core/react libs
     useWithKeys:
       typeof window !== "undefined"
         ? useWithKeys
         : () => {
             console.warn("useWithKeys is only available in the browser");
-            return undefined as any;
+            return undefined;
           },
     setWithKeys,
     getEntityKeys,

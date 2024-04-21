@@ -1,6 +1,7 @@
 import { Entity } from "@latticexyz/recs";
 
 import { TinyBaseAdapter } from "@/adapter";
+import { ValuesArray } from "@/adapter/formatValueForTinyBase";
 import { QueryOptions, QueryResult } from "@/store/queries/templates/types";
 
 // Query all entities for a given table that DON'T have a specific value (or partial value)
@@ -8,7 +9,7 @@ export const queryAllWithoutValue = ({ queries, tableId, value, formattedValue }
   const queryId = "internal__queryAllWithoutValue";
 
   // Format the value for TinyBase storage to compare it with the stored values
-  formattedValue = formattedValue ?? TinyBaseAdapter.format(Object.keys(value), Object.values(value));
+  formattedValue = formattedValue ?? TinyBaseAdapter.format(Object.keys(value), Object.values(value) as ValuesArray);
 
   queries.setQueryDefinition(queryId, tableId, ({ select, where }) => {
     // We need to make one select for the row to be included
@@ -20,9 +21,9 @@ export const queryAllWithoutValue = ({ queries, tableId, value, formattedValue }
     where((getCell) => Object.keys(value).some((key) => getCell(key) !== formattedValue[key]));
   });
 
-  let entities: Entity[] = [];
+  const entities: Entity[] = [];
   // Retrieve all ids of the rows matching the query (entities)
-  queries.forEachResultRow(queryId, (rowId) => entities.push(rowId));
+  queries.forEachResultRow(queryId, (rowId) => entities.push(rowId as Entity));
   // queries.delQueryDefinition("queryAllWithoutValue");
 
   return { id: queryId, entities };
