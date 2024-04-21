@@ -29,7 +29,7 @@ export const createSync = <config extends StoreConfig, extraTables extends Extra
 
   const logFilters = Object.values(components).map((table) => ({ tableId: table.id as string }));
 
-  let unsubs: (() => void)[] = [];
+  const unsubs: (() => void)[] = [];
   const startSync = () => {
     // If an indexer url is provided, start by syncing from the indexer
     if (indexerUrl) {
