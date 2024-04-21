@@ -1,13 +1,15 @@
 import { Schema, World } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
-import { KeySchema } from "@latticexyz/store/internal";
-import { storeTables, worldTables } from "@latticexyz/store-sync";
 import { MUDChain } from "@latticexyz/common/chains";
 import { ResolvedStoreConfig, Tables as MUDTables } from "@latticexyz/store/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 import { Queries } from "tinybase/queries";
+
+// Ease integration as these are returned from the main entry point
+export { Store } from "tinybase/store";
+export { Queries } from "tinybase/queries";
 
 import {
   Components,
@@ -18,6 +20,8 @@ import {
   ContractTables,
 } from "@/store/component/types";
 import { StorageAdapter } from "@/adapter";
+
+import { storeTables, worldTables } from "@/index";
 
 export type ExtraTables = ContractTables | MUDTables | undefined;
 export type AllTables<config extends StoreConfig, extraTables extends ExtraTables> = ResolvedStoreConfig<

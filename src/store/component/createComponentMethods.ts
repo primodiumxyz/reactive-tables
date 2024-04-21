@@ -1,5 +1,4 @@
 import { Entity, Schema } from "@latticexyz/recs";
-import { singletonEntity } from "@latticexyz/store-sync/recs";
 
 import { useEffect, useState } from "react";
 
@@ -12,8 +11,9 @@ import {
   useAllWithoutValue,
 } from "@/store/queries";
 import { createContractComponentMethods } from "@/store/component/createContractComponentMethods";
-import { arrayToIterator, createComponentMethodsUtils } from "@/store/component/utils";
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
+import { arrayToIterator, createComponentMethodsUtils } from "@/store/component/utils";
+import { singletonEntity } from "@/utils";
 import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
 import { ComponentValue, ComponentValueSansMetadata, Table } from "@/store/component/types";
 

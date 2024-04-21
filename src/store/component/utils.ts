@@ -1,10 +1,10 @@
-import { KeySchema, SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
+import { SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
 import { KeySchema as UnparsedKeySchema } from "@latticexyz/store/internal";
 import { Entity, Schema } from "@latticexyz/recs";
-import { entityToHexKeyTuple, hexKeyTupleToEntity } from "@latticexyz/store-sync/recs";
 import { Hex, decodeAbiParameters, encodeAbiParameters } from "viem";
 import { Store } from "tinybase/store";
 
+import { entityToHexKeyTuple, hexKeyTupleToEntity } from "@/utils";
 import { ComponentKey } from "@/store/component/types";
 
 export const createComponentMethodsUtils = (store: Store, tableId: string) => {

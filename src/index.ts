@@ -8,7 +8,10 @@ import { createStorageAdapter } from "@/adapter";
 import { createPublicClient } from "@/utils";
 import { TinyBaseWrapperOptions, NetworkConfig, TinyBaseWrapperResult, AllTables, ExtraTables } from "@/types";
 
-import { storeTables, worldTables } from "@latticexyz/store-sync";
+import storeConfig from "@latticexyz/store/mud.config";
+import worldConfig from "@latticexyz/world/mud.config";
+export const storeTables = resolveConfig(storeToV1(storeConfig)).tables;
+export const worldTables = resolveConfig(storeToV1(worldConfig)).tables;
 
 export const tinyBaseWrapper = <
   world extends World,

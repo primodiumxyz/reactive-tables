@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es2021",
-    "module": "esnext",
+    "target": "ESNext",
+    "module": "ESNext",
     "moduleResolution": "node",
     "declaration": true,
     "sourceMap": true,
@@ -9,7 +9,6 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "resolveJsonModule": true,
-    "emitDeclarationOnly": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]

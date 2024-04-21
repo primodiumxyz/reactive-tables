@@ -8,7 +8,12 @@
     "url": "https://github.com/primodiumxyz/tiny-base-integration"
   },
   "type": "module",
-  "main": "index.js",
+  "main": "src/index.ts",
+  "module": "src/index.ts",
+  "types": "src/index.d.ts",
+  "files": [
+    "src"
+  ],
   "scripts": {
     "dev:indexer": "pnpm clean-local-docker-indexer && pnpm local-docker-indexer",
     "contracts:build": "cd src/__tests__/mocks/contracts && pnpm run build",
@@ -56,7 +61,6 @@
     "@latticexyz/recs": "2.0.6",
     "@latticexyz/schema-type": "2.0.6",
     "@latticexyz/store": "2.0.6",
-    "@latticexyz/store-sync": "2.0.6",
     "@latticexyz/utils": "2.0.6",
     "@latticexyz/world": "2.0.6",
     "@primodiumxyz/sync-stack": "^0.6.3",
@@ -65,5 +69,10 @@
     "rxjs": "^7.5.5",
     "tinybase": "^4.8.0",
     "viem": "2.7.12"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "@latticexyz/common@2.0.6": "patches/@latticexyz__common@2.0.6.patch"
+    }
   }
 }

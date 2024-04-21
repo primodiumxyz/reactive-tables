@@ -18,6 +18,11 @@ export default defineConfig({
       fileName: (format) => `tinybaseStateManager.${format}.js`,
     },
     rollupOptions: {
+      input: {
+        index: "src/index.ts",
+        "store/internal": "src/store/internal/index.ts",
+        "store/queries": "src/store/queries/index.ts",
+      },
       external: /^react/,
       output: {
         globals: {

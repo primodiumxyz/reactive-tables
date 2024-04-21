@@ -1,13 +1,16 @@
 import { hexToResource, spliceHex } from "@latticexyz/common";
-import { StorageAdapterLog } from "@latticexyz/store-sync";
-import { hexKeyTupleToEntity } from "@latticexyz/store-sync/recs";
-import { Hex, size } from "viem";
+import { StoreEventsAbiItem, StoreEventsAbi } from "@latticexyz/store";
+import { UnionPick } from "@latticexyz/common/type-utils";
+import { Hex, Log, size } from "viem";
 import { Write } from "@primodiumxyz/sync-stack";
 import { Store } from "tinybase/store";
 
 import { TinyBaseAdapter } from "@/adapter";
 import { getComponentTable } from "@/store/utils";
-import { debug } from "@/utils";
+import { debug, hexKeyTupleToEntity } from "@/utils";
+
+type StoreEventsLog = Log<bigint, number, false, StoreEventsAbiItem, true, StoreEventsAbi>;
+export type StorageAdapterLog = Partial<StoreEventsLog> & UnionPick<StoreEventsLog, "address" | "eventName" | "args">;
 
 export type CustomWriter = ReturnType<typeof createCustomWriter>;
 

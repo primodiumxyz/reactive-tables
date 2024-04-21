@@ -1,6 +1,6 @@
 export {
   queryAllMatching as query,
-  QueryAllMatchingOptions as QueryOptions,
+  type QueryAllMatchingOptions as QueryOptions,
 } from "@/store/queries/templates/queryAllMatching";
 
 export * from "@/store/queries/templates/queryAllWithValue";
