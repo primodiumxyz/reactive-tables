@@ -1,4 +1,4 @@
-import { describe, it, expect, assert, beforeAll } from "vitest";
+import { describe, it, expect, assert } from "vitest";
 import { renderHook } from "@testing-library/react-hooks";
 
 // libs
@@ -8,7 +8,7 @@ import { wait } from "@latticexyz/common/utils";
 import { padHex, toHex } from "viem";
 
 // src
-import { tinyBaseWrapper } from "@/index";
+import { createTinyBaseWrapper } from "@/index";
 import { createInternalComponent, createInternalCoordComponent } from "@/store/internal";
 import { createInternalComponents } from "@/store/internal/templates";
 import { TableQueryUpdate, query } from "@/store/queries";
@@ -49,7 +49,7 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
     queries,
     storageAdapter,
     publicClient,
-  } = tinyBaseWrapper({
+  } = createTinyBaseWrapper({
     world,
     mudConfig: mockConfig,
     networkConfig: {
@@ -94,6 +94,17 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
     ...["A", "B", "C"].map((id) => padHex(toHex(`entity${id}`))),
   ] as Entity[];
 
+  // Wait for a component to be synced at the specified block
+  const waitForBlockSynced = async (txBlock: bigint, componentKey: keyof typeof components, key?: string) => {
+    let synced = false;
+
+    while (!synced) {
+      await wait(1000);
+      const lastSyncedBlock = components?.[componentKey].get(key)?.__lastSyncedAtBlock;
+      synced = lastSyncedBlock >= txBlock;
+    }
+  };
+
   // We want to wait for both components systems to be in sync & live
   const waitForSyncLive = async () => {
     let synced = false;
@@ -104,17 +115,6 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
       const tinyBaseSync = components?.SyncStatus.get(singletonEntity);
       const recsSync = getComponentValue(recsComponents.SyncProgress, singletonEntity);
       synced = tinyBaseSync?.step === SyncStep.Live && recsSync?.step === "live";
-    }
-  };
-
-  // Wait for a component to be synced at the specified block
-  const waitForBlockSynced = async (txBlock: bigint, componentKey: keyof typeof components, key?: string) => {
-    let synced = false;
-
-    while (!synced) {
-      await wait(1000);
-      const lastSyncedBlock = components?.[componentKey].get(key)?.__lastSyncedAtBlock;
-      synced = lastSyncedBlock >= txBlock;
     }
   };
 
@@ -129,8 +129,8 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
     recsComponents,
     entities,
     networkConfig,
-    waitForSyncLive,
     waitForBlockSynced,
+    waitForSyncLive,
   };
 };
 
@@ -156,7 +156,7 @@ describe("tinyBaseWrapper", () => {
     const networkConfig = getMockNetworkConfig();
 
     // Initialize wrapper
-    const { store } = tinyBaseWrapper({
+    const { store } = createTinyBaseWrapper({
       world,
       mudConfig: mockConfig,
       networkConfig,
@@ -182,7 +182,7 @@ describe("tinyBaseWrapper", () => {
 
   describe("sync: should properly sync similar values to RECS components", () => {
     const runTest = async (options: TestOptions, txs: Record<string, bigint>) => {
-      const { components, recsComponents, entities, waitForSyncLive, waitForBlockSynced } = await init(options);
+      const { components, recsComponents, entities, waitForBlockSynced } = await init(options);
       const player = entities[0];
       assert(components);
 
@@ -192,8 +192,8 @@ describe("tinyBaseWrapper", () => {
           waitForBlockSynced(
             block,
             comp as keyof typeof components,
-            // @ts-ignore
-            components[comp].metadata.keySchema.id ? player : undefined,
+            // @ts-ignore we're passing components with an id as key or none at all
+            components[comp as keyof typeof components].metadata.keySchema.id ? player : undefined,
           ),
         ),
       );
@@ -469,7 +469,10 @@ describe("tinyBaseWrapper", () => {
         return { entity, x: nums[0], y: nums[1] };
       };
 
-      const updatePosition = async (entity: Entity, waitForBlockSynced: Function) => {
+      const updatePosition = async (
+        entity: Entity,
+        waitForBlockSynced: (block: bigint, comp: string, key?: string) => void,
+      ) => {
         const args = getRandomArgs(entity);
         const { blockNumber } = await setPositionForEntity(args);
         await waitForBlockSynced(blockNumber, "Position", entity);
@@ -682,7 +685,11 @@ describe("tinyBaseWrapper", () => {
       return { entity, x: nums[0], y: nums[1] };
     };
 
-    const updatePosition = async (entity: Entity, waitForBlockSynced: Function) => {
+    // @ts-ignore use Function as a type
+    const updatePosition = async (
+      entity: Entity,
+      waitForBlockSynced: (block: bigint, comp: string, key?: string) => void,
+    ) => {
       const args = getRandomArgs(entity);
       const { blockNumber } = await setPositionForEntity(args);
       await waitForBlockSynced(blockNumber, "Position", entity);
@@ -690,19 +697,25 @@ describe("tinyBaseWrapper", () => {
       return { args };
     };
 
-    const updatePositionTo = async (entity: Entity, x: number, y: number, waitForBlockSynced: Function) => {
+    // @ts-ignore use Function as a type
+    const updatePositionTo = async (
+      entity: Entity,
+      x: number,
+      y: number,
+      waitForBlockSynced: (block: bigint, comp: string, key?: string) => void,
+    ) => {
       const { blockNumber } = await setPositionForEntity({ entity, x, y });
       await waitForBlockSynced(blockNumber, "Position", entity);
     };
 
     const preTest = async () => {
-      const { components, waitForSyncLive, waitForBlockSynced, entities } = await init();
+      const { components, waitForBlockSynced, waitForSyncLive, entities } = await init();
       assert(components);
       // Just wait for sync for the test to be accurate (no system trigger due to storing synced values)
       await waitForSyncLive();
 
       // Aggregate updates triggered by the system on component changes
-      let aggregator: TableQueryUpdate<typeof components.Position.schema>[] = [];
+      const aggregator: TableQueryUpdate<typeof components.Position.schema>[] = [];
       const onChange = (update: (typeof aggregator)[number]) => aggregator.push(update);
 
       return { components, waitForBlockSynced, entities, onChange, aggregator };

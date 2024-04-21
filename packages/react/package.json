@@ -3,11 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "description": "",
-  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/primodiumxyz/tiny-base-integration"
   },
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": "./dist/index.js"
@@ -18,14 +18,29 @@
     "dist"
   ],
   "scripts": {
-    "dev:indexer": "pnpm clean-local-docker-indexer && pnpm local-docker-indexer",
-    "contracts:build": "cd src/__tests__/mocks/contracts && pnpm run build",
-    "dev": "concurrently -n node,contracts,indexer -c yellow,cyan,red \"cd src/__tests__/mocks/contracts && pnpm run devnode\" \"cd src/__tests__/mocks/contracts && pnpm run deploy:local\" \"pnpm dev:indexer\"",
-    "test": "vitest",
     "build": "pnpm run build:js",
     "build:js": "tsup",
     "clean": "pnpm run clean:js",
-    "clean:js": "rimraf dist"
+    "clean:js": "rimraf dist",
+    "contracts:build": "cd src/__tests__/mocks/contracts && pnpm run build",
+    "dev": "concurrently -n node,contracts,indexer -c yellow,cyan,red \"cd src/__tests__/mocks/contracts && pnpm run devnode\" \"cd src/__tests__/mocks/contracts && pnpm run deploy:local\" \"pnpm dev:indexer\"",
+    "dev:indexer": "pnpm clean-local-docker-indexer && pnpm local-docker-indexer",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@latticexyz/common": "2.0.6",
+    "@latticexyz/protocol-parser": "2.0.6",
+    "@latticexyz/recs": "2.0.6",
+    "@latticexyz/schema-type": "2.0.6",
+    "@latticexyz/store": "2.0.6",
+    "@latticexyz/store-sync": "2.0.6",
+    "@latticexyz/utils": "2.0.6",
+    "@latticexyz/world": "2.0.6",
+    "@primodiumxyz/sync-stack": "^0.6.3",
+    "debug": "^4.3.4",
+    "react": "^18.2.0",
+    "tinybase": "^4.8.0",
+    "viem": "2.7.12"
   },
   "devDependencies": {
     "@primodiumxyz/pg-indexer-reader": "^0.6.0",
@@ -41,20 +56,6 @@
     "tsup": "^8.0.2",
     "vite": "^5.2.9",
     "vitest": "^1.4.0"
-  },
-  "dependencies": {
-    "@latticexyz/common": "2.0.6",
-    "@latticexyz/protocol-parser": "2.0.6",
-    "@latticexyz/recs": "2.0.6",
-    "@latticexyz/schema-type": "2.0.6",
-    "@latticexyz/store": "2.0.6",
-    "@latticexyz/utils": "2.0.6",
-    "@latticexyz/world": "2.0.6",
-    "@primodiumxyz/sync-stack": "^0.6.3",
-    "debug": "^4.3.4",
-    "react": "^18.2.0",
-    "tinybase": "^4.8.0",
-    "viem": "2.7.12"
   },
   "publishConfig": {
     "access": "restricted"

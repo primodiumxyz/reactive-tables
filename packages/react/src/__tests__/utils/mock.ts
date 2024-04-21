@@ -1,6 +1,6 @@
 import { waitForTransactionReceipt } from "viem/actions";
 import { getMockNetworkConfig } from "./init";
-import { Hex } from "viem";
+import { Entity } from "@latticexyz/recs";
 
 const networkConfig = getMockNetworkConfig();
 
@@ -14,10 +14,10 @@ const mockFunctionToComponent = {
 // This way it should at least reduce a bit the waiting time
 export const fuzz = async (iterations: number) => {
   const allFunctionNames = Object.keys(mockFunctions);
-  let tasks = [];
+  const tasks = [];
   // Remember function called - tx block number
-  let txInfo = Object.entries(mockFunctionToComponent).reduce(
-    (acc, [func, comp]) => {
+  const txInfo = Object.entries(mockFunctionToComponent).reduce(
+    (acc, [, comp]) => {
       acc[comp] = BigInt(0);
       return acc;
     },
@@ -93,7 +93,7 @@ export const setItems = async (args: { items: number[]; weights: number[]; total
 };
 
 // Set the position of an entity
-export const setPositionForEntity = async (args: { entity: Hex; x: number; y: number }) => {
+export const setPositionForEntity = async (args: { entity: Entity; x: number; y: number }) => {
   const { entity, x, y } = args;
   const hash = await networkConfig.worldContract.write.moveWithArbitraryKey([entity, x, y], {
     chain: networkConfig.chain,
