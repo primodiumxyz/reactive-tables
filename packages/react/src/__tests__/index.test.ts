@@ -8,7 +8,7 @@ import { wait } from "@latticexyz/common/utils";
 import { padHex, toHex } from "viem";
 
 // src
-import { createTinyBaseWrapper, useQuery } from "@/index";
+import { createGlobalQuery, createTinyBaseWrapper, useQuery } from "@/index";
 import { createInternalComponent, createInternalCoordComponent } from "@/store/internal";
 import { createInternalComponents } from "@/store/internal/templates";
 import { TableQueryUpdate, query } from "@/store/queries";
@@ -715,7 +715,7 @@ describe("tinyBaseWrapper", () => {
       await waitForSyncLive();
 
       // Aggregate updates triggered by the system on component changes
-      const aggregator: TableQueryUpdate<typeof components.Position.schema>[] = [];
+      const aggregator: TableQueryUpdate<typeof components.Position.schema | typeof components.Inventory.schema>[] = [];
       const onChange = (update: (typeof aggregator)[number]) => aggregator.push(update);
 
       return { components, store, waitForBlockSynced, entities, onChange, aggregator };
@@ -907,9 +907,15 @@ describe("tinyBaseWrapper", () => {
       ).toEqual([A]);
     });
 
-    it("useQuery() (useQueryAllMatching)", async () => {
+    it("createGlobalQuery(), useQuery() (useQueryAllMatching)", async () => {
       const { components, store, entities, onChange, aggregator } = await preTest();
       const [player, A, B, C] = entities;
+
+      // We need another aggregator for the global query
+      const globalAggregator: TableQueryUpdate<
+        typeof components.Position.schema | typeof components.Inventory.schema
+      >[] = [];
+      const globalOnChange = (update: (typeof globalAggregator)[number]) => globalAggregator.push(update);
 
       // Prepare entities
       components.Position.set({ x: 10, y: 10 }, player);
@@ -920,26 +926,40 @@ describe("tinyBaseWrapper", () => {
       components.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6) }, A);
       components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3) }, B);
 
+      const query = {
+        inside: [components.Position],
+        with: [
+          {
+            component: components.Inventory,
+            value: { totalWeight: BigInt(6) },
+          },
+        ],
+      };
+
       const { result } = renderHook(() =>
-        useQuery(
-          store,
-          {
-            inside: [components.Position],
-            with: [
-              {
-                component: components.Inventory,
-                value: { totalWeight: BigInt(6) },
-              },
-            ],
-          },
-          {
-            onChange,
-          },
-        ),
+        useQuery(store, query, {
+          onChange,
+        }),
       );
+      const { unsubscribe } = createGlobalQuery(store, query, { onChange: globalOnChange });
 
       expect(result.current.sort()).toEqual([player, A].sort());
       expect(aggregator).toEqual([]);
+      // The global aggregator has run on init true by default
+      expect(globalAggregator.sort()).toEqual([
+        {
+          tableId: undefined, // on init we don't know about specific tables
+          entity: player,
+          value: { current: undefined, prev: undefined }, // same for values
+          type: "enter",
+        },
+        {
+          tableId: undefined,
+          entity: A,
+          value: { current: undefined, prev: undefined },
+          type: "enter",
+        },
+      ]);
 
       // Update the totalWeight of player
       const valueA = components.Inventory.get(player);
@@ -947,14 +967,15 @@ describe("tinyBaseWrapper", () => {
       const valueB = components.Inventory.get(player);
 
       expect(result.current).toEqual([A]);
-      expect(aggregator).toEqual([
-        {
-          tableId: components.Inventory.id,
-          entity: player,
-          value: { current: valueB, prev: valueA },
-          type: "exit", // out of the query
-        },
-      ]);
+      const expectedAggregatorItem = {
+        tableId: components.Inventory.id,
+        entity: player,
+        value: { current: valueB, prev: valueA },
+        type: "exit", // out of the query
+      };
+      expect(aggregator).toEqual([expectedAggregatorItem]);
+      expect(globalAggregator).toHaveLength(3);
+      expect(globalAggregator[2]).toEqual(expectedAggregatorItem);
 
       // Update the totalWeight of A
       const valueC = components.Inventory.get(A);
@@ -962,13 +983,16 @@ describe("tinyBaseWrapper", () => {
       const valueD = components.Inventory.get(A);
 
       expect(result.current).toEqual([]);
-      expect(aggregator).toHaveLength(2);
-      expect(aggregator[1]).toEqual({
+      const expectedAggregatorItemB = {
         tableId: components.Inventory.id,
         entity: A,
         value: { current: valueD, prev: valueC },
-        type: "exit", // out of the query
-      });
+        type: "exit",
+      };
+      expect(aggregator).toHaveLength(2);
+      expect(globalAggregator).toHaveLength(4);
+      expect(aggregator[1]).toEqual(expectedAggregatorItemB);
+      expect(globalAggregator[3]).toEqual(expectedAggregatorItemB);
 
       // Update the totalWeight of B
       const valueE = components.Inventory.get(B);
@@ -976,13 +1000,16 @@ describe("tinyBaseWrapper", () => {
       const valueF = components.Inventory.get(B);
 
       expect(result.current).toEqual([B]);
-      expect(aggregator).toHaveLength(3);
-      expect(aggregator[2]).toEqual({
+      const expectedAggregatorItemC = {
         tableId: components.Inventory.id,
         entity: B,
         value: { current: valueF, prev: valueE },
-        type: "enter", // into the query
-      });
+        type: "enter",
+      };
+      expect(aggregator).toHaveLength(3);
+      expect(globalAggregator).toHaveLength(5);
+      expect(aggregator[2]).toEqual(expectedAggregatorItemC);
+      expect(globalAggregator[4]).toEqual(expectedAggregatorItemC);
 
       // Update, then remove B
       const valueG = components.Position.get(B);
@@ -991,19 +1018,26 @@ describe("tinyBaseWrapper", () => {
       components.Position.remove(B);
 
       expect(result.current).toEqual([]);
-      expect(aggregator).toHaveLength(5);
-      expect(aggregator[3]).toEqual({
+      const expectedAggregatorItemD = {
         tableId: components.Position.id,
         entity: B,
         value: { current: valueH, prev: valueG },
         type: "change",
-      });
-      expect(aggregator[4]).toEqual({
+      };
+      const expectedAggregatorItemE = {
         tableId: components.Position.id,
         entity: B,
         value: { current: undefined, prev: valueH },
         type: "exit",
-      });
+      };
+      expect(aggregator).toHaveLength(5);
+      expect(globalAggregator).toHaveLength(7);
+      expect(aggregator[3]).toEqual(expectedAggregatorItemD);
+      expect(aggregator[4]).toEqual(expectedAggregatorItemE);
+      expect(globalAggregator[5]).toEqual(expectedAggregatorItemD);
+      expect(globalAggregator[6]).toEqual(expectedAggregatorItemE);
+
+      unsubscribe();
     });
   });
 });

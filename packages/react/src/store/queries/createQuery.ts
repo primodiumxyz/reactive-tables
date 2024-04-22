@@ -10,7 +10,7 @@ type ResultRow = { [key: string]: TinyBaseFormattedType[typeof key] | undefined 
 
 export type UpdateType = "enter" | "exit" | "change";
 export type TableQueryUpdate<S extends Schema, T = unknown> = {
-  tableId: string;
+  tableId: string | undefined; // undefined if run on init on global query
   entity: Entity;
   value: { current: ComponentValue<S, T> | undefined; prev: ComponentValue<S, T> | undefined };
   type: UpdateType;
@@ -79,7 +79,7 @@ export const createQuery = <S extends Schema, T = unknown>({
     if (!inPrev && !inCurrent) return; // not in the query, we're not interested
 
     // Gather the previous and current values
-    const args = getValueAndTypeFromRowChange(getCellChange, keys, tableId, entity) as TableQueryUpdate<S, T>;
+    const args = getValueFromRowChange(getCellChange, keys, tableId, entity) as TableQueryUpdate<S, T>;
 
     // Run the callbacks
     if (!inPrev && inCurrent) {
@@ -112,6 +112,8 @@ export const createQuery = <S extends Schema, T = unknown>({
       };
       onEnter?.(args);
       onChange?.(args);
+
+      previousEntities.push(entity as Entity);
     });
   }
 
@@ -121,7 +123,7 @@ export const createQuery = <S extends Schema, T = unknown>({
 };
 
 // Get accurate new and previous values, and the corresponding type of update, from the changes in a row
-export const getValueAndTypeFromRowChange = <S extends Schema, T = unknown>(
+export const getValueFromRowChange = <S extends Schema, T = unknown>(
   getCellChange: GetResultCellChange,
   keys: string[],
   tableId: string,
