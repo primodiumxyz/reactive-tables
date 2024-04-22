@@ -22,6 +22,7 @@ export type TableQueryCallbacks<S extends Schema, T = unknown> = Partial<{
   onChange: (update: TableQueryUpdate<S, T>) => void;
   onEnter: (update: TableQueryUpdate<S, T>) => void;
   onExit: (update: TableQueryUpdate<S, T>) => void;
+  onUpdate: (update: TableQueryUpdate<S, T>) => void;
 }>;
 
 export type CreateQueryOptions<S extends Schema, T = unknown> = {
@@ -47,9 +48,10 @@ export const createQuery = <S extends Schema, T = unknown>({
   onChange,
   onEnter,
   onExit,
+  onUpdate,
   options = { runOnInit: true },
 }: CreateQueryOptions<S, T>) => {
-  if (!onChange && !onEnter && !onExit) {
+  if (!onChange && !onEnter && !onExit && !onUpdate) {
     throw new Error("At least one callback has to be provided");
   }
 
@@ -92,6 +94,8 @@ export const createQuery = <S extends Schema, T = unknown>({
       onExit?.({ ...args, type });
 
       previousEntities = previousEntities.filter((e) => e !== entity);
+    } else {
+      onUpdate?.({ ...args, type });
     }
 
     onChange?.({ ...args, type });

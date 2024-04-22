@@ -15,10 +15,10 @@ import { Table } from "@/store/component/types";
 export const createGlobalQuery = <table extends Table, S extends Schema, T = unknown>(
   store: Store,
   queryOptions: QueryAllMatchingOptions<table, S, T>,
-  { onChange, onEnter, onExit }: TableQueryCallbacks<S, T>,
+  { onChange, onEnter, onExit, onUpdate }: TableQueryCallbacks<S, T>,
   options: { runOnInit?: boolean } = { runOnInit: true },
 ) => {
-  if (!onChange && !onEnter && !onExit) {
+  if (!onChange && !onEnter && !onExit && !onUpdate) {
     throw new Error("At least one callback has to be provided");
   }
 
@@ -70,6 +70,8 @@ export const createGlobalQuery = <table extends Table, S extends Schema, T = unk
         onExit?.({ ...args, type });
 
         prevEntities = prevEntities.filter((e) => e !== entity);
+      } else {
+        onUpdate?.({ ...args, type });
       }
 
       onChange?.({ ...args, type });

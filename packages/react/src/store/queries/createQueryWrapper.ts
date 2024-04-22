@@ -31,6 +31,7 @@ export const createQueryWrapper = <S extends Schema, T = unknown>({
   onChange,
   onEnter,
   onExit,
+  onUpdate,
   options = { runOnInit: true },
 }: CreateQueryWrapperOptions<S, T>): CreateQueryResult => {
   // If a query is provided, define it and create the listener
@@ -38,6 +39,10 @@ export const createQueryWrapper = <S extends Schema, T = unknown>({
     const queryId = uuid();
     queries.setQueryDefinition(queryId, tableId, query);
     return createQuery({ queries, queryId, tableId, schema, onChange, onEnter, onExit, options });
+  }
+
+  if (!onChange && !onEnter && !onExit && !onUpdate) {
+    throw new Error("At least one callback has to be provided");
   }
 
   // If not, just listen to the whole table
@@ -59,6 +64,8 @@ export const createQueryWrapper = <S extends Schema, T = unknown>({
       onEnter?.(args);
     } else if (args.type === "exit") {
       onExit?.(args);
+    } else {
+      onUpdate?.(args);
     }
 
     onChange?.(args);

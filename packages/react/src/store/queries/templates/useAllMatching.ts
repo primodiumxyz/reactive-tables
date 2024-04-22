@@ -17,10 +17,11 @@ import { Table } from "@/store/component/types";
 // - setup a table listener by default on each component, then when setting up a query listener let that component know so it adds this callback to its array
 // - keep a single useAllMatching listening to all tables, then on change see across all actual useQuery hooks which ones need to be triggered
 // This won't be trigerred on creation for all initial matching entities, but only on change after the hook is mounted
+// TODO: maybe this hook doesn't need any callback, as we already have createGlobalQuery for that?
 export const useAllMatching = <table extends Table, S extends Schema, T = unknown>(
   store: Store,
   options: QueryAllMatchingOptions<table, S, T>,
-  { onChange, onEnter, onExit }: TableQueryCallbacks<S, T>,
+  { onChange, onEnter, onExit, onUpdate }: TableQueryCallbacks<S, T>,
 ): Entity[] => {
   const [entities, setEntities] = useState<Entity[]>([]);
   // Create a ref for previous entities (to provide the update type in the callback)
@@ -75,6 +76,8 @@ export const useAllMatching = <table extends Table, S extends Schema, T = unknow
         } else if (inPrev && !inCurrent) {
           type = "exit";
           onExit?.({ ...args, type });
+        } else {
+          onUpdate?.({ ...args, type });
         }
 
         onChange?.({ ...args, type });
