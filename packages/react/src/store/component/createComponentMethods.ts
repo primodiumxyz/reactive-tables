@@ -136,6 +136,7 @@ export const createComponentMethods = <
   const update = (value: Partial<ComponentValue<VS, T>>, entity?: Entity) => {
     entity = entity ?? singletonEntity;
     const currentValue = getRaw(entity);
+    if (!currentValue) throw new Error(`Entity ${entity} does not exist in table ${tableId}`);
 
     const newValue = TinyBaseAdapter.format(Object.keys(value), Object.values(value));
     setRaw({ ...currentValue, ...newValue }, entity);

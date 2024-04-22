@@ -72,6 +72,7 @@ export const createQueryWrapper = <S extends Schema, T = unknown>({
       const value = TinyBaseAdapter.parse(rawValue) as ComponentValue<S, T>;
 
       const args = {
+        tableId,
         entity: entity as Entity,
         value: { current: value, prev: undefined },
         type: "enter" as UpdateType,

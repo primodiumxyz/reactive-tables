@@ -10,6 +10,7 @@ type ResultRow = { [key: string]: TinyBaseFormattedType[typeof key] | undefined 
 
 export type UpdateType = "enter" | "exit" | "change";
 export type TableQueryUpdate<S extends Schema, T = unknown> = {
+  tableId: string;
   entity: Entity;
   value: { current: ComponentValue<S, T> | undefined; prev: ComponentValue<S, T> | undefined };
   type: UpdateType;
@@ -104,6 +105,7 @@ export const createQuery = <S extends Schema, T = unknown>({
       const value = TinyBaseAdapter.parse(rows[entity]) as ComponentValue<S, T>;
 
       const args = {
+        tableId,
         entity: entity as Entity,
         value: { current: value, prev: undefined },
         type: "enter" as UpdateType,
@@ -160,5 +162,5 @@ export const getValueAndTypeFromRowChange = <S extends Schema, T = unknown>(
       ? undefined
       : (TinyBaseAdapter.parse(previousRow as TinyBaseFormattedType) as ComponentValue<S, T>);
 
-  return { entity, value: { current: newValue, prev: oldValue }, type };
+  return { tableId, entity, value: { current: newValue, prev: oldValue } };
 };
