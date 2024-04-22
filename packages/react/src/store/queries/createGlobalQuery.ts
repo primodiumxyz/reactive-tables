@@ -2,7 +2,12 @@ import { Entity, Schema } from "@latticexyz/recs";
 import { Store } from "tinybase/store";
 
 import { queryAllMatching, QueryAllMatchingOptions } from "@/store/queries/templates/queryAllMatching";
-import { getValueFromRowChange, TableQueryCallbacks, TableQueryUpdate, UpdateType } from "@/store/queries/createQuery";
+import {
+  getValueAndTypeFromRowChange,
+  TableQueryCallbacks,
+  TableQueryUpdate,
+  UpdateType,
+} from "@/store/queries/createQuery";
 import { Table } from "@/store/component/types";
 
 // Listen to all entities matching multiple conditions across tables
@@ -49,7 +54,10 @@ export const createGlobalQuery = <table extends Table, S extends Schema, T = unk
       if (!inPrev && !inCurrent) return; // not in the query, we're not interested
 
       // Gather the previous and current values
-      const args = getValueFromRowChange(getCellChange, tables[tableId], tableId, entity) as TableQueryUpdate<S, T>;
+      const args = getValueAndTypeFromRowChange(getCellChange, tables[tableId], tableId, entity) as TableQueryUpdate<
+        S,
+        T
+      >;
 
       // Run the callbacks
       if (!inPrev && inCurrent) {

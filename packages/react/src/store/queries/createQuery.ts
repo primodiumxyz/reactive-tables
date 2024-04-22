@@ -79,7 +79,7 @@ export const createQuery = <S extends Schema, T = unknown>({
     if (!inPrev && !inCurrent) return; // not in the query, we're not interested
 
     // Gather the previous and current values
-    const args = getValueFromRowChange(getCellChange, keys, tableId, entity) as TableQueryUpdate<S, T>;
+    const args = getValueAndTypeFromRowChange(getCellChange, keys, tableId, entity) as TableQueryUpdate<S, T>;
 
     // Run the callbacks
     if (!inPrev && inCurrent) {
@@ -123,7 +123,7 @@ export const createQuery = <S extends Schema, T = unknown>({
 };
 
 // Get accurate new and previous values, and the corresponding type of update, from the changes in a row
-export const getValueFromRowChange = <S extends Schema, T = unknown>(
+export const getValueAndTypeFromRowChange = <S extends Schema, T = unknown>(
   getCellChange: GetResultCellChange,
   keys: string[],
   tableId: string,
@@ -164,5 +164,5 @@ export const getValueFromRowChange = <S extends Schema, T = unknown>(
       ? undefined
       : (TinyBaseAdapter.parse(previousRow as TinyBaseFormattedType) as ComponentValue<S, T>);
 
-  return { tableId, entity, value: { current: newValue, prev: oldValue } };
+  return { tableId, entity, value: { current: newValue, prev: oldValue }, type };
 };

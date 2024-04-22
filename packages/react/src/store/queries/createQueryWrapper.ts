@@ -9,7 +9,7 @@ import {
   TableQueryUpdate,
   UpdateType,
   createQuery,
-  getValueFromRowChange,
+  getValueAndTypeFromRowChange,
 } from "@/store/queries/createQuery";
 import { ComponentValue } from "@/store/component/types";
 
@@ -52,7 +52,7 @@ export const createQueryWrapper = <S extends Schema, T = unknown>({
     const entity = entityKey as Entity;
 
     // Gather the value and type of the change
-    const args = getValueFromRowChange(getCellChange, keys, tableId, entity) as TableQueryUpdate<S, T>;
+    const args = getValueAndTypeFromRowChange(getCellChange, keys, tableId, entity) as TableQueryUpdate<S, T>;
 
     // Run the callbacks
     if (args.type === "enter") {
