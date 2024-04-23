@@ -9,10 +9,10 @@ import { padHex, toHex } from "viem";
 
 // src
 import { createGlobalQuery, createTinyBaseWrapper, useQuery } from "@/index";
-import { createInternalComponent, createInternalCoordComponent } from "@/store/internal";
-import { createInternalComponents } from "@/store/internal/templates";
-import { TableQueryUpdate, query } from "@/store/queries";
-import { SyncStep } from "@/store/internal/templates/internalComponents";
+import { createInternalComponent, createInternalCoordComponent } from "@/components/internal";
+import { createInternalComponents } from "@/components/internal/templates";
+import { TableQueryUpdate, query } from "@/queries";
+import { SyncStep } from "@/components/internal/templates/internalComponents";
 // mocks
 import {
   fuzz,

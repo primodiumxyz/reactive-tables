@@ -5,8 +5,8 @@ import { SchemaAbiType } from "@latticexyz/schema-type/internal";
 import { KeySchema, ValueSchema } from "@latticexyz/store/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 
-import { CreateQueryResult, CreateQueryWrapperOptions } from "@/store/queries";
-import { SchemaAbiTypeToRecsType } from "@/store/utils";
+import { CreateQueryResult, CreateQueryWrapperOptions } from "@/queries";
+import { SchemaAbiTypeToRecsType } from "@/components/utils";
 
 export type Components<tables extends Tables, config extends StoreConfig> = {
   [tableName in keyof tables]: Component<tables[tableName], config>;
@@ -22,8 +22,7 @@ export type Component<
   ComponentMethods<GetSchema<table, S>, T> &
   (table["namespace"] extends "internal"
     ? Record<string, never>
-    : // @ts-expect-error TODO: fix
-      ContractComponentMethods<ContractValueSchema<table>, ContractKeySchema<table>, T>);
+    : ContractComponentMethods<ContractValueSchema<table>, ContractKeySchema<table>, T>);
 
 // Base component structure containing information about its table & schemas
 export type ComponentTable<
@@ -40,12 +39,10 @@ export type ComponentTable<
     tableName: ResourceLabel<storeToV1<config>["namespace"], string>;
     keySchema: table["namespace"] extends "internal"
       ? undefined
-      : // @ts-expect-error TODO: fix
-        { [name in keyof table["keySchema"] & string]: table["keySchema"][name]["type"] };
+      : { [name in keyof table["keySchema"] & string]: table["keySchema"][name]["type"] };
     valueSchema: table["namespace"] extends "internal"
       ? undefined
-      : // @ts-expect-error TODO: fix
-        { [name in keyof table["valueSchema"] & string]: table["valueSchema"][name]["type"] };
+      : { [name in keyof table["valueSchema"] & string]: table["valueSchema"][name]["type"] };
   };
 };
 
@@ -94,10 +91,7 @@ export type Tables = {
 };
 
 export type GetSchema<table extends Table, S extends Schema = Schema> = S &
-  (table["namespace"] extends "internal"
-    ? table["schema"]
-    : // @ts-expect-error TODO: fix
-      ContractValueSchema<table>);
+  (table["namespace"] extends "internal" ? table["schema"] : ContractValueSchema<table>);
 
 // Used to infer the RECS types from the component's value schema
 export type ContractValueSchema<table extends ContractTable, S extends Schema = Schema> = S & {

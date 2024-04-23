@@ -2,14 +2,14 @@ import { Entity, Schema } from "@latticexyz/recs";
 import { GetResultCellChange, Queries } from "tinybase/queries";
 
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
-import { ComponentValue } from "@/store/component/types";
+import { ComponentValue } from "@/components/contract/types";
 import { encodedDataKeys, internalKeys } from "@/constants";
 
 /* ---------------------------------- TYPES --------------------------------- */
 type ResultRow = { [key: string]: TinyBaseFormattedType[typeof key] | undefined };
 
 export type UpdateType = "enter" | "exit" | "change";
-export type TableQueryUpdate<S extends Schema, T = unknown> = {
+export type TableQueryUpdate<S extends Schema = Schema, T = unknown> = {
   tableId: string | undefined; // undefined if run on init on global query
   entity: Entity;
   value: { current: ComponentValue<S, T> | undefined; prev: ComponentValue<S, T> | undefined };

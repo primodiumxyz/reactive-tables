@@ -5,7 +5,7 @@ import { Hex, decodeAbiParameters, encodeAbiParameters } from "viem";
 import { Store } from "tinybase/store";
 
 import { entityToHexKeyTuple, hexKeyTupleToEntity } from "@/utils";
-import { ComponentKey } from "@/store/component/types";
+import { ComponentKey } from "@/components/contract/types";
 
 export const createComponentMethodsUtils = (store: Store, tableId: string) => {
   const paused = {

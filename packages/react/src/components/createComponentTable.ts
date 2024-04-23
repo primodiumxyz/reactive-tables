@@ -4,8 +4,8 @@ import { Store as StoreConfig } from "@latticexyz/store";
 import { Table as MUDTable } from "@latticexyz/store/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 
-import { schemaAbiTypeToRecsType } from "@/store/utils";
-import { ComponentTable, ContractTable } from "@/store/component/types";
+import { schemaAbiTypeToRecsType } from "@/components/utils";
+import { ComponentTable, ContractTable } from "@/components/contract/types";
 
 export const createComponentTable = <table extends ContractTable | MUDTable, config extends StoreConfig>(
   table: table,

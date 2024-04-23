@@ -2,7 +2,7 @@ import { Store as StoreConfig } from "@latticexyz/store";
 
 import { AllComponents, ExtraTables, NetworkConfig } from "@/types";
 import { OnSyncCallbacks, Sync as SyncType } from "@/__tests__/utils/sync/types";
-import { SyncSourceType, SyncStep } from "@/store/internal/templates/internalComponents";
+import { SyncSourceType, SyncStep } from "@/components/internal/templates/internalComponents";
 
 export const hydrateFromIndexer = <config extends StoreConfig, tables extends ExtraTables>(
   components: AllComponents<config, tables>,

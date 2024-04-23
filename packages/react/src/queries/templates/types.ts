@@ -2,7 +2,7 @@ import { Entity, Schema } from "@latticexyz/recs";
 import { Queries } from "tinybase/queries";
 
 import { TinyBaseFormattedType } from "@/adapter";
-import { ComponentValue } from "@/store/component/types";
+import { ComponentValue } from "@/components/contract/types";
 
 export type QueryOptions = {
   queries: Queries;

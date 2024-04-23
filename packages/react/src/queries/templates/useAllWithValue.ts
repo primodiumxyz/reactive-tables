@@ -4,11 +4,11 @@ import { Queries } from "tinybase/queries";
 import { useEffect, useMemo, useState } from "react";
 
 import { TinyBaseAdapter } from "@/adapter";
-import { queryAllWithoutValue } from "@/store/queries/templates/queryAllWithoutValue";
-import { ComponentValue } from "@/store/component/types";
+import { queryAllWithValue } from "@/queries/templates/queryAllWithValue";
+import { ComponentValue } from "@/components/contract/types";
 
-// Listen to all entities inside a given table that DON'T have a specific value (or partial value)
-export const useAllWithoutValue = <S extends Schema>(
+// Listen to all entities inside a given table that have a specific value (or partial value)
+export const useAllWithValue = <S extends Schema>(
   queries: Queries,
   tableId: string,
   value: Partial<ComponentValue<S>>,
@@ -19,7 +19,7 @@ export const useAllWithoutValue = <S extends Schema>(
 
   useEffect(() => {
     // Get the id and perform the initial query
-    const { id, entities } = queryAllWithoutValue({ queries, tableId, value, formattedValue });
+    const { id, entities } = queryAllWithValue({ queries, tableId, value, formattedValue });
     setEntities(entities);
 
     // Setup the listener for the query

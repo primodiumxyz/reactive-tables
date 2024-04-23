@@ -3,7 +3,7 @@ import { Type as RecsType } from "@latticexyz/recs";
 import { SchemaAbiType } from "@latticexyz/schema-type/internal";
 import { Store } from "tinybase/store";
 
-import { ComponentTable, ContractTable } from "@/store/component/types";
+import { ComponentTable, ContractTable } from "@/components/contract/types";
 
 // Format component's table so it can fit TinyBase tabular data structure
 // We want this to be able to access a component efficiently using TinyBase, instead of mapping through all components

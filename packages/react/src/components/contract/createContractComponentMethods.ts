@@ -1,7 +1,7 @@
 import { Entity, Schema } from "@latticexyz/recs";
 import { KeySchema } from "@latticexyz/store/internal";
 
-import { decodeEntity, encodeEntity } from "@/store/component/utils";
+import { decodeEntity, encodeEntity } from "@/components/contract/utils";
 import { singletonEntity } from "@/utils";
 import {
   ComponentKey,
@@ -10,7 +10,7 @@ import {
   ComponentValueSansMetadata,
   ContractComponentMethods,
   OriginalComponentMethods,
-} from "@/store/component/types";
+} from "@/components/contract/types";
 
 export const createContractComponentMethods = <VS extends Schema, KS extends Schema = Schema, T = unknown>({
   keySchema,

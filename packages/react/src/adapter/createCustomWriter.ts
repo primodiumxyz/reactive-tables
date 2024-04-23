@@ -6,7 +6,7 @@ import { Write } from "@primodiumxyz/sync-stack";
 import { Store } from "tinybase/store";
 
 import { TinyBaseAdapter } from "@/adapter";
-import { getComponentTable } from "@/store/utils";
+import { getComponentTable } from "@/components/utils";
 import { debug, hexKeyTupleToEntity } from "@/utils";
 
 type StoreEventsLog = Log<bigint, number, false, StoreEventsAbiItem, true, StoreEventsAbi>;

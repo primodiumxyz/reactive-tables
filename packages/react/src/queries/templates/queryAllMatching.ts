@@ -2,8 +2,8 @@ import { Entity, Schema } from "@latticexyz/recs";
 import { Store } from "tinybase/store";
 import { createQueries } from "tinybase/queries";
 
-import { queryAllWithValue } from "@/store/queries/templates/queryAllWithValue";
-import { Component, ComponentValue, Table } from "@/store/component/types";
+import { queryAllWithValue } from "@/queries/templates/queryAllWithValue";
+import { Component, ComponentValue, Table } from "@/components/contract/types";
 
 // Query all entities matching all of the given conditions:
 // TODO: need to make types work, e.g. infer value in each with/without object

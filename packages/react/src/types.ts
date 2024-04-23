@@ -18,7 +18,7 @@ import {
   Tables,
   ContractComponentMethods,
   ContractTables,
-} from "@/store/component/types";
+} from "@/components/contract/types";
 import { StorageAdapter } from "@/adapter";
 
 import { storeTables, worldTables } from "@/index";

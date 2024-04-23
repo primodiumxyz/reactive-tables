@@ -10,8 +10,8 @@ import {
   UpdateType,
   createQuery,
   getValueAndTypeFromRowChange,
-} from "@/store/queries/createQuery";
-import { ComponentValue } from "@/store/component/types";
+} from "@/queries/createQuery";
+import { ComponentValue } from "@/components/contract/types";
 
 /* ---------------------------------- TYPES --------------------------------- */
 export type CreateQueryWrapperOptions<S extends Schema, T = unknown> = Omit<CreateQueryOptions<S, T>, "queryId"> & {

@@ -2,7 +2,7 @@ import { Entity } from "@latticexyz/recs";
 
 import { TinyBaseAdapter } from "@/adapter";
 import { ValuesArray } from "@/adapter/formatValueForTinyBase";
-import { QueryOptions, QueryResult } from "@/store/queries/templates/types";
+import { QueryOptions, QueryResult } from "@/queries/templates/types";
 
 // Query all entities for a given table that have a specific value (or partial value)
 export const queryAllWithValue = ({ queries, tableId, value, formattedValue }: QueryOptions): QueryResult => {

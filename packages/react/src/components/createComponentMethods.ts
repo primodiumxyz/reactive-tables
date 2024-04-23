@@ -9,13 +9,13 @@ import {
   queryAllWithoutValue,
   useAllWithValue,
   useAllWithoutValue,
-} from "@/store/queries";
-import { createContractComponentMethods } from "@/store/component/createContractComponentMethods";
+} from "@/queries";
+import { createContractComponentMethods } from "@/components/contract/createContractComponentMethods";
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
-import { arrayToIterator, createComponentMethodsUtils } from "@/store/component/utils";
+import { arrayToIterator, createComponentMethodsUtils } from "@/components/contract/utils";
 import { singletonEntity } from "@/utils";
 import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
-import { ComponentValue, ComponentValueSansMetadata, Table } from "@/store/component/types";
+import { ComponentValue, ComponentValueSansMetadata, Table } from "@/components/contract/types";
 
 export const createComponentMethods = <
   table extends Table,

@@ -5,8 +5,8 @@ import { keccak256, toHex } from "viem";
 import { Store } from "tinybase/store";
 import { createQueries } from "tinybase/queries";
 
-import { createComponentMethods } from "@/store/component/createComponentMethods";
-import { ComponentMethods } from "@/store/component/types";
+import { createComponentMethods } from "@/components/createComponentMethods";
+import { ComponentMethods } from "@/components/contract/types";
 
 // These components will be created alongside the contract components, in a different process,
 // but aggregated into the same store to be used the exact same way to reduce complexity and computation

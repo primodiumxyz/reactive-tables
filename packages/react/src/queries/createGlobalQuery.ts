@@ -1,14 +1,9 @@
 import { Entity, Schema } from "@latticexyz/recs";
 import { Store } from "tinybase/store";
 
-import { queryAllMatching, QueryAllMatchingOptions } from "@/store/queries/templates/queryAllMatching";
-import {
-  getValueAndTypeFromRowChange,
-  TableQueryCallbacks,
-  TableQueryUpdate,
-  UpdateType,
-} from "@/store/queries/createQuery";
-import { Table } from "@/store/component/types";
+import { queryAllMatching, QueryAllMatchingOptions } from "@/queries/templates/queryAllMatching";
+import { getValueAndTypeFromRowChange, TableQueryCallbacks, TableQueryUpdate, UpdateType } from "@/queries/createQuery";
+import { Table } from "@/components/contract/types";
 
 // Listen to all entities matching multiple conditions across tables
 // Alternative to `query` (fetch once) and `useQuery` (hook)
