@@ -10,7 +10,7 @@ import { storeToV1 } from "@latticexyz/store/config/v2";
 import { padHex, toHex } from "viem";
 
 // src
-import { ContractTable, createGlobalQuery, createTinyBaseWrapper, useQuery } from "@/index";
+import { ContractTable, createGlobalQuery, createWrapper, useQuery } from "@/index";
 import { createInternalComponent, createInternalCoordComponent } from "@/components/internal";
 import { MUDTable } from "@/components/types";
 import { TableQueryUpdate, query } from "@/queries";
@@ -51,7 +51,7 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
     store,
     queries,
     storageAdapter,
-  } = createTinyBaseWrapper({
+  } = createWrapper({
     mudConfig: mockConfig,
   });
   const internalComponents = createInternalSyncComponents(store);
@@ -148,7 +148,7 @@ const waitForBlockSynced = async <table extends MUDTable>(
   }
 };
 
-describe("tinyBaseWrapper", () => {
+describe("Wrapper", () => {
   /* -------------------------------------------------------------------------- */
   /*                                    SETUP                                   */
   /* -------------------------------------------------------------------------- */
@@ -166,7 +166,7 @@ describe("tinyBaseWrapper", () => {
 
   it("should be able to create components from internal tables passed during initialization", async () => {
     // Initialize wrapper
-    const { store } = createTinyBaseWrapper({
+    const { store } = createWrapper({
       mudConfig: mockConfig,
     });
 

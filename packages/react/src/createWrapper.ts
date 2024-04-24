@@ -2,7 +2,7 @@ import { Store as StoreConfig } from "@latticexyz/store";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { resolveConfig } from "@latticexyz/store/internal";
 import { Store, createStore } from "tinybase/store";
-import { Queries, createQueries } from "tinybase/queries";
+import { Queries } from "tinybase/queries";
 
 import { StorageAdapter, createStorageAdapter } from "@/adapter";
 import { createComponentsStore } from "@/components";
@@ -35,7 +35,7 @@ export type TinyBaseQueries = Queries;
  * @param mudConfig The actual MUD configuration, usually retrieved for the contracts package.
  * @param otherTables (optional) Custom tables to generate components for as well.
  */
-export type TinyBaseWrapperOptions<config extends StoreConfig, extraTables extends MUDTables> = {
+export type WrapperOptions<config extends StoreConfig, extraTables extends MUDTables> = {
   mudConfig: config;
   otherTables?: extraTables;
 };
@@ -53,7 +53,7 @@ export type TinyBaseWrapperOptions<config extends StoreConfig, extraTables exten
  * @param queries The queries instance (see {@link TinyBaseQueries}).
  * @param storageAdapter The storage adapter for formatting onchain logs into TinyBase tabular data (see {@link createStorageAdapter}).
  */
-export type TinyBaseWrapperResult<config extends StoreConfig, tables extends MUDTables> = {
+export type WrapperResult<config extends StoreConfig, tables extends MUDTables> = {
   components: ContractTables<AllTables<config, tables>>;
   tables: AllTables<config, tables>;
   store: TinyBaseStore;
@@ -71,8 +71,8 @@ export type TinyBaseWrapperResult<config extends StoreConfig, tables extends MUD
  * - creating and reacting to queries, both in TinyBase queries and RECS-like formats.
  *
  * This is the main entry point into the library.
- * @param options The {@link TinyBaseWrapperOptions} object specifying the MUD configuration and custom tables.
- * @returns A {@link TinyBaseWrapperResult} object containing the components, tables, store, queries instance, and storage adapter.
+ * @param options The {@link WrapperOptions} object specifying the MUD configuration and custom tables.
+ * @returns A {@link WrapperResult} object containing the components, tables, store, queries instance, and storage adapter.
  * @example
  * This example creates a wrapper from MUD tables and sets the value of a component.
  *
@@ -88,7 +88,7 @@ export type TinyBaseWrapperResult<config extends StoreConfig, tables extends MUD
  *   },
  * });
  *
- * const { components } = createTinyBaseWrapper({ mudConfig });
+ * const { components } = createWrapper({ mudConfig });
  * components.Counter.set({ value: 42 }); // fully typed
  * const data = components.Counter.get();
  * console.log(data);
@@ -96,10 +96,10 @@ export type TinyBaseWrapperResult<config extends StoreConfig, tables extends MUD
  * ```
  * @category Creation
  */
-export const createTinyBaseWrapper = <config extends StoreConfig, extraTables extends MUDTables>({
+export const createWrapper = <config extends StoreConfig, extraTables extends MUDTables>({
   mudConfig,
   otherTables,
-}: TinyBaseWrapperOptions<config, extraTables>): TinyBaseWrapperResult<config, extraTables> => {
+}: WrapperOptions<config, extraTables>): WrapperResult<config, extraTables> => {
   /* --------------------------------- TABLES --------------------------------- */
   // Resolve tables
   const tables = {
@@ -110,10 +110,8 @@ export const createTinyBaseWrapper = <config extends StoreConfig, extraTables ex
   } as unknown as AllTables<config, extraTables>;
 
   /* ------------------------------- COMPONENTS ------------------------------- */
-  // Create the TinyBase store
-  const store = createStore();
-  // and queries instance tied to the store
-  const queries = createQueries(store);
+  // Create the TinyBase store wrapper and queries instance
+  const { store, queries } = createStore();
   // Create components from the tables (format metadata, access/modify data using the store, perform queries)
   const components = createComponentsStore({ tables, store, queries });
 

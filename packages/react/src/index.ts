@@ -1,5 +1,5 @@
 // Expose wrapper & main types
-export * from "@/createTinyBaseWrapper";
+export * from "@/createWrapper";
 
 // Expose internal store and queries
 export * from "@/components/internal";
