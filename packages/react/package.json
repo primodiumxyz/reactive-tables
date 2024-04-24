@@ -36,7 +36,7 @@
     "@latticexyz/store-sync": "2.0.6",
     "@latticexyz/utils": "2.0.6",
     "@latticexyz/world": "2.0.6",
-    "@primodiumxyz/sync-stack": "^0.6.4",
+    "@primodiumxyz/sync-stack": "^0.6.5",
     "debug": "^4.3.4",
     "react": "^18.2.0",
     "tinybase": "^4.8.0",
