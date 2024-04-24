@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { queryAllMatching, QueryAllMatchingOptions } from "@/queries/templates/queryAllMatching";
 import { getValueAndTypeFromRowChange, TableQueryCallbacks, TableQueryUpdate, UpdateType } from "@/queries/createQuery";
-import { Table } from "@/components/contract/types";
+import { MUDTable } from "@/components/types";
 
 // Listen to all entities matching multiple conditions across tables
 // TODO: this will clearly need to be optimized; there are probably a few options:
@@ -13,9 +13,9 @@ import { Table } from "@/components/contract/types";
 // - keep a single useAllMatching listening to all tables, then on change see across all actual useQuery hooks which ones need to be triggered
 // This won't be trigerred on creation for all initial matching entities, but only on change after the hook is mounted
 // TODO: maybe this hook doesn't need any callback, as we already have createGlobalQuery for that?
-export const useAllMatching = <table extends Table, S extends Schema, T = unknown>(
+export const useAllMatching = <tables extends MUDTable[], S extends Schema, T = unknown>(
   store: Store,
-  options: QueryAllMatchingOptions<table, S, T>,
+  options: QueryAllMatchingOptions<tables, T>,
   { onChange, onEnter, onExit, onUpdate }: TableQueryCallbacks<S, T>,
 ): Entity[] => {
   const [entities, setEntities] = useState<Entity[]>([]);

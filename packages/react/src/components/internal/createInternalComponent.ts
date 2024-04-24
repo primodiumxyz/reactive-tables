@@ -1,4 +1,3 @@
-import { ResourceLabel, resourceToLabel } from "@latticexyz/common";
 import { Metadata, Schema, Type } from "@latticexyz/recs";
 import { uuid } from "@latticexyz/utils";
 import { keccak256, toHex } from "viem";
@@ -6,59 +5,44 @@ import { Store } from "tinybase/store";
 import { createQueries } from "tinybase/queries";
 
 import { createComponentMethods } from "@/components/createComponentMethods";
-import { ComponentMethods } from "@/components/contract/types";
+import { InternalTable, InternalTableMetadata } from "@/components/internal/types";
 
-// These components will be created alongside the contract components, in a different process,
-// but aggregated into the same store to be used the exact same way to reduce complexity and computation
+// These components are meant to be created directly from the implementation, then usedalongside contract components
+// the exact same way
 export type CreateInternalComponentOptions<M extends Metadata> = {
   id: string; // default: uuid
   metadata?: M;
   indexed?: boolean;
 };
 
-export type InternalComponentTable<S extends Schema, M extends Metadata> = {
-  id: string;
-  tableId: string;
-  namespace: "internal";
-  name: string;
-  schema: S;
-  metadata: M & {
-    componentName: string;
-    tableName: ResourceLabel<"internal", string>;
-  };
-};
-export type InternalComponent<S extends Schema, M extends Metadata, T> = InternalComponentTable<S, M> &
-  ComponentMethods<S, T>;
-
-export const createInternalComponent = <S extends Schema, M extends Metadata = Metadata, T = unknown>(
+// TODO: support indexed
+export const createInternalComponent = <S extends Schema, M extends Metadata, T = unknown>(
   store: Store,
   schema: S,
   options?: CreateInternalComponentOptions<M>,
-): InternalComponent<S, M, T> => {
-  // TODO: support indexed
+): InternalTable<S, M, InternalTableMetadata<S, M>, T> => {
   const { id } = options ?? { id: uuid() };
 
-  // TODO: we need to add id because confusion around base table & ComponentTable, which might not be necessary at all (remove it)
-  const table = {
-    id: keccak256(toHex(id)),
+  // Format metadata the same way as MUD tables to treat it the same way during methods creation
+  const metadata = {
     tableId: keccak256(toHex(id)),
     namespace: "internal" as const,
     name: id,
     schema,
-    // @ts-expect-error TODO: fix
+  } as InternalTableMetadata<S, M>;
+
+  return {
+    // Table data
+    id: metadata.tableId,
+    schema,
     metadata: {
       ...options?.metadata,
       componentName: id,
-      tableName: resourceToLabel({ namespace: "internal", name: id }) as ResourceLabel<"internal", string>,
+      tableName: `internal__${id}`,
     },
-  } satisfies InternalComponentTable<S, M>;
-
-  const methods = createComponentMethods({ store, queries: createQueries(store), table, tableId: table.id });
-
-  return {
-    ...table,
-    ...methods,
-  } as unknown as InternalComponent<S, M, T>;
+    // Methods
+    ...createComponentMethods({ store, queries: createQueries(store), metadata }),
+  } as unknown as InternalTable<S, M, typeof metadata, T>;
 };
 
 // Modified from primodium

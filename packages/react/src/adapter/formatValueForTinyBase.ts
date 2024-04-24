@@ -1,6 +1,5 @@
 import { DynamicPrimitiveType, StaticPrimitiveType } from "@latticexyz/schema-type/internal";
 
-// TODO: We might want to create a small library for TinyBase/MUD—Solidity/TypeScript primitives encoding/decoding
 export type TinyBaseFormattedType = {
   [key: string]: //
   // actual storage values

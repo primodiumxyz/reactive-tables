@@ -1,11 +1,11 @@
-import { Store as StoreConfig } from "@latticexyz/store";
-
-import { AllComponents, ExtraTables, NetworkConfig } from "@/types";
+import { MUDTables } from "@/components/types";
+import { ContractTables } from "@/components/contract/types";
+import { NetworkConfig } from "@/types";
 import { OnSyncCallbacks, Sync as SyncType } from "@/__tests__/utils/sync/types";
-import { SyncSourceType, SyncStep } from "@/components/internal/templates/internalComponents";
+import { SyncSourceType, SyncStep, createInternalSyncComponents } from "@/__tests__/utils/sync/components";
 
-export const hydrateFromIndexer = <config extends StoreConfig, tables extends ExtraTables>(
-  components: AllComponents<config, tables>,
+export const hydrateFromIndexer = <tables extends MUDTables>(
+  components: ContractTables<tables> & ReturnType<typeof createInternalSyncComponents>,
   networkConfig: NetworkConfig,
   sync: SyncType,
   onSync: OnSyncCallbacks,
@@ -34,8 +34,8 @@ export const hydrateFromIndexer = <config extends StoreConfig, tables extends Ex
   }, onError);
 };
 
-export const hydrateFromRpc = <config extends StoreConfig, tables extends ExtraTables>(
-  components: AllComponents<config, tables>,
+export const hydrateFromRpc = <tables extends MUDTables>(
+  components: ContractTables<tables> & ReturnType<typeof createInternalSyncComponents>,
   sync: SyncType,
   onSync: OnSyncCallbacks,
 ) => {
@@ -77,8 +77,8 @@ export const hydrateFromRpc = <config extends StoreConfig, tables extends ExtraT
   );
 };
 
-export const subToRpc = <config extends StoreConfig, tables extends ExtraTables>(
-  components: AllComponents<config, tables>,
+export const subToRpc = <tables extends MUDTables>(
+  components: ContractTables<tables> & ReturnType<typeof createInternalSyncComponents>,
   sync: SyncType,
 ) => {
   const { SyncStatus } = components;

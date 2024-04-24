@@ -15,8 +15,7 @@ export enum SyncStep {
   Live,
 }
 
-export type InternalComponents = ReturnType<typeof createInternalComponents>;
-export const createInternalComponents = (store: Store) => ({
+export const createInternalSyncComponents = (store: Store) => ({
   SyncSource: createInternalNumberComponent(store, {
     id: "SyncSource",
   }),

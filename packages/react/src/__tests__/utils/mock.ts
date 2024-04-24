@@ -1,35 +1,38 @@
-import { waitForTransactionReceipt } from "viem/actions";
-import { getMockNetworkConfig } from "./init";
 import { Entity } from "@latticexyz/recs";
+import { waitForTransactionReceipt } from "viem/actions";
+import { Hex, TransactionReceipt } from "viem";
+
+import { getMockNetworkConfig } from "@/__tests__/utils/init";
 
 const networkConfig = getMockNetworkConfig();
 
+export type ComponentNames = (typeof mockFunctionToComponent)[keyof typeof mockFunctionToComponent];
 const mockFunctionToComponent = {
   move: "Position",
   increment: "Counter",
   storeItems: "Inventory",
-};
+} as const;
 
 // We don't want to run everything with Promise.all because it will quickly cause an issue with Viem (transaction underpriced)
 // This way it should at least reduce a bit the waiting time
 export const fuzz = async (iterations: number) => {
-  const allFunctionNames = Object.keys(mockFunctions);
-  const tasks = [];
+  const allFunctionNames = Object.keys(mockFunctionToComponent) as Array<keyof typeof mockFunctionToComponent>;
+  const tasks: Array<{ name: ComponentNames; task: () => Promise<TransactionReceipt> }> = [];
   // Remember function called - tx block number
   const txInfo = Object.entries(mockFunctionToComponent).reduce(
     (acc, [, comp]) => {
       acc[comp] = BigInt(0);
       return acc;
     },
-    {} as Record<(typeof mockFunctionToComponent)[keyof typeof mockFunctionToComponent], bigint>,
+    {} as Record<ComponentNames, bigint>,
   );
 
   for (let i = 0; i < iterations; i++) {
     const rand = Math.floor(Math.random() * allFunctionNames.length);
     const functionName = allFunctionNames[rand];
-    const randomFunction = mockFunctions[functionName as keyof typeof mockFunctions];
+    const randomFunction = mockFunctions[functionName];
     tasks.push({
-      name: mockFunctionToComponent[functionName as keyof typeof mockFunctionToComponent],
+      name: mockFunctionToComponent[functionName],
       task: randomFunction,
     });
 
@@ -95,7 +98,7 @@ export const setItems = async (args: { items: number[]; weights: number[]; total
 // Set the position of an entity
 export const setPositionForEntity = async (args: { entity: Entity; x: number; y: number }) => {
   const { entity, x, y } = args;
-  const hash = await networkConfig.worldContract.write.moveWithArbitraryKey([entity, x, y], {
+  const hash = await networkConfig.worldContract.write.moveWithArbitraryKey([entity as Hex, x, y], {
     chain: networkConfig.chain,
     account: networkConfig.burnerAccount.address,
   });

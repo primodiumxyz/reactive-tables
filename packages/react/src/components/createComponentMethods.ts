@@ -1,4 +1,4 @@
-import { Entity, Schema } from "@latticexyz/recs";
+import { Entity } from "@latticexyz/recs";
 
 import { useEffect, useState } from "react";
 
@@ -10,32 +10,38 @@ import {
   useAllWithValue,
   useAllWithoutValue,
 } from "@/queries";
-import { createContractComponentMethods } from "@/components/contract/createContractComponentMethods";
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
 import { arrayToIterator, createComponentMethodsUtils } from "@/components/contract/utils";
 import { singletonEntity } from "@/utils";
-import { CreateComponentMethodsOptions, CreateComponentMethodsResult } from "@/types";
-import { ComponentValue, ComponentValueSansMetadata, Table } from "@/components/contract/types";
+import { createContractComponentMethods } from "@/components/contract/createContractComponentMethods";
+import { ContractTableMetadata } from "@/components/contract/types";
+import { InternalTableMetadata } from "@/components/internal/types";
+import { ComponentValue, ComponentValueSansMetadata, Metadata, Schema } from "@/components/types";
+import { CreateComponentMethodsOptions } from "@/types";
+
+const inContractTableMetadata = <S extends Schema, M extends Metadata>(
+  metadata: InternalTableMetadata<S, M> | ContractTableMetadata<S, M>,
+): metadata is ContractTableMetadata<S, M> => "keySchema" in metadata;
 
 export const createComponentMethods = <
-  table extends Table,
-  VS extends Schema,
-  KS extends Schema = Schema,
+  S extends Schema,
+  M extends Metadata,
+  metadata extends InternalTableMetadata<S, M> | ContractTableMetadata<S, M>,
   T = unknown,
 >({
   store,
   queries,
-  table,
-  tableId,
-}: CreateComponentMethodsOptions<table>): CreateComponentMethodsResult<VS, KS, T> => {
+  metadata,
+}: CreateComponentMethodsOptions<S, M, metadata>) => {
+  const { tableId, schema } = metadata;
   const { paused } = createComponentMethodsUtils(store, tableId);
 
   // Native RECS entities iterator
-  const entities = () => arrayToIterator(store.getRowIds(tableId));
+  const entities = () => arrayToIterator(store.getRowIds(tableId) as Entity[]);
 
   /* --------------------------------- STREAMS -------------------------------- */
   // Pause updates for an entity (don't react to changes in the store)
-  const pauseUpdates = (entity?: Entity, value?: ComponentValueSansMetadata<VS, T>) => {
+  const pauseUpdates = (entity?: Entity, value?: ComponentValue<S, T>) => {
     entity = entity ?? singletonEntity;
 
     paused.set(entity, true);
@@ -51,7 +57,7 @@ export const createComponentMethods = <
   };
 
   /* ----------------------------------- SET ---------------------------------- */
-  const set = (value: ComponentValueSansMetadata<VS, T> | ComponentValue<VS, T>, entity?: Entity) => {
+  const set = (value: ComponentValue<S, T>, entity?: Entity) => {
     entity = entity ?? singletonEntity;
 
     // Encode the value and set it in the store
@@ -66,15 +72,15 @@ export const createComponentMethods = <
   };
 
   /* ----------------------------------- GET ---------------------------------- */
-  function get(): ComponentValue<VS, T> | undefined;
-  function get(entity: Entity | undefined): ComponentValue<VS, T> | undefined;
-  function get(entity?: Entity | undefined, defaultValue?: ComponentValueSansMetadata<VS, T>): ComponentValue<VS, T>;
-  function get(entity?: Entity, defaultValue?: ComponentValueSansMetadata<VS, T>) {
+  function get(): ComponentValue<S, T> | undefined;
+  function get(entity: Entity | undefined): ComponentValue<S, T> | undefined;
+  function get(entity?: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S, T>): ComponentValue<S, T>;
+  function get(entity?: Entity, defaultValue?: ComponentValueSansMetadata<S, T>) {
     entity = entity ?? singletonEntity;
     const row = store.getRow(tableId, entity);
 
     const decoded = Object.entries(row).length > 0 ? TinyBaseAdapter.parse(row) : undefined; // empty object should be undefined
-    return (decoded ?? defaultValue) as ComponentValue<VS, T>;
+    return (decoded ?? defaultValue) as ComponentValue<S, T>;
   }
   // Utility function to save on computation when we're only interested in the raw data (to set again directly)
   const getRaw = (entity: Entity) => {
@@ -87,11 +93,11 @@ export const createComponentMethods = <
     return store.getRowIds(tableId) as Entity[];
   };
 
-  const getAllWith = (value: Partial<ComponentValue<VS, T>>) => {
+  const getAllWith = (value: Partial<ComponentValue<S, T>>) => {
     return queryAllWithValue({ queries, tableId, value }).entities;
   };
 
-  const getAllWithout = (value: Partial<ComponentValue<VS, T>>) => {
+  const getAllWithout = (value: Partial<ComponentValue<S, T>>) => {
     return queryAllWithoutValue({ queries, tableId, value }).entities;
   };
 
@@ -113,11 +119,11 @@ export const createComponentMethods = <
     return entities;
   }
 
-  const useAllWith = (value: Partial<ComponentValue<VS, T>>) => {
+  const useAllWith = (value: Partial<ComponentValue<S, T>>) => {
     return useAllWithValue(queries, tableId, value);
   };
 
-  const useAllWithout = (value: Partial<ComponentValue<VS, T>>) => {
+  const useAllWithout = (value: Partial<ComponentValue<S, T>>) => {
     return useAllWithoutValue(queries, tableId, value);
   };
 
@@ -133,7 +139,7 @@ export const createComponentMethods = <
   };
 
   /* --------------------------------- UPDATE --------------------------------- */
-  const update = (value: Partial<ComponentValue<VS, T>>, entity?: Entity) => {
+  const update = (value: Partial<ComponentValue<S, T>>, entity?: Entity) => {
     entity = entity ?? singletonEntity;
     const currentValue = getRaw(entity);
     if (!currentValue) throw new Error(`Entity ${entity} does not exist in table ${tableId}`);
@@ -149,12 +155,9 @@ export const createComponentMethods = <
   };
 
   /* -------------------------------- USE VALUE ------------------------------- */
-  function useValue(entity?: Entity | undefined): ComponentValue<VS, T> | undefined;
-  function useValue(
-    entity: Entity | undefined,
-    defaultValue?: ComponentValueSansMetadata<VS, T>,
-  ): ComponentValue<VS, T>;
-  function useValue(entity?: Entity, defaultValue?: ComponentValueSansMetadata<VS, T>) {
+  function useValue(entity?: Entity | undefined): ComponentValue<S, T> | undefined;
+  function useValue(entity: Entity | undefined, defaultValue?: ComponentValueSansMetadata<S, T>): ComponentValue<S, T>;
+  function useValue(entity?: Entity, defaultValue?: ComponentValueSansMetadata<S, T>) {
     entity = entity ?? singletonEntity;
     const [value, setValue] = useState(get(entity));
 
@@ -192,12 +195,12 @@ export const createComponentMethods = <
 
   /* --------------------------------- SYSTEM --------------------------------- */
   // Create a query tied to this component, with callbacks on change, enter & exit from the query conditions
-  const createQuery = (options: Omit<CreateQueryWrapperOptions<VS, T>, "queries" | "tableId" | "schema">) => {
+  const createQuery = (options: Omit<CreateQueryWrapperOptions<S, T>, "queries" | "tableId" | "schema">) => {
     // Add a `select` on top of the query to abstract selecting at least a cell from the value => selecting all entities
     // This is required with TinyQL to at least select a cell so it considers all rows
-    const query: CreateQueryWrapperOptions<VS, T>["query"] = options.query
+    const query: CreateQueryWrapperOptions<S, T>["query"] = options.query
       ? (keywords) => {
-          keywords.select(Object.keys(table.schema)[0]);
+          keywords.select(Object.keys(schema)[0]);
           options.query!(keywords);
         }
       : undefined;
@@ -205,12 +208,13 @@ export const createComponentMethods = <
     return createQueryWrapper({
       queries,
       tableId,
-      schema: table.schema as VS,
+      schema,
       ...options,
       query,
     });
   };
 
+  // Base methods available to all components
   const baseMethods = {
     entities,
     get,
@@ -244,10 +248,10 @@ export const createComponentMethods = <
     ...hookMethods,
   };
   // If it's an internal component, no need for contract methods
-  if (table.namespace === "internal" || !("keySchema" in table)) return methods;
+  if (!inContractTableMetadata(metadata)) return methods;
 
   return {
     ...methods,
-    ...createContractComponentMethods({ ...methods, keySchema: table.keySchema }),
+    ...createContractComponentMethods({ ...methods, keySchema: metadata.keySchema }),
   };
 };

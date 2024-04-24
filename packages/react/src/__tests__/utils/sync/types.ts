@@ -1,11 +1,13 @@
-import { Store as StoreConfig } from "@latticexyz/store";
 import { PublicClient } from "viem";
 import { Store } from "tinybase/store";
 
-import { AllComponents, ExtraTables, NetworkConfig } from "@/types";
+import { NetworkConfig } from "@/types";
+import { MUDTables } from "@/components/types";
+import { ContractTables } from "@/components/contract/types";
+import { createInternalSyncComponents } from "@/__tests__/utils/sync/components";
 
-export type CreateSyncOptions<config extends StoreConfig, extraTables extends ExtraTables> = {
-  components: AllComponents<config, extraTables>;
+export type CreateSyncOptions<tables extends MUDTables> = {
+  components: ContractTables<tables> & ReturnType<typeof createInternalSyncComponents>;
   store: Store;
   networkConfig: NetworkConfig;
   publicClient: PublicClient;
@@ -17,15 +19,15 @@ export type CreateSyncResult = {
   unsubscribe: () => void;
 };
 
-export type CreateIndexerSyncOptions<config extends StoreConfig, extraTables extends ExtraTables> = Omit<
-  CreateSyncOptions<config, extraTables>,
+export type CreateIndexerSyncOptions<tables extends MUDTables> = Omit<
+  CreateSyncOptions<tables>,
   "components" | "publicClient" | "onSync"
 > & {
   logFilters: { tableId: string }[];
 };
 
-export type CreateRpcSyncOptions<config extends StoreConfig, extraTables extends ExtraTables> = Omit<
-  CreateSyncOptions<config, extraTables>,
+export type CreateRpcSyncOptions<tables extends MUDTables> = Omit<
+  CreateSyncOptions<tables>,
   "components" | "onSync"
 > & {
   logFilters: { tableId: string }[];
@@ -36,7 +38,7 @@ export type CreateRpcSyncOptions<config extends StoreConfig, extraTables extends
 export type Sync = {
   start: (
     onProgress?: (index: number, blockNumber: bigint, progress: number) => void,
-    error?: (err: any) => void,
+    error?: (err: unknown) => void,
   ) => void;
   unsubscribe: () => void;
 };
@@ -44,5 +46,5 @@ export type Sync = {
 export type OnSyncCallbacks = {
   progress: (index: number, blockNumber: bigint, progress: number) => void;
   complete: (blockNumber?: bigint) => void;
-  error: (err: any) => void;
+  error: (err: unknown) => void;
 };

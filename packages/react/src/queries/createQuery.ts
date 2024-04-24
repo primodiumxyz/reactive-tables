@@ -2,7 +2,7 @@ import { Entity, Schema } from "@latticexyz/recs";
 import { GetResultCellChange, Queries } from "tinybase/queries";
 
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
-import { ComponentValue } from "@/components/contract/types";
+import { ComponentValue } from "@/components/types";
 import { encodedDataKeys, internalKeys } from "@/constants";
 
 /* ---------------------------------- TYPES --------------------------------- */

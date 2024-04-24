@@ -1,48 +1,21 @@
-import { Store as StoreConfig } from "@latticexyz/store";
 import { Type as RecsType } from "@latticexyz/recs";
 import { SchemaAbiType } from "@latticexyz/schema-type/internal";
+import { ValueSchema } from "@latticexyz/protocol-parser/internal";
+import { Hex } from "viem";
 import { Store } from "tinybase/store";
 
-import { ComponentTable, ContractTable } from "@/components/contract/types";
-
-// Format component's table so it can fit TinyBase tabular data structure
-// We want this to be able to access a component efficiently using TinyBase, instead of mapping through all components
-export const setComponentTable = <table extends ContractTable, config extends StoreConfig>(
-  store: Store,
-  componentTable: Omit<ComponentTable<table, config>, "schema">,
-) => {
-  store.setTable(`table__${componentTable.id}`, {
-    metadata: {
-      id: componentTable.id,
-      componentName: componentTable.metadata.componentName,
-      tableName: componentTable.metadata.tableName,
-      namespace: componentTable.namespace,
-    },
-    keySchema: componentTable.metadata.keySchema!, // we won't pass an internal table (missing schemas)
-    valueSchema: componentTable.metadata.valueSchema!,
+// Utility to store a value schema and access it efficiently in the storage adapter
+export const storeValueSchema = (store: Store, tableId: Hex, valueSchema: ValueSchema) => {
+  store.setTable(`table__${tableId}`, {
+    valueSchema: valueSchema,
   });
 };
 
-// Retrieve a component's table from TinyBase in the RECS compatible Component format
-// This won't include values, as those are stored in their own table (at `componentTable.id`)
-export const getComponentTable = <table extends ContractTable, config extends StoreConfig>(
-  store: Store,
-  tableId: string,
-): Omit<ComponentTable<table, config>, "schema"> => {
-  const table = store.getTable(`table__${tableId}`);
-  if (Object.keys(table).length === 0) throw new Error(`Table with id ${tableId} is empty`);
+export const getValueSchema = (store: Store, tableId: Hex): ValueSchema => {
+  const row = store.getRow(`table__${tableId}`, "valueSchema");
+  if (Object.keys(row).length === 0) throw new Error(`Table with id ${tableId} is empty`);
 
-  return {
-    id: table.metadata.id as ComponentTable<table, config>["id"],
-    namespace: table.metadata.namespace as ComponentTable<table, config>["namespace"],
-    // schema: table.schema as ComponentTable<table, config>["schema"],
-    metadata: {
-      componentName: table.metadata.componentName as ComponentTable<table, config>["metadata"]["componentName"],
-      tableName: table.metadata.tableName as ComponentTable<table, config>["metadata"]["tableName"],
-      keySchema: table.keySchema as ComponentTable<table, config>["metadata"]["keySchema"],
-      valueSchema: table.valueSchema as ComponentTable<table, config>["metadata"]["valueSchema"],
-    },
-  };
+  return row as ValueSchema;
 };
 
 /* ---------------------------------- RECS ---------------------------------- */

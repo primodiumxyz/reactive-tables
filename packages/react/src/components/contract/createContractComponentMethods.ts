@@ -1,21 +1,15 @@
 import { Entity, Schema } from "@latticexyz/recs";
-import { KeySchema } from "@latticexyz/store/internal";
+import { KeySchema } from "@latticexyz/protocol-parser/internal";
 
 import { decodeEntity, encodeEntity } from "@/components/contract/utils";
 import { singletonEntity } from "@/utils";
-import {
-  ComponentKey,
-  ComponentMethods,
-  ComponentValue,
-  ComponentValueSansMetadata,
-  ContractComponentMethods,
-  OriginalComponentMethods,
-} from "@/components/contract/types";
+import { ComponentKey, ComponentValue, ComponentValueSansMetadata, OriginalComponentMethods } from "@/components/types";
+import { ContractTableMethods, ContractTableWithKeysMethods } from "./types";
 
 export const createContractComponentMethods = <VS extends Schema, KS extends Schema = Schema, T = unknown>({
   keySchema,
   ...methods
-}: { keySchema: KeySchema } & ComponentMethods<VS, T> & OriginalComponentMethods): ContractComponentMethods<
+}: { keySchema: KeySchema } & ContractTableMethods<VS, T> & OriginalComponentMethods): ContractTableWithKeysMethods<
   VS,
   KS,
   T
@@ -55,13 +49,13 @@ export const createContractComponentMethods = <VS extends Schema, KS extends Sch
   return {
     getWithKeys,
     hasWithKeys,
-    // @ts-expect-error undefined is not expected here, but we're doing that until we separate core/react libs
     useWithKeys:
       typeof window !== "undefined"
         ? useWithKeys
         : () => {
             console.warn("useWithKeys is only available in the browser");
-            return undefined;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return undefined as any;
           },
     setWithKeys,
     getEntityKeys,

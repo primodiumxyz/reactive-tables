@@ -6,7 +6,7 @@ import { Write } from "@primodiumxyz/sync-stack";
 import { Store } from "tinybase/store";
 
 import { TinyBaseAdapter } from "@/adapter";
-import { getComponentTable } from "@/components/utils";
+import { getValueSchema } from "@/components/utils";
 import { debug, hexKeyTupleToEntity } from "@/utils";
 
 type StoreEventsLog = Log<bigint, number, false, StoreEventsAbiItem, true, StoreEventsAbi>;
@@ -20,26 +20,23 @@ export const createCustomWriter = ({ store }: { store: Store }) => {
     const { namespace, name } = hexToResource(log.args.tableId);
     const entity = hexKeyTupleToEntity(log.args.keyTuple);
 
-    // TODO: We could grab the row for this entity directly, but we then we wouldn't be able to check
-    // its exisence; is the tradeoff worth it?
-    const component = store.getTable(log.args.tableId);
-    const table = getComponentTable(store, log.args.tableId);
-
-    if (!component) {
+    // Check if there are any values registered for this component
+    const exists = store.hasTable(`table__${log.args.tableId}`);
+    if (!exists) {
       debug(`unknown component: ${log.args.tableId} (${namespace}:${name})`);
       return;
     }
 
-    if (!table) {
-      debug(`skipping update for unknown table: ${namespace}:${name} at ${log.address}`);
-      return;
-    }
-
-    return {
-      entity,
-      component,
-      table: { ...table, namespace },
+    // Get the required entries for decoding
+    const table = {
+      id: log.args.tableId,
+      namespace,
+      name,
+      // We stored the value schema for each contract component on creation for convenient access
+      valueSchema: getValueSchema(store, log.args.tableId),
     };
+
+    return { entity, table };
   };
 
   return Write.toCustom({
@@ -50,11 +47,11 @@ export const createCustomWriter = ({ store }: { store: Store }) => {
       if (!values) return;
       const { entity, table } = values;
 
-      const value = TinyBaseAdapter.decodeArgs(table.metadata.valueSchema, log.args);
+      const value = TinyBaseAdapter.decodeArgs(table.valueSchema, log.args);
 
       debug("setting component", {
         namespace: table.namespace,
-        name: table.metadata.tableName,
+        name: table.name,
         entity,
         value,
       });
@@ -71,12 +68,12 @@ export const createCustomWriter = ({ store }: { store: Store }) => {
     updateStatic: (log) => {
       const values = processLog(log);
       if (!values) return;
-      const { entity, component, table } = values;
+      const { entity, table } = values;
 
-      const previousValue = component[entity];
+      const previousValue = store.getRow(table.id, entity);
       const previousStaticData = (previousValue?.__staticData as Hex) ?? "0x";
       const newStaticData = spliceHex(previousStaticData, log.args.start, size(log.args.data), log.args.data);
-      const newValue = TinyBaseAdapter.decodeArgs(table.metadata.valueSchema, {
+      const newValue = TinyBaseAdapter.decodeArgs(table.valueSchema, {
         staticData: newStaticData,
         encodedLengths: (previousValue?.__encodedLengths as Hex) ?? "0x",
         dynamicData: (previousValue?.__dynamicData as Hex) ?? "0x",
@@ -84,7 +81,7 @@ export const createCustomWriter = ({ store }: { store: Store }) => {
 
       debug("setting component via splice static", {
         namespace: table.namespace,
-        name: table.metadata.tableName,
+        name: table.name,
         entity,
         previousStaticData,
         newStaticData,
@@ -105,12 +102,12 @@ export const createCustomWriter = ({ store }: { store: Store }) => {
     updateDynamic: (log) => {
       const values = processLog(log);
       if (!values) return;
-      const { entity, component, table } = values;
+      const { entity, table } = values;
 
-      const previousValue = component[entity];
+      const previousValue = store.getRow(table.id, entity);
       const previousDynamicData = (previousValue?.__dynamicData as Hex) ?? "0x";
       const newDynamicData = spliceHex(previousDynamicData, log.args.start, log.args.deleteCount, log.args.data);
-      const newValue = TinyBaseAdapter.decodeArgs(table.metadata.valueSchema, {
+      const newValue = TinyBaseAdapter.decodeArgs(table.valueSchema, {
         staticData: (previousValue?.__staticData as Hex) ?? "0x",
         encodedLengths: log.args.encodedLengths,
         dynamicData: newDynamicData,
@@ -118,7 +115,7 @@ export const createCustomWriter = ({ store }: { store: Store }) => {
 
       debug("setting component via splice dynamic", {
         namespace: table.namespace,
-        name: table.metadata.tableName,
+        name: table.name,
         entity,
         previousDynamicData,
         newDynamicData,
@@ -141,7 +138,7 @@ export const createCustomWriter = ({ store }: { store: Store }) => {
 
       debug("deleting component", {
         namespace: table.namespace,
-        name: table.metadata.tableName,
+        name: table.name,
         entity,
       });
 

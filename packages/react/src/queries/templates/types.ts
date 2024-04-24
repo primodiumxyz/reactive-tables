@@ -1,13 +1,14 @@
-import { Entity, Schema } from "@latticexyz/recs";
+import { Entity } from "@latticexyz/recs";
 import { Queries } from "tinybase/queries";
 
 import { TinyBaseFormattedType } from "@/adapter";
-import { ComponentValue } from "@/components/contract/types";
+import { ComponentValue, MUDTable } from "@/components/types";
+import { AbiToSchemaPlusMetadata } from "@/components/contract/types";
 
-export type QueryOptions = {
+export type QueryOptions<table extends MUDTable> = {
   queries: Queries;
   tableId: string;
-  value: Partial<ComponentValue<Schema>>;
+  value: Partial<ComponentValue<AbiToSchemaPlusMetadata<table["valueSchema"]>>>;
   formattedValue?: TinyBaseFormattedType;
 };
 

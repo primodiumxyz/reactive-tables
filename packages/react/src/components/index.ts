@@ -1,1 +1,1 @@
-export * from "@/store/createComponentsStore";
+export * from "@/components/createComponentsStore";

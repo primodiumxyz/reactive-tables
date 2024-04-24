@@ -3,13 +3,13 @@ import { Store } from "tinybase/store";
 
 import { queryAllMatching, QueryAllMatchingOptions } from "@/queries/templates/queryAllMatching";
 import { getValueAndTypeFromRowChange, TableQueryCallbacks, TableQueryUpdate, UpdateType } from "@/queries/createQuery";
-import { Table } from "@/components/contract/types";
+import { MUDTable } from "@/components/types";
 
 // Listen to all entities matching multiple conditions across tables
 // Alternative to `query` (fetch once) and `useQuery` (hook)
-export const createGlobalQuery = <table extends Table, S extends Schema, T = unknown>(
+export const createGlobalQuery = <tables extends MUDTable[], S extends Schema, T = unknown>(
   store: Store,
-  queryOptions: QueryAllMatchingOptions<table, S, T>,
+  queryOptions: QueryAllMatchingOptions<tables, T>,
   { onChange, onEnter, onExit, onUpdate }: TableQueryCallbacks<S, T>,
   options: { runOnInit?: boolean } = { runOnInit: true },
 ) => {

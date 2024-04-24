@@ -1,27 +1,31 @@
-import { Entity, Schema } from "@latticexyz/recs";
+import { Entity } from "@latticexyz/recs";
 import { Store } from "tinybase/store";
 import { createQueries } from "tinybase/queries";
 
 import { queryAllWithValue } from "@/queries/templates/queryAllWithValue";
-import { Component, ComponentValue, Table } from "@/components/contract/types";
+import { ComponentValue, MUDTable } from "@/components/types";
+import { AbiToSchemaPlusMetadata, ContractTable } from "@/components/contract/types";
 
+type QueryMatchingComponentValue<table extends MUDTable, T = unknown> = {
+  component: ContractTable<table>;
+  value: ComponentValue<AbiToSchemaPlusMetadata<table["valueSchema"]>, T>;
+};
 // Query all entities matching all of the given conditions:
-// TODO: need to make types work, e.g. infer value in each with/without object
 // At least an inside or with condition needs to be provided for intial filtering
-// Complex union type not typechecking correctly here
-export type QueryAllMatchingOptions<table extends Table, S extends Schema = Schema, T = unknown> = {
-  inside?: Component<table>[];
-  with?: { component: Component<table>; value: ComponentValue<S, T> }[];
-  notInside?: Component<table>[]; // not inside these components
-  without?: { component: Component<table>; value: ComponentValue<S, T> }[]; // without the specified values for their associated components
+// TODO: fix type inference on heterogeneous array (with single MUDTable it wants the same table as the first one for all items)
+export type QueryAllMatchingOptions<tables extends MUDTable[], T = unknown> = {
+  inside?: ContractTable<tables[number]>[]; // inside these components
+  with?: QueryMatchingComponentValue<tables[number], T>[]; // with the specified values for their associated components
+  notInside?: ContractTable<tables[number]>[]; // not inside these components
+  without?: QueryMatchingComponentValue<tables[number], T>[]; // without the specified values for their associated components
 };
 
 // Query all entities matching multiple conditions across tables
 // TODO: this surely can be optimized, but right now we need something that works at least
 // Needs to be benchmarked to see from which point it makes sense getting entire tables once and filtering them in memory
-export const queryAllMatching = <table extends Table, S extends Schema, T = unknown>(
+export const queryAllMatching = <tables extends MUDTable[], T = unknown>(
   store: Store,
-  options: QueryAllMatchingOptions<table, S, T>,
+  options: QueryAllMatchingOptions<tables, T>,
 ): Entity[] => {
   const { inside, notInside, with: withValues, without: withoutValues } = options;
   if (!inside && !withValues) {

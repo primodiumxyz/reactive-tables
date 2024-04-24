@@ -1,11 +1,10 @@
-import { SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
-import { KeySchema as UnparsedKeySchema } from "@latticexyz/store/internal";
+import { SchemaToPrimitives, KeySchema } from "@latticexyz/protocol-parser/internal";
 import { Entity, Schema } from "@latticexyz/recs";
 import { Hex, decodeAbiParameters, encodeAbiParameters } from "viem";
 import { Store } from "tinybase/store";
 
 import { entityToHexKeyTuple, hexKeyTupleToEntity } from "@/utils";
-import { ComponentKey } from "@/components/contract/types";
+import { ComponentKey } from "@/components/types";
 
 export const createComponentMethodsUtils = (store: Store, tableId: string) => {
   const paused = {
@@ -40,34 +39,37 @@ export const arrayToIterator = <T>(array: T[]): IterableIterator<T> => {
   return iterable;
 };
 
-export const encodeEntity = <S extends Schema, TKeySchema extends UnparsedKeySchema>(
+export const encodeEntity = <S extends Schema, TKeySchema extends KeySchema>(
   keySchema: TKeySchema,
-  key: ComponentKey<S>,
+  keys: ComponentKey<S>,
 ) => {
-  if (Object.keys(keySchema).length !== Object.keys(key).length) {
+  if (Object.keys(keySchema).length !== Object.keys(keys).length) {
     throw new Error(
-      `key length ${Object.keys(key).length} does not match key schema length ${Object.keys(keySchema).length}`,
+      `key length ${Object.keys(keys).length} does not match key schema length ${Object.keys(keySchema).length}`,
     );
   }
+
   return hexKeyTupleToEntity(
-    Object.entries(keySchema).map(([keyName, type]) => encodeAbiParameters([{ type: type.type }], [key[keyName]])),
+    // TODO: handle this type, let the compiler know that we won't pass a string (as not expected from the possible types)
+    Object.entries(keySchema).map(([keyName, type]) => encodeAbiParameters([{ type }], [keys[keyName]])),
   );
 };
 
-export const decodeEntity = <TKeySchema extends UnparsedKeySchema>(
+export const decodeEntity = <TKeySchema extends KeySchema>(
   keySchema: TKeySchema,
   entity: Entity,
-): SchemaToPrimitives<TKeySchema["type"]> => {
+): SchemaToPrimitives<TKeySchema> => {
   const hexKeyTuple = entityToHexKeyTuple(entity);
   if (hexKeyTuple.length !== Object.keys(keySchema).length) {
     throw new Error(
       `entity key tuple length ${hexKeyTuple.length} does not match key schema length ${Object.keys(keySchema).length}`,
     );
   }
+
   return Object.fromEntries(
     Object.entries(keySchema).map(([key, type], index) => [
       key,
-      decodeAbiParameters([{ type: type.type }], hexKeyTuple[index] as Hex)[0],
+      decodeAbiParameters([{ type }], hexKeyTuple[index] as Hex)[0],
     ]),
-  ) as SchemaToPrimitives<TKeySchema["type"]>;
+  ) as SchemaToPrimitives<TKeySchema>;
 };

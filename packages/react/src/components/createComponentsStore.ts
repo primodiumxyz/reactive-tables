@@ -1,53 +1,42 @@
-import { Store as StoreConfig } from "@latticexyz/store";
 import { World } from "@latticexyz/recs";
-import { createStore } from "tinybase/store";
-import { createQueries } from "tinybase/queries";
+import { Store as StoreConfig } from "@latticexyz/store";
+import { mapObject } from "@latticexyz/utils";
 
 import { createComponentMethods } from "@/components/createComponentMethods";
 import { createComponentTable } from "@/components/createComponentTable";
-import { setComponentTable } from "@/components/utils";
-import { CreateComponentsStoreOptions, CreateComponentsStoreResult, ExtraTables } from "@/types";
-import { Components } from "@/components/contract/types";
+import { storeValueSchema } from "@/components/utils";
 
-export const createComponentsStore = <
-  world extends World,
-  config extends StoreConfig,
-  extraTables extends ExtraTables,
->({
+import { ContractTables } from "@/components/contract/types";
+import { MUDTables } from "@/components/types";
+import { CreateComponentsStoreOptions } from "@/types";
+
+export const createComponentsStore = <world extends World, config extends StoreConfig, extraTables extends MUDTables>({
   world,
   tables,
-}: CreateComponentsStoreOptions<world, config, extraTables>): CreateComponentsStoreResult<config, extraTables> => {
-  // Create the TinyBase store & queries
-  const store = createStore();
-  const queries = createQueries(store);
+  store,
+  queries,
+}: CreateComponentsStoreOptions<world, config, extraTables>) => {
+  return mapObject(tables, (table) => {
+    if (Object.keys(table.valueSchema).length === 0) throw new Error("Component schema must have at least one key");
 
-  // Resolve tables into components
-  const components = Object.keys(tables).reduce(
-    (acc, key) => {
-      const table = tables[key];
-      if (table.namespace !== "internal" && Object.keys(table.valueSchema).length === 0)
-        throw new Error("Component schema must have at least one key");
+    const metadata = createComponentTable(table);
+    const methods = createComponentMethods({
+      store,
+      queries,
+      metadata: {
+        ...table,
+        schema: metadata.schema,
+        keySchema: metadata.metadata.keySchema,
+        valueSchema: metadata.metadata.valueSchema,
+      },
+    });
 
-      const componentTable = createComponentTable(table);
+    // Store value schema in TinyBase for easier access in the storage adapter
+    storeValueSchema(store, table.tableId, metadata.metadata.valueSchema);
 
-      const methods = createComponentMethods({
-        store,
-        queries,
-        table: { ...table, ...componentTable },
-        tableId: table.tableId,
-      });
-
-      setComponentTable(store, componentTable);
-
-      acc[key as keyof typeof tables] = {
-        ...componentTable,
-        ...methods,
-      };
-
-      return acc;
-    },
-    {} as Components<typeof tables, config>,
-  );
-
-  return { components, store, queries };
+    return {
+      ...metadata,
+      ...methods,
+    };
+  }) as unknown as ContractTables<typeof tables>;
 };

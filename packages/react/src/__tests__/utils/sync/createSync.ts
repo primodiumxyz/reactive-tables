@@ -1,6 +1,6 @@
-import { Store as StoreConfig } from "@latticexyz/store";
 import { Read, Sync } from "@primodiumxyz/sync-stack";
 
+import { MUDTables } from "@/components/types";
 import { createStorageAdapter } from "@/adapter";
 import {
   CreateSyncOptions,
@@ -9,21 +9,19 @@ import {
   CreateSyncResult,
   Sync as SyncType,
 } from "@/__tests__/utils/sync/types";
-
-import { hydrateFromIndexer, hydrateFromRpc, subToRpc } from "./handleSync";
-import { ExtraTables } from "@/types";
+import { hydrateFromIndexer, hydrateFromRpc, subToRpc } from "@/__tests__/utils/sync/handleSync";
 
 /* -------------------------------------------------------------------------- */
 /*                                   GLOBAL                                   */
 /* -------------------------------------------------------------------------- */
 
-export const createSync = <config extends StoreConfig, extraTables extends ExtraTables>({
+export const createSync = <tables extends MUDTables>({
   components,
   store,
   networkConfig,
   publicClient,
   onSync,
-}: CreateSyncOptions<config, extraTables>): CreateSyncResult => {
+}: CreateSyncOptions<tables>): CreateSyncResult => {
   const { complete: onComplete } = onSync;
   const { indexerUrl, initialBlockNumber } = networkConfig;
 
@@ -83,11 +81,11 @@ export const createSync = <config extends StoreConfig, extraTables extends Extra
 /*                                   INDEXER                                  */
 /* -------------------------------------------------------------------------- */
 
-const createIndexerSync = <config extends StoreConfig, extraTables extends ExtraTables>({
+const createIndexerSync = <tables extends MUDTables>({
   store,
   networkConfig,
   logFilters,
-}: CreateIndexerSyncOptions<config, extraTables>): SyncType => {
+}: CreateIndexerSyncOptions<tables>): SyncType => {
   const { worldAddress, indexerUrl } = networkConfig;
 
   return Sync.withCustom({
@@ -103,14 +101,14 @@ const createIndexerSync = <config extends StoreConfig, extraTables extends Extra
 /*                                     RPC                                    */
 /* -------------------------------------------------------------------------- */
 
-const createRpcSync = <config extends StoreConfig, extraTables extends ExtraTables>({
+const createRpcSync = <tables extends MUDTables>({
   store,
   networkConfig,
   publicClient,
   logFilters,
   startBlock,
   endBlock,
-}: CreateRpcSyncOptions<config, extraTables>): { historical: SyncType; live: SyncType } => {
+}: CreateRpcSyncOptions<tables>): { historical: SyncType; live: SyncType } => {
   const { worldAddress } = networkConfig;
 
   return {

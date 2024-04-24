@@ -7,40 +7,29 @@ import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 import { Queries } from "tinybase/queries";
 
-// Ease integration as these are returned from the main entry point
-export type TinyBaseStore = Store;
-export type TinyBaseQueries = Queries;
-
-import {
-  Components,
-  ComponentMethods,
-  Table,
-  Tables,
-  ContractComponentMethods,
-  ContractTables,
-} from "@/components/contract/types";
+import { ContractTableMetadata, ContractTables } from "@/components/contract/types";
+import { InternalTableMetadata } from "@/components/internal/types";
+import { Metadata } from "@/components/types";
 import { StorageAdapter } from "@/adapter";
 
 import { storeTables, worldTables } from "@/index";
 
-export type ExtraTables = ContractTables | MUDTables | undefined;
-export type AllTables<config extends StoreConfig, extraTables extends ExtraTables> = ResolvedStoreConfig<
+// Ease integration as these are returned from the main entry point
+export type TinyBaseStore = Store;
+export type TinyBaseQueries = Queries;
+
+export type AllTables<config extends StoreConfig, extraTables extends MUDTables> = ResolvedStoreConfig<
   storeToV1<config>
 >["tables"] &
-  (extraTables extends Tables ? extraTables : Record<string, never>) &
+  (extraTables extends MUDTables ? extraTables : Record<string, never>) &
   typeof storeTables &
   typeof worldTables;
-
-export type AllComponents<config extends StoreConfig, tables extends ExtraTables> = Components<
-  AllTables<config, tables>,
-  config
->;
 
 export type TinyBaseWrapperOptions<
   world extends World,
   config extends StoreConfig,
   networkConfig extends NetworkConfig,
-  extraTables extends ExtraTables,
+  extraTables extends MUDTables,
 > = {
   world: world;
   mudConfig: config;
@@ -49,8 +38,8 @@ export type TinyBaseWrapperOptions<
   publicClient?: PublicClient;
 };
 
-export type TinyBaseWrapperResult<config extends StoreConfig, tables extends ExtraTables> = {
-  components: AllComponents<config, tables>;
+export type TinyBaseWrapperResult<config extends StoreConfig, tables extends MUDTables> = {
+  components: ContractTables<AllTables<config, tables>>;
   tables: AllTables<config, tables>;
   store: TinyBaseStore;
   queries: TinyBaseQueries;
@@ -73,30 +62,25 @@ export interface NetworkConfig {
 export type CreateComponentsStoreOptions<
   world extends World,
   config extends StoreConfig,
-  extraTables extends ExtraTables,
+  extraTables extends MUDTables,
 > = {
   world: world;
   tables: AllTables<config, extraTables>;
-};
-
-export type CreateComponentsStoreResult<config extends StoreConfig, extraTables extends ExtraTables> = {
-  components: AllComponents<config, extraTables>;
   store: TinyBaseStore;
   queries: TinyBaseQueries;
 };
 
-export type CreateComponentMethodsOptions<table extends Table> = {
+export type CreateComponentMethodsOptions<
+  S extends Schema,
+  M extends Metadata,
+  metadata extends InternalTableMetadata<S, M> | ContractTableMetadata<S, M>,
+> = {
   store: TinyBaseStore;
   queries: TinyBaseQueries;
-  table: table;
-  tableId: string;
+  metadata: metadata;
 };
 
-export type CreateComponentMethodsResult<VS extends Schema, KS extends Schema = Schema, T = unknown> =
-  | ComponentMethods<VS, T>
-  | (ComponentMethods<VS, T> & ContractComponentMethods<VS, KS, T>);
-
-export type CreateStoreOptions<config extends StoreConfig, tables extends ExtraTables> = {
+export type CreateStoreOptions<config extends StoreConfig, tables extends MUDTables> = {
   tables: AllTables<config, tables>;
 };
 

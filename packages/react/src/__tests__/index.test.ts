@@ -5,16 +5,18 @@ import { renderHook } from "@testing-library/react-hooks";
 import { Entity, Type, createWorld, getComponentValue } from "@latticexyz/recs";
 import { encodeEntity, singletonEntity, syncToRecs } from "@latticexyz/store-sync/recs";
 import { wait } from "@latticexyz/common/utils";
+import { ResolvedStoreConfig } from "@latticexyz/store/config";
+import { storeToV1 } from "@latticexyz/store/config/v2";
 import { padHex, toHex } from "viem";
 
 // src
-import { createGlobalQuery, createTinyBaseWrapper, useQuery } from "@/index";
+import { ContractTable, createGlobalQuery, createTinyBaseWrapper, useQuery } from "@/index";
 import { createInternalComponent, createInternalCoordComponent } from "@/components/internal";
-import { createInternalComponents } from "@/components/internal/templates";
+import { MUDTable } from "@/components/types";
 import { TableQueryUpdate, query } from "@/queries";
-import { SyncStep } from "@/components/internal/templates/internalComponents";
 // mocks
 import {
+  ComponentNames,
   fuzz,
   getMockNetworkConfig,
   getRandomBigInts,
@@ -24,6 +26,7 @@ import {
 } from "@/__tests__/utils";
 import mockConfig from "@/__tests__/mocks/contracts/mud.config";
 import { createSync } from "@/__tests__/utils/sync";
+import { createInternalSyncComponents, SyncStep } from "@/__tests__/utils/sync/components";
 
 const FUZZ_ITERATIONS = 20;
 
@@ -57,7 +60,7 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
       indexerUrl: useIndexer ? networkConfig.indexerUrl : undefined,
     },
   });
-  const components = { ...contractComponents, ...createInternalComponents(store) };
+  const components = { ...contractComponents, ...createInternalSyncComponents(store) };
 
   // Sync components with the chain
   const sync = createSync({
@@ -94,17 +97,6 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
     ...["A", "B", "C"].map((id) => padHex(toHex(`entity${id}`))),
   ] as Entity[];
 
-  // Wait for a component to be synced at the specified block
-  const waitForBlockSynced = async (txBlock: bigint, componentKey: keyof typeof components, key?: string) => {
-    let synced = false;
-
-    while (!synced) {
-      await wait(1000);
-      const lastSyncedBlock = components?.[componentKey].get(key)?.__lastSyncedAtBlock;
-      synced = lastSyncedBlock >= txBlock;
-    }
-  };
-
   // We want to wait for both components systems to be in sync & live
   const waitForSyncLive = async () => {
     let synced = false;
@@ -112,7 +104,7 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
     while (!synced) {
       await wait(1000);
 
-      const tinyBaseSync = components?.SyncStatus.get(singletonEntity);
+      const tinyBaseSync = components.SyncStatus.get();
       const recsSync = getComponentValue(recsComponents.SyncProgress, singletonEntity);
       synced = tinyBaseSync?.step === SyncStep.Live && recsSync?.step === "live";
     }
@@ -129,9 +121,27 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
     recsComponents,
     entities,
     networkConfig,
-    waitForBlockSynced,
     waitForSyncLive,
   };
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                    UTILS                                   */
+/* -------------------------------------------------------------------------- */
+
+// Wait for a component to be synced at the specified block
+const waitForBlockSynced = async <table extends MUDTable>(
+  txBlock: bigint,
+  component: ContractTable<table>,
+  key?: Entity,
+) => {
+  let synced = false;
+
+  while (!synced) {
+    await wait(1000);
+    const lastSyncedBlock = component.get(key)?.__lastSyncedAtBlock;
+    synced = lastSyncedBlock ? lastSyncedBlock >= txBlock : false;
+  }
 };
 
 describe("tinyBaseWrapper", () => {
@@ -181,8 +191,8 @@ describe("tinyBaseWrapper", () => {
   /* -------------------------------------------------------------------------- */
 
   describe("sync: should properly sync similar values to RECS components", () => {
-    const runTest = async (options: TestOptions, txs: Record<string, bigint>) => {
-      const { components, recsComponents, entities, waitForBlockSynced } = await init(options);
+    const runTest = async (options: TestOptions, txs: Record<ComponentNames, bigint>) => {
+      const { components, recsComponents, entities } = await init(options);
       const player = entities[0];
       assert(components);
 
@@ -191,8 +201,9 @@ describe("tinyBaseWrapper", () => {
         Object.entries(txs).map(([comp, block]) =>
           waitForBlockSynced(
             block,
-            comp as keyof typeof components,
-            // @ts-ignore we're passing components with an id as key or none at all
+            // @ts-expect-error we're passing contract components
+            components[comp as ComponentNames],
+            // @ts-expect-error we're passing components with an id as key or none at all
             components[comp as keyof typeof components].metadata.keySchema.id ? player : undefined,
           ),
         ),
@@ -209,9 +220,9 @@ describe("tinyBaseWrapper", () => {
         const tinyBaseComp = hasKey ? components[comp].get(player) : components[comp].get();
 
         const recsComp = hasKey
-          ? // @ts-expect-error
+          ? // @ts-expect-error wrong types in table
             getComponentValue(recsComponents[comp], player)
-          : // @ts-expect-error
+          : // @ts-expect-error wrong types in table
             getComponentValue(recsComponents[comp], singletonEntity);
 
         if (!tinyBaseComp) {
@@ -257,7 +268,7 @@ describe("tinyBaseWrapper", () => {
     describe("basic methods", () => {
       // Init and return components and utils
       const preTest = async () => {
-        const { components, entities, waitForBlockSynced } = await init();
+        const { components, entities } = await init();
         const player = entities[0];
         assert(components);
 
@@ -269,7 +280,7 @@ describe("tinyBaseWrapper", () => {
           totalWeight: getRandomBigInts(1)[0],
         });
 
-        return { components, player, getRandomArgs, waitForBlockSynced };
+        return { components, player, getRandomArgs };
       };
 
       // Check returned values against input args
@@ -281,12 +292,12 @@ describe("tinyBaseWrapper", () => {
 
       // Get component value after a transaction was made
       it("get(), getWithKeys()", async () => {
-        const { components, player, getRandomArgs, waitForBlockSynced } = await preTest();
+        const { components, player, getRandomArgs } = await preTest();
 
         // Set the items and wait for sync
         const args = getRandomArgs();
         const { blockNumber } = await setItems(args);
-        await waitForBlockSynced(blockNumber, "Inventory", player);
+        await waitForBlockSynced(blockNumber, components.Inventory, player);
 
         const value = components.Inventory.get(player);
         const valueWithKeys = components.Inventory.getWithKeys({ id: player });
@@ -299,7 +310,13 @@ describe("tinyBaseWrapper", () => {
         const { components, player, getRandomArgs } = await preTest();
 
         // Set the component manually
-        const args = getRandomArgs();
+        const args = {
+          ...getRandomArgs(),
+          __staticData: "0x",
+          __encodedLengths: "0x",
+          __dynamicData: "0x",
+          __lastSyncedAtBlock: BigInt(0),
+        };
         components.Inventory.set(args, player);
 
         const value = components.Inventory.get(player);
@@ -311,12 +328,12 @@ describe("tinyBaseWrapper", () => {
 
       // Update component value client-side
       it("update()", async () => {
-        const { components, player, getRandomArgs, waitForBlockSynced } = await preTest();
+        const { components, player, getRandomArgs } = await preTest();
 
         // Set the items and wait for sync
         const args = getRandomArgs();
         const { blockNumber } = await setItems(args);
-        await waitForBlockSynced(blockNumber, "Inventory", player);
+        await waitForBlockSynced(blockNumber, components.Inventory, player);
 
         // Update the component
         const updateArgs = getRandomArgs();
@@ -329,12 +346,12 @@ describe("tinyBaseWrapper", () => {
 
       // Remove component value client-side
       it("remove()", async () => {
-        const { components, player, getRandomArgs, waitForBlockSynced } = await preTest();
+        const { components, player, getRandomArgs } = await preTest();
 
         // Set the items and wait for sync
         const args = getRandomArgs();
         const { blockNumber } = await setItems(args);
-        await waitForBlockSynced(blockNumber, "Inventory", player);
+        await waitForBlockSynced(blockNumber, components.Inventory, player);
 
         // Remove the component
         components.Inventory.remove(player);
@@ -457,7 +474,7 @@ describe("tinyBaseWrapper", () => {
         });
 
         const unknownEntity = padHex(toHex("unknownEntity"));
-        expect(components.Position.has(unknownEntity)).toBe(false);
+        expect(components.Position.has(unknownEntity as Entity)).toBe(false);
         expect(components.Position.hasWithKeys({ id: unknownEntity })).toBe(false);
       });
     });
@@ -469,19 +486,29 @@ describe("tinyBaseWrapper", () => {
         return { entity, x: nums[0], y: nums[1] };
       };
 
-      const updatePosition = async (
+      const updatePosition = async <
+        table extends ResolvedStoreConfig<storeToV1<typeof mockConfig>>["tables"]["Position"],
+      >(
+        Position: ContractTable<table>,
         entity: Entity,
-        waitForBlockSynced: (block: bigint, comp: string, key?: string) => void,
       ) => {
         const args = getRandomArgs(entity);
         const { blockNumber } = await setPositionForEntity(args);
-        await waitForBlockSynced(blockNumber, "Position", entity);
+        await waitForBlockSynced(blockNumber, Position, entity);
 
-        return { args };
+        return {
+          args: {
+            ...args,
+            __staticData: "0x",
+            __encodedLengths: "0x",
+            __dynamicData: "0x",
+            __lastSyncedAtBlock: BigInt(0),
+          },
+        };
       };
 
       it("use(), useWithKeys()", async () => {
-        const { components, waitForBlockSynced, entities } = await init();
+        const { components, entities } = await init();
         assert(components);
         const player = entities[0];
 
@@ -489,13 +516,13 @@ describe("tinyBaseWrapper", () => {
         const { result: resultWithKeys } = renderHook(() => components.Position.useWithKeys({ id: player }));
 
         // Update the position
-        const { args } = await updatePosition(player, waitForBlockSynced);
+        const { args } = await updatePosition(components.Position, player);
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
         expect(result.current).toEqual(resultWithKeys.current);
 
         // Update the position again with different values
-        const { args: argsB } = await updatePosition(player, waitForBlockSynced);
+        const { args: argsB } = await updatePosition(components.Position, player);
         expect(result.current).toHaveProperty("x", argsB.x);
         expect(result.current).toHaveProperty("y", argsB.y);
         expect(result.current).toEqual(resultWithKeys.current);
@@ -507,14 +534,14 @@ describe("tinyBaseWrapper", () => {
       });
 
       it("pauseUpdates()", async () => {
-        const { components, waitForBlockSynced, entities } = await init();
+        const { components, entities } = await init();
         assert(components);
         const player = entities[0];
 
         const { result } = renderHook(() => components.Position.use(entities[0]));
 
         // Update the position
-        const { args } = await updatePosition(player, waitForBlockSynced);
+        const { args } = await updatePosition(components.Position, player);
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
 
@@ -522,7 +549,7 @@ describe("tinyBaseWrapper", () => {
         components.Position.pauseUpdates(player, args);
 
         // Update the position again with different values
-        await updatePosition(player, waitForBlockSynced);
+        await updatePosition(components.Position, player);
 
         // It should still have the same values
         expect(result.current).toHaveProperty("x", args.x);
@@ -530,14 +557,14 @@ describe("tinyBaseWrapper", () => {
       });
 
       it("resumeUpdates()", async () => {
-        const { components, waitForBlockSynced, entities } = await init();
+        const { components, entities } = await init();
         assert(components);
         const player = entities[0];
 
         const { result } = renderHook(() => components.Position.use(entities[0]));
 
         // Update the position
-        const { args } = await updatePosition(player, waitForBlockSynced);
+        const { args } = await updatePosition(components.Position, player);
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
 
@@ -545,7 +572,7 @@ describe("tinyBaseWrapper", () => {
         components.Position.pauseUpdates(player, args);
 
         // Update the position again with different values
-        const { args: argsB } = await updatePosition(player, waitForBlockSynced);
+        const { args: argsB } = await updatePosition(components.Position, player);
         // It should keep the old values
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
@@ -558,13 +585,13 @@ describe("tinyBaseWrapper", () => {
       });
 
       it("useAll()", async () => {
-        const { components, waitForBlockSynced, entities } = await init();
+        const { components, entities } = await init();
         assert(components);
 
         const { result } = renderHook(() => components.Position.useAll());
 
         // Update the position for all entities
-        await Promise.all(entities.map(async (entity) => await updatePosition(entity, waitForBlockSynced)));
+        await Promise.all(entities.map(async (entity) => await updatePosition(components.Position, entity)));
         expect(result.current.sort()).toEqual(entities.sort());
 
         // Clear the positions
@@ -572,7 +599,9 @@ describe("tinyBaseWrapper", () => {
         expect(result.current).toEqual([]);
 
         // Update the position for a few entities
-        await Promise.all(entities.slice(0, 2).map(async (entity) => await updatePosition(entity, waitForBlockSynced)));
+        await Promise.all(
+          entities.slice(0, 2).map(async (entity) => await updatePosition(components.Position, entity)),
+        );
         expect(result.current.sort()).toEqual(entities.slice(0, 2).sort());
 
         // Remove an entity
@@ -581,7 +610,7 @@ describe("tinyBaseWrapper", () => {
       });
 
       it("useAllWith()", async () => {
-        const { components, waitForBlockSynced, entities } = await init();
+        const { components, entities } = await init();
         assert(components);
 
         const targetPos = { x: 10, y: 10 };
@@ -596,7 +625,7 @@ describe("tinyBaseWrapper", () => {
             }
 
             const { blockNumber } = await setPositionForEntity(args);
-            await waitForBlockSynced(blockNumber, "Position", entity);
+            await waitForBlockSynced(blockNumber, components.Position, entity);
           }),
         );
 
@@ -604,16 +633,16 @@ describe("tinyBaseWrapper", () => {
 
         // Update the position for a few entities to the target position
         const { blockNumber: blockNumberB } = await setPositionForEntity({ ...targetPos, entity: entities[0] });
-        await waitForBlockSynced(blockNumberB, "Position", entities[0]);
+        await waitForBlockSynced(blockNumberB, components.Position, entities[0]);
         expect(result.current).toEqual([entities[0]]);
 
         const { blockNumber: blockNumberC } = await setPositionForEntity({ ...targetPos, entity: entities[1] });
-        await waitForBlockSynced(blockNumberC, "Position", entities[1]);
+        await waitForBlockSynced(blockNumberC, components.Position, entities[1]);
         expect(result.current.sort()).toEqual([entities[0], entities[1]].sort());
 
         // And with only part of the properties matching
         const { blockNumber: blockNumberD } = await setPositionForEntity({ x: targetPos.x, y: 0, entity: entities[2] });
-        await waitForBlockSynced(blockNumberD, "Position", entities[2]);
+        await waitForBlockSynced(blockNumberD, components.Position, entities[2]);
         expect(result.current.sort()).toEqual([entities[0], entities[1]].sort());
 
         // Remove an entity
@@ -622,7 +651,7 @@ describe("tinyBaseWrapper", () => {
       });
 
       it("useAllWithout()", async () => {
-        const { components, waitForBlockSynced, entities } = await init();
+        const { components, entities } = await init();
         assert(components);
 
         const targetPos = { x: 10, y: 10 };
@@ -636,7 +665,7 @@ describe("tinyBaseWrapper", () => {
               args = getRandomArgs(entity);
             }
             const { blockNumber } = await setPositionForEntity(args);
-            await waitForBlockSynced(blockNumber, "Position", entity);
+            await waitForBlockSynced(blockNumber, components.Position, entity);
           }),
         );
 
@@ -644,16 +673,16 @@ describe("tinyBaseWrapper", () => {
 
         // Update the position for a few entities to the target position
         const { blockNumber: blockNumberB } = await setPositionForEntity({ ...targetPos, entity: entities[0] });
-        await waitForBlockSynced(blockNumberB, "Position", entities[0]);
+        await waitForBlockSynced(blockNumberB, components.Position, entities[0]);
         expect(result.current.sort()).toEqual(entities.slice(1).sort());
 
         const { blockNumber: blockNumberC } = await setPositionForEntity({ ...targetPos, entity: entities[1] });
-        await waitForBlockSynced(blockNumberC, "Position", entities[1]);
+        await waitForBlockSynced(blockNumberC, components.Position, entities[1]);
         expect(result.current.sort()).toEqual(entities.slice(2).sort());
 
         // And with only part of the properties matching
         const { blockNumber: blockNumberD } = await setPositionForEntity({ x: targetPos.x, y: 0, entity: entities[2] });
-        await waitForBlockSynced(blockNumberD, "Position", entities[2]);
+        await waitForBlockSynced(blockNumberD, components.Position, entities[2]);
         expect(result.current.sort()).toEqual(entities.slice(2).sort());
 
         // Remove an entity
@@ -685,31 +714,22 @@ describe("tinyBaseWrapper", () => {
       return { entity, x: nums[0], y: nums[1] };
     };
 
-    // @ts-ignore use Function as a type
-    const updatePosition = async (
+    const updatePosition = async <
+      table extends ResolvedStoreConfig<storeToV1<typeof mockConfig>>["tables"]["Position"],
+    >(
+      Position: ContractTable<table>,
       entity: Entity,
-      waitForBlockSynced: (block: bigint, comp: string, key?: string) => void,
+      to?: { x: number; y: number },
     ) => {
-      const args = getRandomArgs(entity);
+      const args = to ? { entity, ...to } : getRandomArgs(entity);
       const { blockNumber } = await setPositionForEntity(args);
-      await waitForBlockSynced(blockNumber, "Position", entity);
+      await waitForBlockSynced(blockNumber, Position, entity);
 
       return { args };
     };
 
-    // @ts-ignore use Function as a type
-    const updatePositionTo = async (
-      entity: Entity,
-      x: number,
-      y: number,
-      waitForBlockSynced: (block: bigint, comp: string, key?: string) => void,
-    ) => {
-      const { blockNumber } = await setPositionForEntity({ entity, x, y });
-      await waitForBlockSynced(blockNumber, "Position", entity);
-    };
-
     const preTest = async () => {
-      const { components, store, waitForBlockSynced, waitForSyncLive, entities } = await init();
+      const { components, store, waitForSyncLive, entities } = await init();
       assert(components);
       // Just wait for sync for the test to be accurate (no system trigger due to storing synced values)
       await waitForSyncLive();
@@ -718,11 +738,11 @@ describe("tinyBaseWrapper", () => {
       const aggregator: TableQueryUpdate<typeof components.Position.schema | typeof components.Inventory.schema>[] = [];
       const onChange = (update: (typeof aggregator)[number]) => aggregator.push(update);
 
-      return { components, store, waitForBlockSynced, entities, onChange, aggregator };
+      return { components, store, entities, onChange, aggregator };
     };
 
     it("createQueryWrapper(): without query", async () => {
-      const { components, waitForBlockSynced, entities, onChange, aggregator } = await preTest();
+      const { components, entities, onChange, aggregator } = await preTest();
       const tableId = components.Position.id;
 
       const { unsubscribe } = components.Position.createQuery({
@@ -733,7 +753,7 @@ describe("tinyBaseWrapper", () => {
 
       // Update the position for an entity (and enter the table)
       const valueA = components.Position.get(entities[0]);
-      await updatePosition(entities[0], waitForBlockSynced);
+      await updatePosition(components.Position, entities[0]);
       const valueB = components.Position.get(entities[0]);
 
       expect(aggregator).toEqual([
@@ -742,12 +762,12 @@ describe("tinyBaseWrapper", () => {
 
       // Update entity[1]
       const valueC = components.Position.get(entities[1]);
-      await updatePosition(entities[1], waitForBlockSynced);
+      await updatePosition(components.Position, entities[1]);
       const valueD = components.Position.get(entities[1]);
       // Exit entity[0]
       components.Position.remove(entities[0]);
       // Enter again entity[0]
-      await updatePosition(entities[0], waitForBlockSynced);
+      await updatePosition(components.Position, entities[0]);
       const valueE = components.Position.get(entities[0]);
 
       expect(aggregator).toEqual([
@@ -761,10 +781,10 @@ describe("tinyBaseWrapper", () => {
     });
 
     it("createQueryWrapper(): run on init", async () => {
-      const { components, waitForBlockSynced, entities, onChange, aggregator } = await preTest();
+      const { components, entities, onChange, aggregator } = await preTest();
 
       // Enter entities
-      await Promise.all(entities.map(async (entity) => await updatePosition(entity, waitForBlockSynced)));
+      await Promise.all(entities.map(async (entity) => await updatePosition(components.Position, entity)));
 
       const { unsubscribe } = components.Position.createQuery({
         onChange,
@@ -776,7 +796,7 @@ describe("tinyBaseWrapper", () => {
     });
 
     it("createQueryWrapper(): with query", async () => {
-      const { components, waitForBlockSynced, entities, onChange, aggregator } = await preTest();
+      const { components, entities, onChange, aggregator } = await preTest();
       const tableId = components.Position.id;
       const matchQuery = (x: number) => x > 5 && x < 15;
 
@@ -793,7 +813,7 @@ describe("tinyBaseWrapper", () => {
 
       // Move an entity inside the query condition
       const valueA = components.Position.get(entities[0]);
-      await updatePositionTo(entities[0], 9, 9, waitForBlockSynced);
+      await updatePosition(components.Position, entities[0], { x: 9, y: 9 });
       const valueB = components.Position.get(entities[0]);
 
       expect(aggregator).toEqual([
@@ -807,7 +827,7 @@ describe("tinyBaseWrapper", () => {
 
       // Update entity[1] inside the query condition
       const valueC = components.Position.get(entities[1]);
-      await updatePositionTo(entities[1], 10, 10, waitForBlockSynced);
+      await updatePosition(components.Position, entities[1], { x: 10, y: 10 });
       const valueD = components.Position.get(entities[1]);
 
       expect(aggregator[1]).toEqual({
@@ -828,7 +848,7 @@ describe("tinyBaseWrapper", () => {
       });
 
       // Move out entity[1] from the query condition
-      await updatePositionTo(entities[1], 20, 20, waitForBlockSynced);
+      await updatePosition(components.Position, entities[1], { x: 20, y: 20 });
       const valueE = components.Position.get(entities[1]);
 
       expect(aggregator).toHaveLength(4);
@@ -845,15 +865,21 @@ describe("tinyBaseWrapper", () => {
     it("query() (queryAllMatching)", async () => {
       const { components, store, entities } = await init();
       const [player, A, B, C] = entities;
+      const emptyData = {
+        __staticData: "0x",
+        __encodedLengths: "0x",
+        __dynamicData: "0x",
+        __lastSyncedAtBlock: BigInt(0),
+      };
 
       // Prepare entities
-      components.Position.set({ x: 10, y: 10 }, player);
-      components.Position.set({ x: 5, y: 5 }, A);
-      components.Position.set({ x: 10, y: 10 }, B);
-      components.Position.set({ x: 15, y: 10 }, C);
-      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6) }, player);
-      components.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6) }, A);
-      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3) }, B);
+      components.Position.set({ x: 10, y: 10, ...emptyData }, player);
+      components.Position.set({ x: 5, y: 5, ...emptyData }, A);
+      components.Position.set({ x: 10, y: 10, ...emptyData }, B);
+      components.Position.set({ x: 15, y: 10, ...emptyData }, C);
+      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6), ...emptyData }, player);
+      components.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6), ...emptyData }, A);
+      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3), ...emptyData }, B);
 
       // Entities inside the Position component
       expect(
@@ -910,6 +936,12 @@ describe("tinyBaseWrapper", () => {
     it("createGlobalQuery(), useQuery() (useQueryAllMatching)", async () => {
       const { components, store, entities, onChange, aggregator } = await preTest();
       const [player, A, B, C] = entities;
+      const emptyData = {
+        __staticData: "0x",
+        __encodedLengths: "0x",
+        __dynamicData: "0x",
+        __lastSyncedAtBlock: BigInt(0),
+      };
 
       // We need another aggregator for the global query
       const globalAggregator: TableQueryUpdate<
@@ -918,13 +950,13 @@ describe("tinyBaseWrapper", () => {
       const globalOnChange = (update: (typeof globalAggregator)[number]) => globalAggregator.push(update);
 
       // Prepare entities
-      components.Position.set({ x: 10, y: 10 }, player);
-      components.Position.set({ x: 5, y: 5 }, A);
-      components.Position.set({ x: 10, y: 10 }, B);
-      components.Position.set({ x: 15, y: 10 }, C);
-      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6) }, player);
-      components.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6) }, A);
-      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3) }, B);
+      components.Position.set({ x: 10, y: 10, ...emptyData }, player);
+      components.Position.set({ x: 5, y: 5, ...emptyData }, A);
+      components.Position.set({ x: 10, y: 10, ...emptyData }, B);
+      components.Position.set({ x: 15, y: 10, ...emptyData }, C);
+      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6), ...emptyData }, player);
+      components.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6), ...emptyData }, A);
+      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3), ...emptyData }, B);
 
       const query = {
         inside: [components.Position],

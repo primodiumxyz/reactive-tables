@@ -1,17 +1,18 @@
-import { Entity, Schema } from "@latticexyz/recs";
+import { Entity } from "@latticexyz/recs";
 import { Queries } from "tinybase/queries";
 
 import { useEffect, useMemo, useState } from "react";
 
 import { TinyBaseAdapter } from "@/adapter";
 import { queryAllWithValue } from "@/queries/templates/queryAllWithValue";
-import { ComponentValue } from "@/components/contract/types";
+import { QueryOptions } from "@/queries/templates/types";
+import { MUDTable } from "@/components/types";
 
 // Listen to all entities inside a given table that have a specific value (or partial value)
-export const useAllWithValue = <S extends Schema>(
+export const useAllWithValue = <table extends MUDTable>(
   queries: Queries,
   tableId: string,
-  value: Partial<ComponentValue<S>>,
+  value: QueryOptions<table>["value"],
 ): Entity[] => {
   // Format the value for TinyBase storage to compare it with the stored values
   const formattedValue = useMemo(() => TinyBaseAdapter.format(Object.keys(value), Object.values(value)), [value]);
