@@ -1,9 +1,7 @@
-import { Schema, World } from "@latticexyz/recs";
+import { Schema } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
-import { MUDChain } from "@latticexyz/common/chains";
 import { ResolvedStoreConfig, Tables as MUDTables } from "@latticexyz/store/internal";
 import { storeToV1 } from "@latticexyz/store/config/v2";
-import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 import { Queries } from "tinybase/queries";
 
@@ -25,17 +23,9 @@ export type AllTables<config extends StoreConfig, extraTables extends MUDTables>
   typeof storeTables &
   typeof worldTables;
 
-export type TinyBaseWrapperOptions<
-  world extends World,
-  config extends StoreConfig,
-  networkConfig extends NetworkConfig,
-  extraTables extends MUDTables,
-> = {
-  world: world;
+export type TinyBaseWrapperOptions<config extends StoreConfig, extraTables extends MUDTables> = {
   mudConfig: config;
-  networkConfig: networkConfig;
   otherTables?: extraTables;
-  publicClient?: PublicClient;
 };
 
 export type TinyBaseWrapperResult<config extends StoreConfig, tables extends MUDTables> = {
@@ -44,27 +34,12 @@ export type TinyBaseWrapperResult<config extends StoreConfig, tables extends MUD
   store: TinyBaseStore;
   queries: TinyBaseQueries;
   storageAdapter: StorageAdapter;
-  publicClient: PublicClient;
 };
-
-export interface NetworkConfig {
-  chainId: number;
-  chain: MUDChain;
-  worldAddress: Address;
-  initialBlockNumber: bigint;
-  faucetServiceUrl?: string;
-  indexerUrl?: string;
-}
 
 /* -------------------------------------------------------------------------- */
 /*                                    STORE                                   */
 /* -------------------------------------------------------------------------- */
-export type CreateComponentsStoreOptions<
-  world extends World,
-  config extends StoreConfig,
-  extraTables extends MUDTables,
-> = {
-  world: world;
+export type CreateComponentsStoreOptions<config extends StoreConfig, extraTables extends MUDTables> = {
   tables: AllTables<config, extraTables>;
   store: TinyBaseStore;
   queries: TinyBaseQueries;

@@ -1,10 +1,19 @@
-import { PublicClient } from "viem";
+import { MUDChain } from "@latticexyz/common/chains";
+import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 
-import { NetworkConfig } from "@/types";
 import { MUDTables } from "@/components/types";
 import { ContractTables } from "@/components/contract/types";
 import { createInternalSyncComponents } from "@/__tests__/utils/sync/components";
+
+export interface NetworkConfig {
+  chainId: number;
+  chain: MUDChain;
+  worldAddress: Address;
+  initialBlockNumber: bigint;
+  faucetServiceUrl?: string;
+  indexerUrl?: string;
+}
 
 export type CreateSyncOptions<tables extends MUDTables> = {
   components: ContractTables<tables> & ReturnType<typeof createInternalSyncComponents>;

@@ -1,4 +1,3 @@
-import { World } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { resolveConfig } from "@latticexyz/store/internal";
@@ -8,28 +7,17 @@ import { createQueries } from "tinybase/queries";
 import { MUDTables } from "@/components/types";
 import { createComponentsStore } from "@/components";
 import { createStorageAdapter } from "@/adapter";
-import { createPublicClient } from "@/utils";
-import { TinyBaseWrapperOptions, NetworkConfig, TinyBaseWrapperResult, AllTables } from "@/types";
+import { TinyBaseWrapperOptions, TinyBaseWrapperResult, AllTables } from "@/types";
 
 import storeConfig from "@latticexyz/store/mud.config";
 import worldConfig from "@latticexyz/world/mud.config";
 export const storeTables = resolveConfig(storeToV1(storeConfig)).tables;
 export const worldTables = resolveConfig(storeToV1(worldConfig)).tables;
 
-export const createTinyBaseWrapper = <
-  world extends World,
-  config extends StoreConfig,
-  networkConfig extends NetworkConfig,
-  extraTables extends MUDTables,
->({
-  world,
+export const createTinyBaseWrapper = <config extends StoreConfig, extraTables extends MUDTables>({
   mudConfig,
-  networkConfig,
   otherTables,
-  publicClient,
-}: TinyBaseWrapperOptions<world, config, networkConfig, extraTables>): TinyBaseWrapperResult<config, extraTables> => {
-  const client = publicClient ?? createPublicClient(networkConfig);
-
+}: TinyBaseWrapperOptions<config, extraTables>): TinyBaseWrapperResult<config, extraTables> => {
   /* --------------------------------- TABLES --------------------------------- */
   // Resolve tables
   const tables = {
@@ -40,14 +28,16 @@ export const createTinyBaseWrapper = <
   } as unknown as AllTables<config, extraTables>;
 
   /* ------------------------------- COMPONENTS ------------------------------- */
-  // Create the TinyBase store & queries
+  // Create the TinyBase store
   const store = createStore();
+  // and queries instance tied to the store
   const queries = createQueries(store);
-  const components = createComponentsStore({ world, tables, store, queries });
+  // Create components from the tables (format metadata, access/modify data using the store, perform queries)
+  const components = createComponentsStore({ tables, store, queries });
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create storage adapter (custom writer, see @primodiumxyz/sync-stack)
   const storageAdapter = createStorageAdapter({ store });
 
-  return { components, tables, store, queries, storageAdapter, publicClient: client };
+  return { components, tables, store, queries, storageAdapter };
 };

@@ -1,27 +1,6 @@
 import { Entity } from "@latticexyz/recs";
-import { transportObserver } from "@latticexyz/common";
-import {
-  concatHex,
-  createPublicClient as createViemPublicClient,
-  fallback,
-  Hex,
-  http,
-  isHex,
-  PublicClient,
-  size,
-  sliceHex,
-} from "viem";
+import { concatHex, Hex, isHex, size, sliceHex } from "viem";
 import createDebug from "debug";
-
-import { NetworkConfig } from "@/types";
-
-/* ---------------------------------- VIEM ---------------------------------- */
-export const createPublicClient = (networkConfig: NetworkConfig): PublicClient =>
-  createViemPublicClient({
-    chain: networkConfig.chain,
-    transport: transportObserver(fallback([http()])),
-    pollingInterval: 1000,
-  });
 
 /* ---------------------------------- DEBUG --------------------------------- */
 export const debug = createDebug("primodium:tiny-base-integration");
