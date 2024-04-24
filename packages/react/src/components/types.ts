@@ -1,74 +1,28 @@
 import { Entity } from "@latticexyz/recs";
+import { Store as StoreConfig } from "@latticexyz/store";
 import { Hex } from "viem";
-export { Table as MUDTable, Tables as MUDTables } from "@latticexyz/store/internal";
+import { Store } from "tinybase/store";
+import { Queries } from "tinybase/queries";
 
-/**
- * Type enum is used to specify value types to be able to access type values in JavaScript in addition to TypeScript type checks.
- * @see MUD
- */
-export enum Type {
-  Boolean,
-  Number,
-  OptionalNumber,
-  BigInt,
-  OptionalBigInt,
-  String,
-  OptionalString,
-  NumberArray,
-  OptionalNumberArray,
-  BigIntArray,
-  OptionalBigIntArray,
-  StringArray,
-  OptionalStringArray,
-  Entity,
-  OptionalEntity,
-  EntityArray,
-  OptionalEntityArray,
-  T,
-  OptionalT,
-}
+import { ContractTableMetadata } from "@/components/contract/types";
+import { InternalTableMetadata } from "@/components/internal/types";
+import { AllTables, Metadata, MUDTables, Schema, ValueType } from "@/lib";
 
-/**
- * Used to define the schema of a {@link ContractTable} or {@link InternalTable}.
- * Uses {@link Type} enum to be able to access the component type in JavaScript as well as have TypeScript type checks.
- * @see MUD
- */
-export type Schema = {
-  [key: string]: Type;
+export type CreateComponentsStoreOptions<config extends StoreConfig, extraTables extends MUDTables> = {
+  tables: AllTables<config, extraTables>;
+  store: Store;
+  queries: Queries;
 };
 
-/**
- * Mapping between JavaScript {@link Type} enum and corresponding TypeScript type.
- * @see MUD
- */
-export type ValueType<T = unknown> = {
-  [Type.Boolean]: boolean;
-  [Type.Number]: number;
-  [Type.BigInt]: bigint;
-  [Type.String]: string;
-  [Type.NumberArray]: number[];
-  [Type.BigIntArray]: bigint[];
-  [Type.StringArray]: string[];
-  [Type.Entity]: Entity;
-  [Type.EntityArray]: Entity[];
-  [Type.OptionalNumber]: number | undefined;
-  [Type.OptionalBigInt]: bigint | undefined;
-  [Type.OptionalBigIntArray]: bigint[] | undefined;
-  [Type.OptionalString]: string | undefined;
-  [Type.OptionalNumberArray]: number[] | undefined;
-  [Type.OptionalStringArray]: string[] | undefined;
-  [Type.OptionalEntity]: Entity | undefined;
-  [Type.OptionalEntityArray]: Entity[] | undefined;
-  [Type.T]: T;
-  [Type.OptionalT]: T | undefined;
+export type CreateComponentMethodsOptions<
+  S extends Schema,
+  M extends Metadata,
+  metadata extends InternalTableMetadata<S, M> | ContractTableMetadata<S, M>,
+> = {
+  store: Store;
+  queries: Queries;
+  metadata: metadata;
 };
-
-// Add arbitrary metadata to the table
-export type Metadata =
-  | {
-      [key: string]: unknown;
-    }
-  | undefined;
 
 export type BaseTableMetadata<S extends Schema = Schema> = {
   readonly tableId: Hex;

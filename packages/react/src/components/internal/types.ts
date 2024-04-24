@@ -1,7 +1,8 @@
 import { Entity } from "@latticexyz/recs";
 
-import { BaseTableMetadata, ComponentValue, Metadata, OriginalComponentMethods, Schema } from "@/components/types";
+import { BaseTableMetadata, ComponentValue, OriginalComponentMethods } from "@/components/types";
 import { CreateQueryResult, CreateQueryWrapperOptions } from "@/queries";
+import { Metadata, Schema } from "@/lib";
 
 export type InternalTable<
   S extends Schema = Schema,

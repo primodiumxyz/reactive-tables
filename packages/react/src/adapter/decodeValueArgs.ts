@@ -20,6 +20,7 @@ import {
   dynamicAbiTypeToDefaultValue,
 } from "@latticexyz/schema-type/internal";
 import { Hex } from "viem";
+
 import { formatValueForTinyBase } from "@/adapter/formatValueForTinyBase";
 
 export function decodeValueArgs<TSchema extends ValueSchema>(

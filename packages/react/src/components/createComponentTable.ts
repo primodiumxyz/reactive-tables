@@ -1,7 +1,6 @@
 import { Type } from "@latticexyz/recs";
-import { Table as MUDTable } from "@latticexyz/store/internal";
 
-import { schemaAbiTypeToRecsType } from "@/lib";
+import { MUDTable, schemaAbiTypeToRecsType } from "@/lib";
 
 export const createComponentTable = <table extends MUDTable>(metadata: table) => {
   const schema = {

@@ -14,9 +14,9 @@ import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
 import { createContractComponentMethods } from "@/components/contract";
 import { ContractTableMetadata } from "@/components/contract/types";
 import { InternalTableMetadata } from "@/components/internal/types";
-import { ComponentValue, ComponentValueSansMetadata, Metadata, Schema } from "@/components/types";
-import { arrayToIterator, createComponentMethodsUtils, singletonEntity } from "@/lib";
-import { CreateComponentMethodsOptions } from "@/types";
+import { ComponentValue, ComponentValueSansMetadata, CreateComponentMethodsOptions } from "@/components/types";
+import { arrayToIterator, createComponentMethodsUtils, Metadata, Schema, singletonEntity } from "@/lib";
+import {} from "@/components/types";
 
 const inContractTableMetadata = <S extends Schema, M extends Metadata>(
   metadata: InternalTableMetadata<S, M> | ContractTableMetadata<S, M>,

@@ -3,8 +3,9 @@ import { Store } from "tinybase/store";
 import { createQueries } from "tinybase/queries";
 
 import { queryAllWithValue } from "@/queries/templates/queryAllWithValue";
-import { ComponentValue, MUDTable } from "@/components/types";
+import { ComponentValue } from "@/components/types";
 import { AbiToSchemaPlusMetadata, ContractTable } from "@/components/contract/types";
+import { MUDTable } from "@/lib";
 
 type QueryMatchingComponentValue<table extends MUDTable, T = unknown> = {
   component: ContractTable<table>;

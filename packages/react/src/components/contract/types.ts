@@ -4,17 +4,13 @@ import { KeySchema, Table as MUDTable, ValueSchema } from "@latticexyz/store/int
 import { KeySchema as ParsedKeySchema, ValueSchema as ParsedValueSchema } from "@latticexyz/protocol-parser/internal";
 
 import { CreateQueryResult, CreateQueryWrapperOptions } from "@/queries";
-import { SchemaAbiTypeToRecsType } from "@/lib";
+import { MUDTables, Metadata, Schema, SchemaAbiTypeToRecsType, Type } from "@/lib";
 import {
   BaseTableMetadata,
   ComponentKey,
   ComponentValue,
   ComponentValueSansMetadata,
-  MUDTables,
-  Metadata,
   OriginalComponentMethods,
-  Schema,
-  Type,
 } from "@/components/types";
 
 export type ContractTables<tables extends MUDTables> = {

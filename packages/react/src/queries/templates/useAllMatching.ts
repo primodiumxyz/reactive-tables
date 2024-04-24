@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { queryAllMatching, QueryAllMatchingOptions } from "@/queries/templates/queryAllMatching";
 import { getValueAndTypeFromRowChange, TableQueryCallbacks, TableQueryUpdate, UpdateType } from "@/queries/createQuery";
-import { MUDTable } from "@/components/types";
+import { MUDTable } from "@/lib";
 
 // Listen to all entities matching multiple conditions across tables
 // TODO: this will clearly need to be optimized; there are probably a few options:

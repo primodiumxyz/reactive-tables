@@ -3,7 +3,7 @@ import { Entity } from "@latticexyz/recs";
 import { TinyBaseAdapter } from "@/adapter";
 import { ValuesArray } from "@/adapter/formatValueForTinyBase";
 import { QueryOptions, QueryResult } from "@/queries/templates/types";
-import { MUDTable } from "@/components/types";
+import { MUDTable } from "@/lib";
 
 // Query all entities for a given table that DON'T have a specific value (or partial value)
 export const queryAllWithoutValue = <table extends MUDTable>({

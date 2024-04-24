@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { TinyBaseAdapter } from "@/adapter";
 import { queryAllWithoutValue } from "@/queries/templates/queryAllWithoutValue";
 import { QueryOptions } from "@/queries/templates/types";
-import { MUDTable } from "@/components/types";
+import { MUDTable } from "@/lib";
 
 // Listen to all entities inside a given table that DON'T have a specific value (or partial value)
 export const useAllWithoutValue = <table extends MUDTable>(

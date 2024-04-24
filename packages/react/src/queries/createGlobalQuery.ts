@@ -3,7 +3,7 @@ import { Store } from "tinybase/store";
 
 import { queryAllMatching, QueryAllMatchingOptions } from "@/queries/templates/queryAllMatching";
 import { getValueAndTypeFromRowChange, TableQueryCallbacks, TableQueryUpdate, UpdateType } from "@/queries/createQuery";
-import { MUDTable } from "@/components/types";
+import { MUDTable } from "@/lib";
 
 // Listen to all entities matching multiple conditions across tables
 // Alternative to `query` (fetch once) and `useQuery` (hook)
