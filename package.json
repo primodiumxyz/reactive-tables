@@ -9,11 +9,13 @@
   "license": "MIT",
   "scripts": {
     "build": "lerna run build",
+    "dev": "cd packages/react && pnpm dev",
     "lerna-publish": "lerna publish",
     "lint": "eslint --cache",
     "lint:fix": "eslint --cache --fix",
     "prepare": "husky install",
-    "sort-package-json": "npx sort-package-json package.json 'packages/*/package.json'"
+    "sort-package-json": "npx sort-package-json package.json 'packages/*/package.json'",
+    "test": "cd packages/react && pnpm test"
   },
   "lint-staged": {
     "*.{ts,tsx}": "eslint --cache --fix",
