@@ -235,10 +235,10 @@ export const createComponentMethods = <
   const hookMethods = { useAll, useAllWith, useAllWithout, use: useValue };
   if (typeof window === "undefined") {
     Object.keys(hookMethods).forEach((key) => {
-      // @ts-expect-error undefined is not expected here, but we're doing that until we separate core/react libs
       hookMethods[key as keyof typeof hookMethods] = () => {
         console.warn(`${key} is only available in the browser`);
-        return undefined;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return undefined as any;
       };
     });
   }
