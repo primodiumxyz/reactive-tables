@@ -8,3 +8,6 @@ export * from "@/queries";
 
 // Expose component types
 export * from "@/components/contract/types";
+
+// Expose lib (utils)
+export * from "@/lib";

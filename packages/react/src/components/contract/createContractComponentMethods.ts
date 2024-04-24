@@ -1,10 +1,9 @@
 import { Entity, Schema } from "@latticexyz/recs";
 import { KeySchema } from "@latticexyz/protocol-parser/internal";
 
-import { decodeEntity, encodeEntity } from "@/components/contract/utils";
-import { singletonEntity } from "@/utils";
 import { ComponentKey, ComponentValue, ComponentValueSansMetadata, OriginalComponentMethods } from "@/components/types";
-import { ContractTableMethods, ContractTableWithKeysMethods } from "./types";
+import { decodeEntity, encodeEntity, singletonEntity } from "@/lib";
+import { ContractTableMethods, ContractTableWithKeysMethods } from "@/components/contract/types";
 
 export const createContractComponentMethods = <VS extends Schema, KS extends Schema = Schema, T = unknown>({
   keySchema,

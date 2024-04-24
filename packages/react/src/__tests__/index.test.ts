@@ -140,7 +140,7 @@ const waitForBlockSynced = async <table extends MUDTable>(
         `Component did not sync after ${SYNC_TIMEOUT}s; last synced at block ${component.get(key)?.__lastSyncedAtBlock}, waiting for block ${txBlock}`,
       );
     }
-    console.log("looking for block", txBlock, "last synced at", component.get(key)?.__lastSyncedAtBlock);
+
     await wait(1000);
     const lastSyncedBlock = component.get(key)?.__lastSyncedAtBlock;
     synced = lastSyncedBlock ? lastSyncedBlock >= txBlock : false;

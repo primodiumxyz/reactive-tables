@@ -3,8 +3,7 @@ import { mapObject } from "@latticexyz/utils";
 
 import { createComponentMethods } from "@/components/createComponentMethods";
 import { createComponentTable } from "@/components/createComponentTable";
-import { storeValueSchema } from "@/components/utils";
-
+import { storeValueSchema } from "@/lib";
 import { ContractTables } from "@/components/contract/types";
 import { MUDTables } from "@/components/types";
 import { CreateComponentsStoreOptions } from "@/types";

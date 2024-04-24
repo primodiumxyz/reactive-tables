@@ -3,7 +3,7 @@ import { Hex } from "viem";
 
 import { TinyBaseFormattedType } from "@/adapter/formatValueForTinyBase";
 
-import { encodedDataKeys } from "@/constants";
+import { encodedDataKeys } from "@/lib";
 
 type DecodedTinyBaseType =
   | {

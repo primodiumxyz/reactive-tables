@@ -1,22 +1,5 @@
 import { Type as RecsType } from "@latticexyz/recs";
 import { SchemaAbiType } from "@latticexyz/schema-type/internal";
-import { ValueSchema } from "@latticexyz/protocol-parser/internal";
-import { Hex } from "viem";
-import { Store } from "tinybase/store";
-
-// Utility to store a value schema and access it efficiently in the storage adapter
-export const storeValueSchema = (store: Store, tableId: Hex, valueSchema: ValueSchema) => {
-  store.setTable(`table__${tableId}`, {
-    valueSchema: valueSchema,
-  });
-};
-
-export const getValueSchema = (store: Store, tableId: Hex): ValueSchema => {
-  const row = store.getRow(`table__${tableId}`, "valueSchema");
-  if (Object.keys(row).length === 0) throw new Error(`Table with id ${tableId} is empty`);
-
-  return row as ValueSchema;
-};
 
 /* ---------------------------------- RECS ---------------------------------- */
 // Copied from https://github.com/latticexyz/mud/blob/ade94a7fa761070719bcd4b4dac6cb8cc7783c3b/packages/store-sync/src/recs/schemaAbiTypeToRecsType.ts#L205

@@ -1,43 +1,24 @@
-import { SchemaToPrimitives, KeySchema } from "@latticexyz/protocol-parser/internal";
 import { Entity, Schema } from "@latticexyz/recs";
-import { Hex, decodeAbiParameters, encodeAbiParameters } from "viem";
-import { Store } from "tinybase/store";
+import { SchemaToPrimitives, KeySchema } from "@latticexyz/protocol-parser/internal";
+import { concatHex, decodeAbiParameters, encodeAbiParameters, Hex, isHex, size, sliceHex } from "viem";
 
-import { entityToHexKeyTuple, hexKeyTupleToEntity } from "@/utils";
 import { ComponentKey } from "@/components/types";
 
-export const createComponentMethodsUtils = (store: Store, tableId: string) => {
-  const paused = {
-    set: (entity: Entity, paused: boolean) => {
-      store.setValue(`paused__${tableId}__${entity}`, paused);
-    },
-    get: (entity: Entity) => {
-      return store.getValue(`paused__${tableId}__${entity}`);
-    },
-  };
+export const singletonEntity = hexKeyTupleToEntity([]);
+export function hexKeyTupleToEntity(hexKeyTuple: readonly Hex[]): Entity {
+  return concatHex(hexKeyTuple as Hex[]) as Entity;
+}
 
-  return { paused };
-};
-
-export const arrayToIterator = <T>(array: T[]): IterableIterator<T> => {
-  let i = 0;
-
-  const iterator: Iterator<T> = {
-    next() {
-      if (i >= array.length) return { done: true, value: undefined };
-      return { done: false, value: array[i++] };
-    },
-  };
-
-  const iterable: IterableIterator<T> = {
-    ...iterator,
-    [Symbol.iterator]() {
-      return this;
-    },
-  };
-
-  return iterable;
-};
+export function entityToHexKeyTuple(entity: Entity): readonly Hex[] {
+  if (!isHex(entity)) {
+    throw new Error(`entity ${entity} is not a hex string`);
+  }
+  const length = size(entity);
+  if (length % 32 !== 0) {
+    throw new Error(`entity length ${length} is not a multiple of 32 bytes`);
+  }
+  return new Array(length / 32).fill(0).map((_, index) => sliceHex(entity, index * 32, (index + 1) * 32));
+}
 
 export const encodeEntity = <S extends Schema, TKeySchema extends KeySchema>(
   keySchema: TKeySchema,
@@ -72,4 +53,24 @@ export const decodeEntity = <TKeySchema extends KeySchema>(
       decodeAbiParameters([{ type }], hexKeyTuple[index] as Hex)[0],
     ]),
   ) as SchemaToPrimitives<TKeySchema>;
+};
+
+export const arrayToIterator = <T>(array: T[]): IterableIterator<T> => {
+  let i = 0;
+
+  const iterator: Iterator<T> = {
+    next() {
+      if (i >= array.length) return { done: true, value: undefined };
+      return { done: false, value: array[i++] };
+    },
+  };
+
+  const iterable: IterableIterator<T> = {
+    ...iterator,
+    [Symbol.iterator]() {
+      return this;
+    },
+  };
+
+  return iterable;
 };

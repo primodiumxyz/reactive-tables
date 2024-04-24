@@ -6,8 +6,7 @@ import { Write } from "@primodiumxyz/sync-stack";
 import { Store } from "tinybase/store";
 
 import { TinyBaseAdapter } from "@/adapter";
-import { getValueSchema } from "@/components/utils";
-import { debug, hexKeyTupleToEntity } from "@/utils";
+import { debug, hexKeyTupleToEntity, getValueSchema } from "@/lib";
 
 type StoreEventsLog = Log<bigint, number, false, StoreEventsAbiItem, true, StoreEventsAbi>;
 export type StorageAdapterLog = Partial<StoreEventsLog> & UnionPick<StoreEventsLog, "address" | "eventName" | "args">;

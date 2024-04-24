@@ -2,8 +2,8 @@ import { Entity, Schema } from "@latticexyz/recs";
 import { GetResultCellChange, Queries } from "tinybase/queries";
 
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
+import { encodedDataKeys, internalKeys } from "@/lib";
 import { ComponentValue } from "@/components/types";
-import { encodedDataKeys, internalKeys } from "@/constants";
 
 /* ---------------------------------- TYPES --------------------------------- */
 type ResultRow = { [key: string]: TinyBaseFormattedType[typeof key] | undefined };

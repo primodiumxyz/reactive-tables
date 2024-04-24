@@ -11,12 +11,11 @@ import {
   useAllWithoutValue,
 } from "@/queries";
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
-import { arrayToIterator, createComponentMethodsUtils } from "@/components/contract/utils";
-import { singletonEntity } from "@/utils";
-import { createContractComponentMethods } from "@/components/contract/createContractComponentMethods";
+import { createContractComponentMethods } from "@/components/contract";
 import { ContractTableMetadata } from "@/components/contract/types";
 import { InternalTableMetadata } from "@/components/internal/types";
 import { ComponentValue, ComponentValueSansMetadata, Metadata, Schema } from "@/components/types";
+import { arrayToIterator, createComponentMethodsUtils, singletonEntity } from "@/lib";
 import { CreateComponentMethodsOptions } from "@/types";
 
 const inContractTableMetadata = <S extends Schema, M extends Metadata>(

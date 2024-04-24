@@ -4,7 +4,7 @@ import { KeySchema, Table as MUDTable, ValueSchema } from "@latticexyz/store/int
 import { KeySchema as ParsedKeySchema, ValueSchema as ParsedValueSchema } from "@latticexyz/protocol-parser/internal";
 
 import { CreateQueryResult, CreateQueryWrapperOptions } from "@/queries";
-import { SchemaAbiTypeToRecsType } from "@/components/utils";
+import { SchemaAbiTypeToRecsType } from "@/lib";
 import {
   BaseTableMetadata,
   ComponentKey,
