@@ -9,6 +9,7 @@
   "license": "MIT",
   "scripts": {
     "build": "lerna run build",
+    "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && find . -name 'pnpm-lock.yaml' -type f -prune -exec rm -rf '{}' +",
     "dev": "cd packages/react && pnpm dev",
     "lerna-publish": "lerna publish",
     "lint": "eslint --cache",

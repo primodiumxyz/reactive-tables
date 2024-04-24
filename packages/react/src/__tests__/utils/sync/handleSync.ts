@@ -1,11 +1,9 @@
-import { MUDTables } from "@/components/types";
-import { ContractTables } from "@/components/contract/types";
-import { NetworkConfig } from "@/types";
+import { NetworkConfig } from "@/__tests__/utils/init";
 import { OnSyncCallbacks, Sync as SyncType } from "@/__tests__/utils/sync/types";
 import { SyncSourceType, SyncStep, createInternalSyncComponents } from "@/__tests__/utils/sync/components";
 
-export const hydrateFromIndexer = <tables extends MUDTables>(
-  components: ContractTables<tables> & ReturnType<typeof createInternalSyncComponents>,
+export const hydrateFromIndexer = (
+  components: ReturnType<typeof createInternalSyncComponents>,
   networkConfig: NetworkConfig,
   sync: SyncType,
   onSync: OnSyncCallbacks,
@@ -34,8 +32,8 @@ export const hydrateFromIndexer = <tables extends MUDTables>(
   }, onError);
 };
 
-export const hydrateFromRpc = <tables extends MUDTables>(
-  components: ContractTables<tables> & ReturnType<typeof createInternalSyncComponents>,
+export const hydrateFromRpc = (
+  components: ReturnType<typeof createInternalSyncComponents>,
   sync: SyncType,
   onSync: OnSyncCallbacks,
 ) => {
@@ -77,10 +75,7 @@ export const hydrateFromRpc = <tables extends MUDTables>(
   );
 };
 
-export const subToRpc = <tables extends MUDTables>(
-  components: ContractTables<tables> & ReturnType<typeof createInternalSyncComponents>,
-  sync: SyncType,
-) => {
+export const subToRpc = (components: ReturnType<typeof createInternalSyncComponents>, sync: SyncType) => {
   const { SyncStatus } = components;
   sync.start(
     (_, blockNumber) => {

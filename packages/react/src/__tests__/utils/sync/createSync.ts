@@ -1,6 +1,5 @@
 import { Read, Sync } from "@primodiumxyz/sync-stack";
 
-import { MUDTables } from "@/components/types";
 import { createStorageAdapter } from "@/adapter";
 import {
   CreateSyncOptions,
@@ -15,17 +14,17 @@ import { hydrateFromIndexer, hydrateFromRpc, subToRpc } from "@/__tests__/utils/
 /*                                   GLOBAL                                   */
 /* -------------------------------------------------------------------------- */
 
-export const createSync = <tables extends MUDTables>({
+export const createSync = ({
   components,
   store,
+  tables,
   networkConfig,
-  publicClient,
   onSync,
-}: CreateSyncOptions<tables>): CreateSyncResult => {
+}: CreateSyncOptions): CreateSyncResult => {
   const { complete: onComplete } = onSync;
-  const { indexerUrl, initialBlockNumber } = networkConfig;
+  const { publicClient, indexerUrl, initialBlockNumber } = networkConfig;
 
-  const logFilters = Object.values(components).map((table) => ({ tableId: table.id as string }));
+  const logFilters = Object.values(tables).map((table) => ({ tableId: table.tableId as string }));
 
   const unsubs: (() => void)[] = [];
   const startSync = () => {
@@ -56,7 +55,6 @@ export const createSync = <tables extends MUDTables>({
     const rpcSync = createRpcSync({
       store,
       networkConfig,
-      publicClient,
       logFilters,
       startBlock: startBlock ?? initialBlockNumber,
       endBlock: latestBlockNumber,
@@ -81,11 +79,7 @@ export const createSync = <tables extends MUDTables>({
 /*                                   INDEXER                                  */
 /* -------------------------------------------------------------------------- */
 
-const createIndexerSync = <tables extends MUDTables>({
-  store,
-  networkConfig,
-  logFilters,
-}: CreateIndexerSyncOptions<tables>): SyncType => {
+const createIndexerSync = ({ store, networkConfig, logFilters }: CreateIndexerSyncOptions): SyncType => {
   const { worldAddress, indexerUrl } = networkConfig;
 
   return Sync.withCustom({
@@ -101,15 +95,14 @@ const createIndexerSync = <tables extends MUDTables>({
 /*                                     RPC                                    */
 /* -------------------------------------------------------------------------- */
 
-const createRpcSync = <tables extends MUDTables>({
+const createRpcSync = ({
   store,
   networkConfig,
-  publicClient,
   logFilters,
   startBlock,
   endBlock,
-}: CreateRpcSyncOptions<tables>): { historical: SyncType; live: SyncType } => {
-  const { worldAddress } = networkConfig;
+}: CreateRpcSyncOptions): { historical: SyncType; live: SyncType } => {
+  const { publicClient, worldAddress } = networkConfig;
 
   return {
     historical: Sync.withCustom({

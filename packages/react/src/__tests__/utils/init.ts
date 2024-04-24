@@ -1,5 +1,5 @@
 import { transportObserver, createBurnerAccount } from "@latticexyz/common";
-import { mudFoundry } from "@latticexyz/common/chains";
+import { MUDChain, mudFoundry } from "@latticexyz/common/chains";
 import {
   Account,
   Address,
@@ -14,9 +14,17 @@ import {
   webSocket,
 } from "viem";
 
-import { NetworkConfig } from "@/types";
 import worldsJson from "@/__tests__/mocks/contracts/worlds.json";
 import IWorldAbi from "@/__tests__/mocks/contracts/out/IWorld.sol/IWorld.abi.json";
+
+export interface BaseNetworkConfig {
+  chainId: number;
+  chain: MUDChain;
+  worldAddress: Address;
+  initialBlockNumber: bigint;
+  faucetServiceUrl?: string;
+  indexerUrl?: string;
+}
 
 const worlds = worldsJson as Partial<Record<string, { address: Address; blockNumber?: number }>>;
 
@@ -51,9 +59,8 @@ const worldContract: GetContractReturnType<typeof IWorldAbi, typeof publicClient
   client: { public: publicClient, wallet: createWalletClient({ ...clientOptions, account: burnerAccount }) },
 });
 
-export type MockNetworkConfig = ReturnType<typeof getMockNetworkConfig>;
-
-export const getMockNetworkConfig = (): NetworkConfig & {
+export type NetworkConfig = ReturnType<typeof getMockNetworkConfig>;
+export const getMockNetworkConfig = (): BaseNetworkConfig & {
   publicClient: PublicClient;
   burnerAccount: Account;
   worldContract: GetContractReturnType<typeof IWorldAbi, typeof publicClient>;

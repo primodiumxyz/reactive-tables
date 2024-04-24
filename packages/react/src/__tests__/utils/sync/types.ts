@@ -1,25 +1,14 @@
-import { MUDChain } from "@latticexyz/common/chains";
-import { Address, PublicClient } from "viem";
 import { Store } from "tinybase/store";
 
 import { MUDTables } from "@/components/types";
-import { ContractTables } from "@/components/contract/types";
 import { createInternalSyncComponents } from "@/__tests__/utils/sync/components";
+import { NetworkConfig } from "@/__tests__/utils/init";
 
-export interface NetworkConfig {
-  chainId: number;
-  chain: MUDChain;
-  worldAddress: Address;
-  initialBlockNumber: bigint;
-  faucetServiceUrl?: string;
-  indexerUrl?: string;
-}
-
-export type CreateSyncOptions<tables extends MUDTables> = {
-  components: ContractTables<tables> & ReturnType<typeof createInternalSyncComponents>;
+export type CreateSyncOptions = {
+  components: ReturnType<typeof createInternalSyncComponents>;
   store: Store;
+  tables: MUDTables;
   networkConfig: NetworkConfig;
-  publicClient: PublicClient;
   onSync: OnSyncCallbacks;
 };
 
@@ -28,17 +17,11 @@ export type CreateSyncResult = {
   unsubscribe: () => void;
 };
 
-export type CreateIndexerSyncOptions<tables extends MUDTables> = Omit<
-  CreateSyncOptions<tables>,
-  "components" | "publicClient" | "onSync"
-> & {
+export type CreateIndexerSyncOptions = Omit<CreateSyncOptions, "components" | "tables" | "publicClient" | "onSync"> & {
   logFilters: { tableId: string }[];
 };
 
-export type CreateRpcSyncOptions<tables extends MUDTables> = Omit<
-  CreateSyncOptions<tables>,
-  "components" | "onSync"
-> & {
+export type CreateRpcSyncOptions = Omit<CreateSyncOptions, "components" | "tables" | "onSync"> & {
   logFilters: { tableId: string }[];
   startBlock: bigint;
   endBlock: bigint;

@@ -51,26 +51,21 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
     store,
     queries,
     storageAdapter,
-    publicClient,
   } = createTinyBaseWrapper({
-    world,
     mudConfig: mockConfig,
-    networkConfig: {
-      ...networkConfig,
-      indexerUrl: useIndexer ? networkConfig.indexerUrl : undefined,
-    },
   });
-  const components = { ...contractComponents, ...createInternalSyncComponents(store) };
+  const internalComponents = createInternalSyncComponents(store);
+  const components = { ...contractComponents, ...internalComponents };
 
   // Sync components with the chain
   const sync = createSync({
-    components,
+    components: internalComponents,
     store,
+    tables,
     networkConfig: {
       ...networkConfig,
       indexerUrl: useIndexer ? networkConfig.indexerUrl : undefined,
     },
-    publicClient,
     onSync: {
       progress: (_, __, progress) => console.log(`Syncing: ${(progress * 100).toFixed()}%`),
       complete: (blockNumber) => `Synced to block ${blockNumber?.toString()}`,
@@ -117,7 +112,6 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
     queries,
     storageAdapter,
     sync,
-    publicClient,
     recsComponents,
     entities,
     networkConfig,
@@ -136,11 +130,21 @@ const waitForBlockSynced = async <table extends MUDTable>(
   key?: Entity,
 ) => {
   let synced = false;
+  // after 10 seconds, with such basic tables we can definitely consider it a failure
+  let counter = 0;
+  const SYNC_TIMEOUT = 10;
 
   while (!synced) {
+    if (counter > SYNC_TIMEOUT) {
+      throw new Error(
+        `Component did not sync after ${SYNC_TIMEOUT}s; last synced at block ${component.get(key)?.__lastSyncedAtBlock}, waiting for block ${txBlock}`,
+      );
+    }
+    console.log("looking for block", txBlock, "last synced at", component.get(key)?.__lastSyncedAtBlock);
     await wait(1000);
     const lastSyncedBlock = component.get(key)?.__lastSyncedAtBlock;
     synced = lastSyncedBlock ? lastSyncedBlock >= txBlock : false;
+    counter++;
   }
 };
 
@@ -150,7 +154,7 @@ describe("tinyBaseWrapper", () => {
   /* -------------------------------------------------------------------------- */
 
   it("should properly initialize and return expected objects", async () => {
-    const { components, tables, store, queries, storageAdapter, publicClient } = await init({ startSync: false });
+    const { components, tables, store, queries, storageAdapter } = await init({ startSync: false });
 
     // Verify the existence of the result
     expect(components).toBeDefined();
@@ -158,18 +162,12 @@ describe("tinyBaseWrapper", () => {
     expect(store).toBeDefined();
     expect(queries).toBeDefined();
     expect(storageAdapter).toBeDefined();
-    expect(publicClient).toBeDefined();
   });
 
   it("should be able to create components from internal tables passed during initialization", async () => {
-    const world = createWorld();
-    const networkConfig = getMockNetworkConfig();
-
     // Initialize wrapper
     const { store } = createTinyBaseWrapper({
-      world,
       mudConfig: mockConfig,
-      networkConfig,
     });
 
     const components = {
@@ -192,9 +190,10 @@ describe("tinyBaseWrapper", () => {
 
   describe("sync: should properly sync similar values to RECS components", () => {
     const runTest = async (options: TestOptions, txs: Record<ComponentNames, bigint>) => {
-      const { components, recsComponents, entities } = await init(options);
+      const { components, recsComponents, entities, waitForSyncLive } = await init(options);
       const player = entities[0];
       assert(components);
+      await waitForSyncLive();
 
       // Wait for sync to be live at the block of the latest transaction for each component
       await Promise.all(
