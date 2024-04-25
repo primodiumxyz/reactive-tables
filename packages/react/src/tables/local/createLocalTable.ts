@@ -1,9 +1,8 @@
-import { uuid } from "@latticexyz/utils";
 import { keccak256, toHex } from "viem";
 
 import { createTableMethods, Properties } from "@/tables";
 import { LocalTable, LocalTableMetadata } from "@/tables/local";
-import { Metadata, Schema, Store, Type } from "@/lib";
+import { Metadata, Schema, Store, Type, uuid } from "@/lib";
 
 // These tables are meant to be created directly from the implementation, then used alongside contract tables
 // the exact same way

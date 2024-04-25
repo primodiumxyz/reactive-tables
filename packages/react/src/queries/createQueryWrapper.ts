@@ -1,4 +1,3 @@
-import { uuid } from "@latticexyz/utils";
 import { Group, Having, Join, Select, Where } from "tinybase/queries";
 
 import { TinyBaseAdapter } from "@/adapter";
@@ -11,7 +10,7 @@ import {
   getPropsAndTypeFromRowChange,
 } from "@/queries";
 import { Properties } from "@/tables";
-import { Schema, $Record } from "@/lib";
+import { Schema, $Record, uuid } from "@/lib";
 
 /* ---------------------------------- TYPES --------------------------------- */
 export type CreateQueryWrapperOptions<S extends Schema, T = unknown> = Omit<CreateQueryOptions<S, T>, "queryId"> & {

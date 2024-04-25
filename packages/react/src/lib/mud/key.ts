@@ -1,11 +1,11 @@
-import { Entity as $Record } from "@latticexyz/recs";
 import { SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
 import { concatHex, decodeAbiParameters, encodeAbiParameters, Hex, isHex, size, sliceHex } from "viem";
 
 import { Properties } from "@/tables";
 import { KeySchema } from "@/tables/contract";
 import { Schema } from "@/lib/mud/types";
-export { $Record };
+
+export type $Record = string & { readonly __opaque__: "$Record" };
 
 export const empty$Record = hexKeyTupleTo$Record([]);
 export function hexKeyTupleTo$Record(hexKeyTuple: readonly Hex[]): $Record {
