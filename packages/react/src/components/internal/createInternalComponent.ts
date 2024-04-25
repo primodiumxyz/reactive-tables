@@ -1,11 +1,10 @@
 import { Metadata, Schema, Type } from "@latticexyz/recs";
 import { uuid } from "@latticexyz/utils";
 import { keccak256, toHex } from "viem";
-import { Store } from "tinybase/store";
-import { createQueries } from "tinybase/queries";
 
 import { createComponentMethods } from "@/components/createComponentMethods";
 import { InternalTable, InternalTableMetadata } from "@/components/internal/types";
+import { Store } from "@/lib";
 
 // These components are meant to be created directly from the implementation, then usedalongside contract components
 // the exact same way
@@ -13,6 +12,7 @@ export type CreateInternalComponentOptions<M extends Metadata> = {
   id: string; // default: uuid
   metadata?: M;
   indexed?: boolean;
+  persist?: boolean;
 };
 
 // TODO: support indexed
@@ -22,6 +22,8 @@ export const createInternalComponent = <S extends Schema, M extends Metadata, T 
   options?: CreateInternalComponentOptions<M>,
 ): InternalTable<S, M, InternalTableMetadata<S, M>, T> => {
   const { id } = options ?? { id: uuid() };
+  // Get the appropriate store instance
+  const storeInstance = options?.persist ? store("PERSIST") : store();
 
   // Format metadata the same way as MUD tables to treat it the same way during methods creation
   const metadata = {
@@ -41,7 +43,7 @@ export const createInternalComponent = <S extends Schema, M extends Metadata, T 
       tableName: `internal__${id}`,
     },
     // Methods
-    ...createComponentMethods({ store, queries: createQueries(store), metadata }),
+    ...createComponentMethods({ store: storeInstance, queries: storeInstance.getQueries(), metadata }),
   } as unknown as InternalTable<S, M, typeof metadata, T>;
 };
 

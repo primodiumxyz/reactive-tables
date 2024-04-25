@@ -1,6 +1,6 @@
 import { Store } from "tinybase/store";
 
-import { MUDTables } from "@/components/types";
+import { MUDTables } from "@/lib";
 import { createInternalSyncComponents } from "@/__tests__/utils/sync/components";
 import { NetworkConfig } from "@/__tests__/utils/init";
 

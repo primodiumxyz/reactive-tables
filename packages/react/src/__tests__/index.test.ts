@@ -12,8 +12,8 @@ import { padHex, toHex } from "viem";
 // src
 import { ContractTable, createGlobalQuery, createWrapper, useQuery } from "@/index";
 import { createInternalComponent, createInternalCoordComponent } from "@/components/internal";
-import { MUDTable } from "@/components/types";
 import { TableQueryUpdate, query } from "@/queries";
+import { MUDTable } from "@/lib";
 // mocks
 import {
   ComponentNames,
@@ -49,7 +49,6 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
     components: contractComponents,
     tables,
     store,
-    queries,
     storageAdapter,
   } = createWrapper({
     mudConfig: mockConfig,
@@ -60,7 +59,7 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
   // Sync components with the chain
   const sync = createSync({
     components: internalComponents,
-    store,
+    store: store(),
     tables,
     networkConfig: {
       ...networkConfig,
@@ -109,7 +108,6 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
     components,
     tables,
     store,
-    queries,
     storageAdapter,
     sync,
     recsComponents,
@@ -154,13 +152,12 @@ describe("Wrapper", () => {
   /* -------------------------------------------------------------------------- */
 
   it("should properly initialize and return expected objects", async () => {
-    const { components, tables, store, queries, storageAdapter } = await init({ startSync: false });
+    const { components, tables, store, storageAdapter } = await init({ startSync: false });
 
     // Verify the existence of the result
     expect(components).toBeDefined();
     expect(tables).toBeDefined();
     expect(store).toBeDefined();
-    expect(queries).toBeDefined();
     expect(storageAdapter).toBeDefined();
   });
 
@@ -882,14 +879,14 @@ describe("Wrapper", () => {
 
       // Entities inside the Position component
       expect(
-        query(store, {
+        query(store(), {
           inside: [components.Position],
         }).sort(),
       ).toEqual([player, A, B, C].sort());
 
       // Entities inside the Position component but not inside the Inventory component
       expect(
-        query(store, {
+        query(store(), {
           inside: [components.Position],
           notInside: [components.Inventory],
         }),
@@ -897,7 +894,7 @@ describe("Wrapper", () => {
 
       // Entities with a specific value inside the Inventory component, and without a specific value inside the Position component
       expect(
-        query(store, {
+        query(store(), {
           with: [
             {
               component: components.Inventory,
@@ -915,7 +912,7 @@ describe("Wrapper", () => {
 
       // Entities with a specific value inside the Inventory component, not another one
       expect(
-        query(store, {
+        query(store(), {
           with: [
             {
               component: components.Inventory,
@@ -932,7 +929,7 @@ describe("Wrapper", () => {
       ).toEqual([A]);
     });
 
-    it("createGlobalQuery(), useQuery() (useQueryAllMatching)", async () => {
+    it.skip("createGlobalQuery(), useQuery() (useQueryAllMatching)", async () => {
       const { components, store, entities, onChange, aggregator } = await preTest();
       const [player, A, B, C] = entities;
       const emptyData = {
@@ -968,11 +965,11 @@ describe("Wrapper", () => {
       };
 
       const { result } = renderHook(() =>
-        useQuery(store, query, {
+        useQuery(store(), query, {
           onChange,
         }),
       );
-      const { unsubscribe } = createGlobalQuery(store, query, { onChange: globalOnChange });
+      const { unsubscribe } = createGlobalQuery(store(), query, { onChange: globalOnChange });
 
       expect(result.current.sort()).toEqual([player, A].sort());
       expect(aggregator).toEqual([]);

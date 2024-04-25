@@ -1,13 +1,11 @@
 import { Store as StoreConfig } from "@latticexyz/store";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { resolveConfig } from "@latticexyz/store/internal";
-import { Store, createStore } from "tinybase/store";
-import { Queries } from "tinybase/queries";
 
 import { StorageAdapter, createStorageAdapter } from "@/adapter";
-import { createComponentsStore } from "@/components";
+import { createContractComponents } from "@/components";
 import { ContractTables } from "@/components/contract/types";
-import { AllTables, MUDTables, storeTables, worldTables } from "@/lib";
+import { AllTables, createStore, MUDTables, Store, storeTables, worldTables } from "@/lib";
 
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -19,14 +17,14 @@ import { queryAllWithValue } from "@/queries";
  *
  * @see {@link Store}
  */
-export type TinyBaseStore = Store;
+// export type TinyBaseStore = Store;
 /**
  * The TinyBase queries instance, used for querying components and reacting to changes within a query.
  *
  * @see {@link Queries}
  * @see {@link queryAllWithValue} for an example of usage.
  */
-export type TinyBaseQueries = Queries;
+// export type TinyBaseQueries = Queries;
 
 /**
  * Defines the options for creating a TinyBase wrapper.
@@ -46,18 +44,16 @@ export type WrapperOptions<config extends StoreConfig, extraTables extends MUDTa
  * The components are the main entry point to all kind of data retrieval and manipulation.
  * @template config The type of the configuration object specifying tables for contracts codegen.
  * @template tables The types of the tables used for generating components.
- * @param components The components generated from the contract tables (see {@link createComponentsStore}).
+ * @param components The components generated from the contract tables (see {@link createContractComponents}).
  * @param tables The full tables object, including provided MUD tables and custom tables, as well as store and world tables.
- * TODO: provide link to wrapper
- * @param store A wrapper around the TinyBase store, addressing either the "regular" or persistent store depending on the provided flag (see TODO).
- * @param queries The queries instance (see {@link TinyBaseQueries}).
+ * @param store A wrapper around the TinyBase store, addressing either the "regular" or persistent store depending on the provided key,
+ * as well as the queries instance (see {@link}).
  * @param storageAdapter The storage adapter for formatting onchain logs into TinyBase tabular data (see {@link createStorageAdapter}).
  */
 export type WrapperResult<config extends StoreConfig, tables extends MUDTables> = {
   components: ContractTables<AllTables<config, tables>>;
   tables: AllTables<config, tables>;
-  store: TinyBaseStore;
-  queries: TinyBaseQueries;
+  store: Store;
   storageAdapter: StorageAdapter;
 };
 
@@ -111,13 +107,13 @@ export const createWrapper = <config extends StoreConfig, extraTables extends MU
 
   /* ------------------------------- COMPONENTS ------------------------------- */
   // Create the TinyBase store wrapper and queries instance
-  const { store, queries } = createStore();
+  const store = createStore();
   // Create components from the tables (format metadata, access/modify data using the store, perform queries)
-  const components = createComponentsStore({ tables, store, queries });
+  const components = createContractComponents({ tables, store: store(), queries: store().getQueries() });
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create storage adapter (custom writer, see @primodiumxyz/sync-stack)
-  const storageAdapter = createStorageAdapter({ store });
+  const storageAdapter = createStorageAdapter({ store: store() });
 
-  return { components, tables, store, queries, storageAdapter };
+  return { components, tables, store, storageAdapter };
 };

@@ -4,14 +4,14 @@ import { mapObject } from "@latticexyz/utils";
 import { createComponentMethods } from "@/components/createComponentMethods";
 import { createComponentTable } from "@/components/createComponentTable";
 import { MUDTables, storeValueSchema } from "@/lib";
-import { CreateComponentsStoreOptions } from "@/components/types";
+import { CreateContractComponentsOptions } from "@/components/types";
 import { ContractTables } from "@/components/contract/types";
 
-export const createComponentsStore = <config extends StoreConfig, extraTables extends MUDTables>({
+export const createContractComponents = <config extends StoreConfig, extraTables extends MUDTables>({
   tables,
   store,
   queries,
-}: CreateComponentsStoreOptions<config, extraTables>) => {
+}: CreateContractComponentsOptions<config, extraTables>) => {
   return mapObject(tables, (table) => {
     if (Object.keys(table.valueSchema).length === 0) throw new Error("Component schema must have at least one key");
 

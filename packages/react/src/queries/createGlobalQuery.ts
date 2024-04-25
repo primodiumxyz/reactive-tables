@@ -1,14 +1,13 @@
 import { Entity, Schema } from "@latticexyz/recs";
-import { Store } from "tinybase/store";
 
 import { queryAllMatching, QueryAllMatchingOptions } from "@/queries/templates/queryAllMatching";
 import { getValueAndTypeFromRowChange, TableQueryCallbacks, TableQueryUpdate, UpdateType } from "@/queries/createQuery";
-import { MUDTable } from "@/lib";
+import { MUDTable, TinyBaseStore } from "@/lib";
 
 // Listen to all entities matching multiple conditions across tables
 // Alternative to `query` (fetch once) and `useQuery` (hook)
 export const createGlobalQuery = <tables extends MUDTable[], S extends Schema, T = unknown>(
-  store: Store,
+  store: TinyBaseStore,
   queryOptions: QueryAllMatchingOptions<tables, T>,
   { onChange, onEnter, onExit, onUpdate }: TableQueryCallbacks<S, T>,
   options: { runOnInit?: boolean } = { runOnInit: true },

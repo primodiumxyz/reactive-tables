@@ -1,1 +1,1 @@
-export * from "@/components/createComponentsStore";
+export * from "@/components/createContractComponents";

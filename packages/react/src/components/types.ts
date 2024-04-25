@@ -1,17 +1,15 @@
 import { Entity } from "@latticexyz/recs";
 import { Store as StoreConfig } from "@latticexyz/store";
 import { Hex } from "viem";
-import { Store } from "tinybase/store";
-import { Queries } from "tinybase/queries";
 
 import { ContractTableMetadata } from "@/components/contract/types";
 import { InternalTableMetadata } from "@/components/internal/types";
-import { AllTables, Metadata, MUDTables, Schema, ValueType } from "@/lib";
+import { AllTables, Metadata, MUDTables, Schema, TinyBaseQueries, TinyBaseStore, ValueType } from "@/lib";
 
-export type CreateComponentsStoreOptions<config extends StoreConfig, extraTables extends MUDTables> = {
+export type CreateContractComponentsOptions<config extends StoreConfig, extraTables extends MUDTables> = {
   tables: AllTables<config, extraTables>;
-  store: Store;
-  queries: Queries;
+  store: TinyBaseStore;
+  queries: TinyBaseQueries;
 };
 
 export type CreateComponentMethodsOptions<
@@ -19,8 +17,8 @@ export type CreateComponentMethodsOptions<
   M extends Metadata,
   metadata extends InternalTableMetadata<S, M> | ContractTableMetadata<S, M>,
 > = {
-  store: Store;
-  queries: Queries;
+  store: TinyBaseStore;
+  queries: TinyBaseQueries;
   metadata: metadata;
 };
 

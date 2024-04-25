@@ -1,11 +1,10 @@
 import { Entity } from "@latticexyz/recs";
-import { Store } from "tinybase/store";
 import { createQueries } from "tinybase/queries";
 
 import { queryAllWithValue } from "@/queries/templates/queryAllWithValue";
 import { ComponentValue } from "@/components/types";
 import { AbiToSchemaPlusMetadata, ContractTable } from "@/components/contract/types";
-import { MUDTable } from "@/lib";
+import { MUDTable, TinyBaseStore } from "@/lib";
 
 type QueryMatchingComponentValue<table extends MUDTable, T = unknown> = {
   component: ContractTable<table>;
@@ -25,7 +24,7 @@ export type QueryAllMatchingOptions<tables extends MUDTable[], T = unknown> = {
 // TODO: this surely can be optimized, but right now we need something that works at least
 // Needs to be benchmarked to see from which point it makes sense getting entire tables once and filtering them in memory
 export const queryAllMatching = <tables extends MUDTable[], T = unknown>(
-  store: Store,
+  store: TinyBaseStore,
   options: QueryAllMatchingOptions<tables, T>,
 ): Entity[] => {
   const { inside, notInside, with: withValues, without: withoutValues } = options;

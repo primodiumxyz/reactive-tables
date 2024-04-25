@@ -1,16 +1,15 @@
 import { Entity } from "@latticexyz/recs";
-import { Queries } from "tinybase/queries";
 
 import { useEffect, useMemo, useState } from "react";
 
 import { TinyBaseAdapter } from "@/adapter";
 import { queryAllWithoutValue } from "@/queries/templates/queryAllWithoutValue";
 import { QueryOptions } from "@/queries/templates/types";
-import { MUDTable } from "@/lib";
+import { MUDTable, TinyBaseQueries } from "@/lib";
 
 // Listen to all entities inside a given table that DON'T have a specific value (or partial value)
 export const useAllWithoutValue = <table extends MUDTable>(
-  queries: Queries,
+  queries: TinyBaseQueries,
   tableId: string,
   value: QueryOptions<table>["value"],
 ): Entity[] => {

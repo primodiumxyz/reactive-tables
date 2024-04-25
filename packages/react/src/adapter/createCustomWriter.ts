@@ -3,10 +3,9 @@ import { StoreEventsAbiItem, StoreEventsAbi } from "@latticexyz/store";
 import { UnionPick } from "@latticexyz/common/type-utils";
 import { Hex, Log, size } from "viem";
 import { Write } from "@primodiumxyz/sync-stack";
-import { Store } from "tinybase/store";
 
 import { TinyBaseAdapter } from "@/adapter";
-import { debug, hexKeyTupleToEntity, getValueSchema } from "@/lib";
+import { debug, hexKeyTupleToEntity, getValueSchema, TinyBaseStore } from "@/lib";
 
 type StoreEventsLog = Log<bigint, number, false, StoreEventsAbiItem, true, StoreEventsAbi>;
 export type StorageAdapterLog = Partial<StoreEventsLog> & UnionPick<StoreEventsLog, "address" | "eventName" | "args">;
@@ -14,7 +13,7 @@ export type StorageAdapterLog = Partial<StoreEventsLog> & UnionPick<StoreEventsL
 export type CustomWriter = ReturnType<typeof createCustomWriter>;
 
 // in order to store it in the table, at component creation
-export const createCustomWriter = ({ store }: { store: Store }) => {
+export const createCustomWriter = ({ store }: { store: TinyBaseStore }) => {
   const processLog = (log: StorageAdapterLog) => {
     const { namespace, name } = hexToResource(log.args.tableId);
     const entity = hexKeyTupleToEntity(log.args.keyTuple);

@@ -1,7 +1,7 @@
 import { Type } from "@latticexyz/recs";
-import { Store } from "tinybase/store";
 
 import { createInternalComponent, createInternalNumberComponent } from "@/components/internal";
+import { Store } from "@/lib";
 
 export enum SyncSourceType {
   Indexer,

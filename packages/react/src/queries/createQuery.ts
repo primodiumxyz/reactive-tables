@@ -1,8 +1,8 @@
 import { Entity, Schema } from "@latticexyz/recs";
-import { GetResultCellChange, Queries } from "tinybase/queries";
+import { GetResultCellChange } from "tinybase/queries";
 
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
-import { encodedDataKeys, internalKeys } from "@/lib";
+import { encodedDataKeys, internalKeys, TinyBaseQueries } from "@/lib";
 import { ComponentValue } from "@/components/types";
 
 /* ---------------------------------- TYPES --------------------------------- */
@@ -26,7 +26,7 @@ export type TableQueryCallbacks<S extends Schema, T = unknown> = Partial<{
 }>;
 
 export type CreateQueryOptions<S extends Schema, T = unknown> = {
-  queries: Queries;
+  queries: TinyBaseQueries;
   queryId: string;
   tableId: string;
   schema: S;

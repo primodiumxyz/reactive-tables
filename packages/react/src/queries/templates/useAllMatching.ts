@@ -1,11 +1,10 @@
 import { Entity, Schema } from "@latticexyz/recs";
-import { Store } from "tinybase/store";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { queryAllMatching, QueryAllMatchingOptions } from "@/queries/templates/queryAllMatching";
 import { getValueAndTypeFromRowChange, TableQueryCallbacks, TableQueryUpdate, UpdateType } from "@/queries/createQuery";
-import { MUDTable } from "@/lib";
+import { MUDTable, TinyBaseStore } from "@/lib";
 
 // Listen to all entities matching multiple conditions across tables
 // TODO: this will clearly need to be optimized; there are probably a few options:
@@ -14,7 +13,7 @@ import { MUDTable } from "@/lib";
 // This won't be trigerred on creation for all initial matching entities, but only on change after the hook is mounted
 // TODO: maybe this hook doesn't need any callback, as we already have createGlobalQuery for that?
 export const useAllMatching = <tables extends MUDTable[], S extends Schema, T = unknown>(
-  store: Store,
+  store: TinyBaseStore,
   options: QueryAllMatchingOptions<tables, T>,
   { onChange, onEnter, onExit, onUpdate }: TableQueryCallbacks<S, T>,
 ): Entity[] => {
