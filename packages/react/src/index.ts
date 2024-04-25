@@ -1,12 +1,13 @@
-// Expose wrapper & main types
+// Expose wrapper (including types)
 export * from "@/createWrapper";
 
-// Expose internal store and queries
-export * from "@/components/internal";
+// Expose local tables (creation, types)
+export * from "@/tables/local";
+// Expose contract tables types
+export * from "@/tables/contract/types";
+
+// Expose queries (including types)
 export * from "@/queries";
 
-// Expose component types
-export * from "@/components/contract/types";
-
-// Expose lib (utils)
+// Expose lib (MUD, schema utils, tables config, TinyBase utils)
 export * from "@/lib";

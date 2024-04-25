@@ -1,14 +1,12 @@
-import { Entity, Schema } from "@latticexyz/recs";
-
 import { queryAllMatching, QueryAllMatchingOptions } from "@/queries/templates/queryAllMatching";
-import { getValueAndTypeFromRowChange, TableQueryCallbacks, TableQueryUpdate, UpdateType } from "@/queries/createQuery";
-import { MUDTable, TinyBaseStore } from "@/lib";
+import { getPropsAndTypeFromRowChange, TableQueryCallbacks, TableQueryUpdate, UpdateType } from "@/queries/createQuery";
+import { ContractTableDef, $Record, Schema, TinyBaseStore } from "@/lib";
 
-// Listen to all entities matching multiple conditions across tables
+// Listen to all records matching multiple conditions across tables
 // Alternative to `query` (fetch once) and `useQuery` (hook)
-export const createGlobalQuery = <tables extends MUDTable[], S extends Schema, T = unknown>(
+export const createGlobalQuery = <tableDefs extends ContractTableDef[], S extends Schema, T = unknown>(
   store: TinyBaseStore,
-  queryOptions: QueryAllMatchingOptions<tables, T>,
+  queryOptions: QueryAllMatchingOptions<tableDefs, T>,
   { onChange, onEnter, onExit, onUpdate }: TableQueryCallbacks<S, T>,
   options: { runOnInit?: boolean } = { runOnInit: true },
 ) => {
@@ -16,39 +14,39 @@ export const createGlobalQuery = <tables extends MUDTable[], S extends Schema, T
     throw new Error("At least one callback has to be provided");
   }
 
-  // Remember previous entities (to provide the update type in the callback)
-  let prevEntities: Entity[] = [];
+  // Remember previous records (to provide the update type in the callback)
+  let prev$Records: $Record[] = [];
 
   // Gather ids and schemas of all table we need to listen to
   // tableId => schema keys
   const tables: Record<string, string[]> = {};
-  const { inside, notInside, with: withValues, without: withoutValues } = queryOptions;
+  const { inside, notInside, with: withProps, without: withoutProps } = queryOptions;
 
-  (inside ?? []).concat(notInside ?? []).forEach((component) => {
-    tables[component.id] = Object.keys(component.schema);
+  (inside ?? []).concat(notInside ?? []).forEach((table) => {
+    tables[table.id] = Object.keys(table.schema);
   });
-  (withValues ?? []).concat(withoutValues ?? []).forEach(({ component }) => {
-    tables[component.id] = Object.keys(component.schema);
+  (withProps ?? []).concat(withoutProps ?? []).forEach(({ table }) => {
+    tables[table.id] = Object.keys(table.schema);
   });
 
   // Listen to all tables (at each row)
-  const listenerId = store.addRowListener(null, null, (_, tableId, entityKey, getCellChange) => {
+  const listenerId = store.addRowListener(null, null, (_, tableId, rowId, getCellChange) => {
     if (!getCellChange) return;
-    const entity = entityKey as Entity;
+    const $record = rowId as $Record;
 
-    // Refetch matching entities if one of the tables included in the query changes
+    // Refetch matching records if one of the tables included in the query changes
     if (Object.keys(tables).includes(tableId)) {
-      const matchingEntities = queryAllMatching(store, queryOptions);
+      const matching$Records = queryAllMatching(store, queryOptions);
 
       // Figure out if it's an enter or an exit
       let type = "change" as UpdateType;
-      const inPrev = prevEntities.includes(entity);
-      const inCurrent = matchingEntities.includes(entity);
+      const inPrev = prev$Records.includes($record);
+      const inCurrent = matching$Records.includes($record);
 
       if (!inPrev && !inCurrent) return; // not in the query, we're not interested
 
-      // Gather the previous and current values
-      const args = getValueAndTypeFromRowChange(getCellChange, tables[tableId], tableId, entity) as TableQueryUpdate<
+      // Gather the previous and current properties
+      const args = getPropsAndTypeFromRowChange(getCellChange, tables[tableId], tableId, $record) as TableQueryUpdate<
         S,
         T
       >;
@@ -58,12 +56,12 @@ export const createGlobalQuery = <tables extends MUDTable[], S extends Schema, T
         type = "enter";
         onEnter?.({ ...args, type });
 
-        prevEntities.push(entity);
+        prev$Records.push($record);
       } else if (inPrev && !inCurrent) {
         type = "exit";
         onExit?.({ ...args, type });
 
-        prevEntities = prevEntities.filter((e) => e !== entity);
+        prev$Records = prev$Records.filter((e) => e !== $record);
       } else {
         onUpdate?.({ ...args, type });
       }
@@ -73,20 +71,20 @@ export const createGlobalQuery = <tables extends MUDTable[], S extends Schema, T
   });
 
   if (options.runOnInit) {
-    const matchingEntities = queryAllMatching(store, queryOptions);
+    const matching$Records = queryAllMatching(store, queryOptions);
 
-    // Run callbacks for all entities in the query
-    matchingEntities.forEach((entity) => {
+    // Run callbacks for all records in the query
+    matching$Records.forEach(($record) => {
       const args = {
         tableId: undefined,
-        entity,
-        value: { current: undefined, prev: undefined },
+        $record,
+        properties: { current: undefined, prev: undefined },
         type: "enter" as UpdateType,
       };
       onEnter?.(args);
       onChange?.(args);
 
-      prevEntities.push(entity);
+      prev$Records.push($record);
     });
   }
 

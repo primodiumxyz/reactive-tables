@@ -2,7 +2,7 @@ import { describe, it, expect, assert } from "vitest";
 import { renderHook } from "@testing-library/react-hooks";
 
 // libs
-import { Entity, Type, createWorld, getComponentValue } from "@latticexyz/recs";
+import { createWorld, getComponentValue } from "@latticexyz/recs";
 import { encodeEntity, singletonEntity, syncToRecs } from "@latticexyz/store-sync/recs";
 import { wait } from "@latticexyz/common/utils";
 import { ResolvedStoreConfig } from "@latticexyz/store/config";
@@ -11,22 +11,22 @@ import { padHex, toHex } from "viem";
 
 // src
 import { ContractTable, createGlobalQuery, createWrapper, useQuery } from "@/index";
-import { createInternalComponent, createInternalCoordComponent } from "@/components/internal";
+import { createLocalTable, createLocalCoordTable } from "@/tables/local";
 import { TableQueryUpdate, query } from "@/queries";
-import { MUDTable } from "@/lib";
+import { ContractTableDef, $Record, Type, empty$Record } from "@/lib";
 // mocks
 import {
-  ComponentNames,
+  TableNames,
   fuzz,
   getMockNetworkConfig,
   getRandomBigInts,
   getRandomNumbers,
   setItems,
-  setPositionForEntity,
+  setPositionFor$Record,
 } from "@/__tests__/utils";
 import mockConfig from "@/__tests__/mocks/contracts/mud.config";
 import { createSync } from "@/__tests__/utils/sync";
-import { createInternalSyncComponents, SyncStep } from "@/__tests__/utils/sync/components";
+import { createLocalSyncTables, SyncStep } from "@/__tests__/utils/sync/tables";
 
 const FUZZ_ITERATIONS = 20;
 
@@ -46,21 +46,21 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
 
   // Initialize wrapper
   const {
-    components: contractComponents,
-    tables,
+    registry: contractRegistry,
+    tableDefs,
     store,
     storageAdapter,
   } = createWrapper({
     mudConfig: mockConfig,
   });
-  const internalComponents = createInternalSyncComponents(store);
-  const components = { ...contractComponents, ...internalComponents };
+  const localRegistry = createLocalSyncTables(store);
+  const registry = { ...contractRegistry, ...localRegistry };
 
-  // Sync components with the chain
+  // Sync tables with the chain
   const sync = createSync({
-    components: internalComponents,
+    registry: localRegistry,
     store: store(),
-    tables,
+    tableDefs,
     networkConfig: {
       ...networkConfig,
       indexerUrl: useIndexer ? networkConfig.indexerUrl : undefined,
@@ -74,7 +74,7 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
   sync.start();
   world.registerDisposer(sync.unsubscribe);
 
-  // Sync RECS components for comparison
+  // Sync RECS registry for comparison
   const { components: recsComponents } = await syncToRecs({
     world,
     config: mockConfig,
@@ -84,34 +84,34 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
     indexerUrl: useIndexer ? networkConfig.indexerUrl : undefined,
   });
 
-  // Grab a few entities to use across tests (because each test will keep the state of the chain
+  // Grab a few records to use across tests (because each test will keep the state of the chain
   // from previous runs)
-  const entities = [
+  const $records = [
     encodeEntity({ address: "address" }, { address: networkConfig.burnerAccount.address }),
-    ...["A", "B", "C"].map((id) => padHex(toHex(`entity${id}`))),
-  ] as Entity[];
+    ...["A", "B", "C"].map((id) => padHex(toHex(`record${id}`))),
+  ] as $Record[];
 
-  // We want to wait for both components systems to be in sync & live
+  // We want to wait for both registry/tables to be in sync & live
   const waitForSyncLive = async () => {
     let synced = false;
 
     while (!synced) {
       await wait(1000);
 
-      const tinyBaseSync = components.SyncStatus.get();
+      const tinyBaseSync = registry.SyncStatus.get();
       const recsSync = getComponentValue(recsComponents.SyncProgress, singletonEntity);
       synced = tinyBaseSync?.step === SyncStep.Live && recsSync?.step === "live";
     }
   };
 
   return {
-    components,
-    tables,
+    registry,
+    tableDefs,
     store,
     storageAdapter,
     sync,
     recsComponents,
-    entities,
+    $records,
     networkConfig,
     waitForSyncLive,
   };
@@ -121,11 +121,11 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
 /*                                    UTILS                                   */
 /* -------------------------------------------------------------------------- */
 
-// Wait for a component to be synced at the specified block
-const waitForBlockSynced = async <table extends MUDTable>(
+// Wait for a table to be synced at the specified block
+const waitForBlockSynced = async <table extends ContractTableDef>(
   txBlock: bigint,
-  component: ContractTable<table>,
-  key?: Entity,
+  table: ContractTable<table>,
+  key?: $Record,
 ) => {
   let synced = false;
   // after 10 seconds, with such basic tables we can definitely consider it a failure
@@ -135,12 +135,12 @@ const waitForBlockSynced = async <table extends MUDTable>(
   while (!synced) {
     if (counter > SYNC_TIMEOUT) {
       throw new Error(
-        `Component did not sync after ${SYNC_TIMEOUT}s; last synced at block ${component.get(key)?.__lastSyncedAtBlock}, waiting for block ${txBlock}`,
+        `Table did not sync after ${SYNC_TIMEOUT}s; last synced at block ${table.get(key)?.__lastSyncedAtBlock}, waiting for block ${txBlock}`,
       );
     }
 
     await wait(1000);
-    const lastSyncedBlock = component.get(key)?.__lastSyncedAtBlock;
+    const lastSyncedBlock = table.get(key)?.__lastSyncedAtBlock;
     synced = lastSyncedBlock ? lastSyncedBlock >= txBlock : false;
     counter++;
   }
@@ -152,98 +152,98 @@ describe("Wrapper", () => {
   /* -------------------------------------------------------------------------- */
 
   it("should properly initialize and return expected objects", async () => {
-    const { components, tables, store, storageAdapter } = await init({ startSync: false });
+    const { registry, tableDefs, store, storageAdapter } = await init({ startSync: false });
 
     // Verify the existence of the result
-    expect(components).toBeDefined();
-    expect(tables).toBeDefined();
+    expect(registry).toBeDefined();
+    expect(tableDefs).toBeDefined();
     expect(store).toBeDefined();
     expect(storageAdapter).toBeDefined();
   });
 
-  it("should be able to create components from internal tables passed during initialization", async () => {
+  it("should be able to create tables from local definitions passed during initialization", async () => {
     // Initialize wrapper
     const { store } = createWrapper({
       mudConfig: mockConfig,
     });
 
-    const components = {
-      A: createInternalCoordComponent(store, { id: "A" }),
-      B: createInternalComponent(store, { bool: Type.Boolean, array: Type.EntityArray }),
-      // with a default value
-      C: createInternalComponent(store, { value: Type.Number }, { id: "C" }, { value: 10 }),
+    const registry = {
+      A: createLocalCoordTable(store, { id: "A" }),
+      B: createLocalTable(store, { bool: Type.Boolean, array: Type.$RecordArray }),
+      // with default properties
+      C: createLocalTable(store, { value: Type.Number }, { id: "C" }, { value: 10 }),
     };
 
-    components.A.set({ x: 1, y: 1 });
-    components.B.set({ bool: true, array: [singletonEntity] });
+    registry.A.set({ x: 1, y: 1 });
+    registry.B.set({ bool: true, array: [empty$Record] });
 
-    expect(components.A.get()).toHaveProperty("x", 1);
-    expect(components.A.get()).toHaveProperty("y", 1);
-    expect(components.B.get()).toHaveProperty("bool", true);
-    expect(components.B.get()).toHaveProperty("array", [singletonEntity]);
-    expect(components.C.get()).toHaveProperty("value", 10);
+    expect(registry.A.get()).toHaveProperty("x", 1);
+    expect(registry.A.get()).toHaveProperty("y", 1);
+    expect(registry.B.get()).toHaveProperty("bool", true);
+    expect(registry.B.get()).toHaveProperty("array", [empty$Record]);
+    expect(registry.C.get()).toHaveProperty("value", 10);
   });
 
   /* -------------------------------------------------------------------------- */
   /*                                    SYNC                                    */
   /* -------------------------------------------------------------------------- */
 
-  describe("sync: should properly sync similar values to RECS components", () => {
-    const runTest = async (options: TestOptions, txs: Record<ComponentNames, bigint>) => {
-      const { components, recsComponents, entities, waitForSyncLive } = await init(options);
-      const player = entities[0];
-      assert(components);
+  describe("sync: should properly sync similar properties to RECS registry", () => {
+    const runTest = async (options: TestOptions, txs: Record<TableNames, bigint>) => {
+      const { registry, recsComponents, $records, waitForSyncLive } = await init(options);
+      const player = $records[0];
+      assert(registry);
       await waitForSyncLive();
 
-      // Wait for sync to be live at the block of the latest transaction for each component
+      // Wait for sync to be live at the block of the latest transaction for each table
       await Promise.all(
-        Object.entries(txs).map(([comp, block]) =>
+        Object.entries(txs).map(([key, block]) =>
           waitForBlockSynced(
             block,
-            // @ts-expect-error we're passing contract components
-            components[comp as ComponentNames],
-            // @ts-expect-error we're passing components with an id as key or none at all
-            components[comp as keyof typeof components].metadata.keySchema.id ? player : undefined,
+            // @ts-expect-error we're passing contract registry
+            registry[key as ComponentNames],
+            // @ts-expect-error we're passing registry with an id as key or none at all
+            registry[key as keyof typeof registry].metadata.keySchema.id ? player : undefined,
           ),
         ),
       );
 
-      // Ignore components not registered in RECS (e.g. SyncSource)
-      const componentKeys = Object.keys(components).filter((key) =>
+      // Ignore tables not registered in RECS (e.g. SyncSource)
+      const registryKeys = Object.keys(registry).filter((key) =>
         Object.keys(recsComponents).includes(key),
-      ) as (keyof typeof components)[];
+      ) as (keyof typeof registry)[];
 
       // Verify the equality
-      for (const comp of componentKeys) {
-        const hasKey = Object.entries(components[comp].metadata.keySchema ?? {}).length > 0;
-        const tinyBaseComp = hasKey ? components[comp].get(player) : components[comp].get();
+      for (const key of registryKeys) {
+        const hasKey = Object.entries(registry[key].metadata.keySchema ?? {}).length > 0;
+        const table = hasKey ? registry[key].get(player) : registry[key].get();
 
         const recsComp = hasKey
-          ? // @ts-expect-error wrong types in table
-            getComponentValue(recsComponents[comp], player)
-          : // @ts-expect-error wrong types in table
-            getComponentValue(recsComponents[comp], singletonEntity);
+          ? // @ts-expect-error key does exist in recsComponents
+            getComponentValue(recsComponents[key], player)
+          : // @ts-expect-error key does exist in recsComponents
+            getComponentValue(recsComponents[key], singletonEntity);
 
-        if (!tinyBaseComp) {
+        if (!table) {
           expect(recsComp).toBeUndefined();
           continue;
         } else if (!recsComp) {
-          expect(tinyBaseComp).toBeUndefined();
+          expect(table).toBeUndefined();
           continue;
         }
 
-        // Test value schema
-        const valueSchema = components[comp].metadata.valueSchema ?? {};
-        for (const key of Object.keys(valueSchema)) {
-          if (!(key in tinyBaseComp)) {
+        // Test properties schema
+        const propsSchema = registry[key].metadata.propsSchema ?? {};
+        for (const key of Object.keys(propsSchema)) {
+          if (!(key in table)) {
             expect(recsComp[key]).toBeUndefined();
           } else {
-            expect(tinyBaseComp[key as keyof typeof tinyBaseComp]).toEqual(recsComp[key]);
+            expect(table[key as keyof typeof table]).toEqual(recsComp[key]);
           }
         }
 
-        // We don't test the metadata because if the values are right it's because it was decoded correctly
-        // and there are rare inconsistencies with RECS sync returning either "0x" or undefined for empty values
+        // We don't test the metadata because if the properties are right it's because it was decoded correctly
+        // and there are rare inconsistencies with RECS sync returning either "0x" or undefined for empty value
       }
     };
 
@@ -259,17 +259,17 @@ describe("Wrapper", () => {
   });
 
   /* -------------------------------------------------------------------------- */
-  /*                              COMPONENT METHODS                             */
+  /*                                TABLE METHODS                               */
   /* -------------------------------------------------------------------------- */
 
-  describe("methods: should set and return intended values", () => {
+  describe("methods: should set and return intended properties", () => {
     /* ---------------------------------- BASIC --------------------------------- */
     describe("basic methods", () => {
-      // Init and return components and utils
+      // Init and return registry and utils
       const preTest = async () => {
-        const { components, entities } = await init();
-        const player = entities[0];
-        assert(components);
+        const { registry, $records } = await init();
+        const player = $records[0];
+        assert(registry);
 
         // Generate random args
         const length = 5;
@@ -279,36 +279,36 @@ describe("Wrapper", () => {
           totalWeight: getRandomBigInts(1)[0],
         });
 
-        return { components, player, getRandomArgs };
+        return { registry, player, getRandomArgs };
       };
 
-      // Check returned values against input args
-      const postTest = (args: Record<string, unknown>, value: Record<string, unknown>) => {
+      // Check returned properties against input args
+      const postTest = (args: Record<string, unknown>, properties: Record<string, unknown>) => {
         Object.entries(args).forEach(([key, v]) => {
-          expect(value?.[key]).toEqual(v);
+          expect(properties?.[key]).toEqual(v);
         });
       };
 
-      // Get component value after a transaction was made
+      // Get table properties after a transaction was made
       it("get(), getWithKeys()", async () => {
-        const { components, player, getRandomArgs } = await preTest();
+        const { registry, player, getRandomArgs } = await preTest();
 
         // Set the items and wait for sync
         const args = getRandomArgs();
         const { blockNumber } = await setItems(args);
-        await waitForBlockSynced(blockNumber, components.Inventory, player);
+        await waitForBlockSynced(blockNumber, registry.Inventory, player);
 
-        const value = components.Inventory.get(player);
-        const valueWithKeys = components.Inventory.getWithKeys({ id: player });
-        postTest({ ...args, block: blockNumber }, { ...value, block: value?.__lastSyncedAtBlock });
-        expect(value).toEqual(valueWithKeys);
+        const props = registry.Inventory.get(player);
+        const propsWithKeys = registry.Inventory.getWithKeys({ id: player });
+        postTest({ ...args, block: blockNumber }, { ...props, block: props?.__lastSyncedAtBlock });
+        expect(props).toEqual(propsWithKeys);
       });
 
-      // Set component value client-side
+      // Set table properties locally
       it("set(), setWithKeys", async () => {
-        const { components, player, getRandomArgs } = await preTest();
+        const { registry, player, getRandomArgs } = await preTest();
 
-        // Set the component manually
+        // Set the properties manually
         const args = {
           ...getRandomArgs(),
           __staticData: "0x",
@@ -316,184 +316,184 @@ describe("Wrapper", () => {
           __dynamicData: "0x",
           __lastSyncedAtBlock: BigInt(0),
         };
-        components.Inventory.set(args, player);
+        registry.Inventory.set(args, player);
 
-        const value = components.Inventory.get(player);
-        const valueWithKeys = components.Inventory.getWithKeys({ id: player });
-        assert(value);
-        postTest(args, value);
-        expect(value).toEqual(valueWithKeys);
+        const props = registry.Inventory.get(player);
+        const propsWithKeys = registry.Inventory.getWithKeys({ id: player });
+        assert(props);
+        postTest(args, props);
+        expect(props).toEqual(propsWithKeys);
       });
 
-      // Update component value client-side
+      // Update table properties client-side
       it("update()", async () => {
-        const { components, player, getRandomArgs } = await preTest();
+        const { registry, player, getRandomArgs } = await preTest();
 
         // Set the items and wait for sync
         const args = getRandomArgs();
         const { blockNumber } = await setItems(args);
-        await waitForBlockSynced(blockNumber, components.Inventory, player);
+        await waitForBlockSynced(blockNumber, registry.Inventory, player);
 
-        // Update the component
+        // Update the table
         const updateArgs = getRandomArgs();
-        components.Inventory.update(updateArgs, player);
+        registry.Inventory.update(updateArgs, player);
 
-        const value = components.Inventory.get(player);
-        assert(value);
-        postTest(updateArgs, value);
+        const props = registry.Inventory.get(player);
+        assert(props);
+        postTest(updateArgs, props);
       });
 
-      // Remove component value client-side
+      // Remove table properties locally
       it("remove()", async () => {
-        const { components, player, getRandomArgs } = await preTest();
+        const { registry, player, getRandomArgs } = await preTest();
 
         // Set the items and wait for sync
         const args = getRandomArgs();
         const { blockNumber } = await setItems(args);
-        await waitForBlockSynced(blockNumber, components.Inventory, player);
+        await waitForBlockSynced(blockNumber, registry.Inventory, player);
 
-        // Remove the component
-        components.Inventory.remove(player);
+        // Remove the record from the table
+        registry.Inventory.remove(player);
 
-        const value = components.Inventory.get(player);
-        expect(value).toBeUndefined();
+        const props = registry.Inventory.get(player);
+        expect(props).toBeUndefined();
       });
     });
 
     /* --------------------------------- NATIVE --------------------------------- */
     describe("native methods", () => {
-      // Entities iterator
-      it("entities()", async () => {
-        const { components, entities, waitForSyncLive } = await init();
-        assert(components);
+      // Records iterator
+      it("$records()", async () => {
+        const { registry, $records, waitForSyncLive } = await init();
+        assert(registry);
 
-        await Promise.all(entities.map(async (entity) => await setPositionForEntity({ entity, x: 1, y: 1 })));
+        await Promise.all($records.map(async ($record) => await setPositionFor$Record({ $record, x: 1, y: 1 })));
         await waitForSyncLive();
 
-        const iterator = components.Position.entities();
+        const iterator = registry.Position.$records();
 
         // It _should_ already include the burner account from previous tests
         // Since we're not sure about the order, we can just test the global output
-        const iterations = entities.map(() => iterator.next());
-        expect(iterations.map((i) => i.value).sort()).toEqual(entities.sort());
+        const iterations = $records.map(() => iterator.next());
+        expect(iterations.map((i) => i.value).sort()).toEqual($records.sort());
         expect(iterator.next()).toEqual({ done: true, value: undefined });
       });
     });
 
     /* --------------------------------- QUERIES -------------------------------- */
     describe("query methods", () => {
-      const getRandomArgs = (entity: Entity) => {
+      const getRandomArgs = ($record: $Record) => {
         const nums = getRandomNumbers(2);
-        return { entity, x: nums[0], y: nums[1] };
+        return { $record, x: nums[0], y: nums[1] };
       };
 
       const preTest = async () => {
-        const { components, networkConfig, entities, waitForSyncLive } = await init();
-        assert(components);
+        const { registry, networkConfig, $records, waitForSyncLive } = await init();
+        assert(registry);
 
-        // 4 entities: A has a value, B has a different value, C & D have the same value
-        const argsA = getRandomArgs(entities[0]);
-        const argsB = getRandomArgs(entities[1]);
-        const argsC = getRandomArgs(entities[2]);
-        const argsD = { ...argsC, entity: entities[3] };
+        // 4 $records: A has some properties, B has different properties, C & D have the same properties
+        const argsA = getRandomArgs($records[0]);
+        const argsB = getRandomArgs($records[1]);
+        const argsC = getRandomArgs($records[2]);
+        const argsD = { ...argsC, $record: $records[3] };
 
         const args = [argsA, argsB, argsC, argsD];
-        await Promise.all(args.map(async (a) => await setPositionForEntity(a)));
+        await Promise.all(args.map(async (a) => await setPositionFor$Record(a)));
         await waitForSyncLive();
 
-        return { components, networkConfig, entities, args };
+        return { registry, networkConfig, $records, args };
       };
 
       it("getAll()", async () => {
-        const { components, entities } = await preTest();
+        const { registry, $records } = await preTest();
 
-        const allEntities = components.Position.getAll();
-        expect(allEntities.sort()).toEqual(entities.sort());
+        const allEntities = registry.Position.getAll();
+        expect(allEntities.sort()).toEqual($records.sort());
       });
 
       it("getAllWith()", async () => {
-        const { components, entities, args } = await preTest();
+        const { registry, $records, args } = await preTest();
 
-        expect(components.Position.getAllWith({ x: args[0].x, y: args[0].y })).toEqual([entities[0]]);
-        expect(components.Position.getAllWith({ x: args[1].x, y: args[1].y })).toEqual([entities[1]]);
-        expect(components.Position.getAllWith({ x: args[2].x, y: args[2].y }).sort()).toEqual(
-          [entities[2], entities[3]].sort(),
+        expect(registry.Position.getAllWith({ x: args[0].x, y: args[0].y })).toEqual([$records[0]]);
+        expect(registry.Position.getAllWith({ x: args[1].x, y: args[1].y })).toEqual([$records[1]]);
+        expect(registry.Position.getAllWith({ x: args[2].x, y: args[2].y }).sort()).toEqual(
+          [$records[2], $records[3]].sort(),
         );
 
-        // Test with args not included for any entity
-        let randomArgs = getRandomArgs(entities[0]);
+        // Test with args not included for any $record
+        let randomArgs = getRandomArgs($records[0]);
         while (args.some((a) => a.x === randomArgs.x && a.y === randomArgs.y)) {
-          randomArgs = getRandomArgs(entities[0]);
+          randomArgs = getRandomArgs($records[0]);
         }
-        expect(components.Position.getAllWith({ x: randomArgs.x, y: randomArgs.y })).toEqual([]);
+        expect(registry.Position.getAllWith({ x: randomArgs.x, y: randomArgs.y })).toEqual([]);
 
-        // Matching only a part of the args should not be enough for the entity to be included
-        let argsWithPartialEquality = getRandomArgs(entities[0]);
+        // Matching only a part of the args should not be enough for the $record to be included
+        let argsWithPartialEquality = getRandomArgs($records[0]);
         while (args.some((a) => a.x === argsWithPartialEquality.x)) {
-          argsWithPartialEquality = getRandomArgs(entities[0]);
+          argsWithPartialEquality = getRandomArgs($records[0]);
         }
-        expect(components.Position.getAllWith({ x: argsWithPartialEquality.x, y: args[0].y })).toEqual([]);
+        expect(registry.Position.getAllWith({ x: argsWithPartialEquality.x, y: args[0].y })).toEqual([]);
       });
 
       it("getAllWithout()", async () => {
-        const { components, entities, args } = await preTest();
+        const { registry, $records, args } = await preTest();
 
-        expect(components.Position.getAllWithout({ x: args[0].x, y: args[0].y }).sort()).toEqual(
-          [entities[1], entities[2], entities[3]].sort(),
+        expect(registry.Position.getAllWithout({ x: args[0].x, y: args[0].y }).sort()).toEqual(
+          [$records[1], $records[2], $records[3]].sort(),
         );
-        expect(components.Position.getAllWithout({ x: args[1].x, y: args[1].y }).sort()).toEqual(
-          [entities[0], entities[2], entities[3]].sort(),
+        expect(registry.Position.getAllWithout({ x: args[1].x, y: args[1].y }).sort()).toEqual(
+          [$records[0], $records[2], $records[3]].sort(),
         );
-        expect(components.Position.getAllWithout({ x: args[2].x, y: args[2].y }).sort()).toEqual(
-          [entities[0], entities[1]].sort(),
+        expect(registry.Position.getAllWithout({ x: args[2].x, y: args[2].y }).sort()).toEqual(
+          [$records[0], $records[1]].sort(),
         );
 
-        // Test with args not included for any entity
-        let randomArgs = getRandomArgs(entities[0]);
+        // Test with args not included for any $record
+        let randomArgs = getRandomArgs($records[0]);
         while (args.some((a) => a.x === randomArgs.x && a.y === randomArgs.y)) {
-          randomArgs = getRandomArgs(entities[0]);
+          randomArgs = getRandomArgs($records[0]);
         }
-        expect(components.Position.getAllWithout({ x: randomArgs.x, y: randomArgs.y }).sort()).toEqual(entities.sort());
+        expect(registry.Position.getAllWithout({ x: randomArgs.x, y: randomArgs.y }).sort()).toEqual($records.sort());
       });
 
       it("clear()", async () => {
-        const { components, entities } = await preTest();
-        expect(components.Position.getAll().sort()).toEqual(entities.sort());
+        const { registry, $records } = await preTest();
+        expect(registry.Position.getAll().sort()).toEqual($records.sort());
 
-        components.Position.clear();
-        expect(components.Position.getAll()).toEqual([]);
+        registry.Position.clear();
+        expect(registry.Position.getAll()).toEqual([]);
       });
 
       it("has(), hasWithKeys()", async () => {
-        const { components, entities } = await preTest();
+        const { registry, $records } = await preTest();
 
-        entities.forEach((entity) => {
-          expect(components.Position.has(entity)).toBe(true);
-          expect(components.Position.hasWithKeys({ id: entity })).toBe(true);
+        $records.forEach(($record) => {
+          expect(registry.Position.has($record)).toBe(true);
+          expect(registry.Position.hasWithKeys({ id: $record })).toBe(true);
         });
 
-        const unknownEntity = padHex(toHex("unknownEntity"));
-        expect(components.Position.has(unknownEntity as Entity)).toBe(false);
-        expect(components.Position.hasWithKeys({ id: unknownEntity })).toBe(false);
+        const unknown$Record = padHex(toHex("unknown$Record"));
+        expect(registry.Position.has(unknown$Record as $Record)).toBe(false);
+        expect(registry.Position.hasWithKeys({ id: unknown$Record })).toBe(false);
       });
     });
 
     /* ---------------------------------- HOOKS --------------------------------- */
     describe("reactive methods", () => {
-      const getRandomArgs = (entity: Entity) => {
+      const getRandomArgs = ($record: $Record) => {
         const nums = getRandomNumbers(2);
-        return { entity, x: nums[0], y: nums[1] };
+        return { $record, x: nums[0], y: nums[1] };
       };
 
       const updatePosition = async <
-        table extends ResolvedStoreConfig<storeToV1<typeof mockConfig>>["tables"]["Position"],
+        tableDef extends ResolvedStoreConfig<storeToV1<typeof mockConfig>>["tables"]["Position"],
       >(
-        Position: ContractTable<table>,
-        entity: Entity,
+        Position: ContractTable<tableDef>,
+        $record: $Record,
       ) => {
-        const args = getRandomArgs(entity);
-        const { blockNumber } = await setPositionForEntity(args);
-        await waitForBlockSynced(blockNumber, Position, entity);
+        const args = getRandomArgs($record);
+        const { blockNumber } = await setPositionFor$Record(args);
+        await waitForBlockSynced(blockNumber, Position, $record);
 
         return {
           args: {
@@ -507,197 +507,205 @@ describe("Wrapper", () => {
       };
 
       it("use(), useWithKeys()", async () => {
-        const { components, entities } = await init();
-        assert(components);
-        const player = entities[0];
+        const { registry, $records } = await init();
+        assert(registry);
+        const player = $records[0];
 
-        const { result } = renderHook(() => components.Position.use(player));
-        const { result: resultWithKeys } = renderHook(() => components.Position.useWithKeys({ id: player }));
+        const { result } = renderHook(() => registry.Position.use(player));
+        const { result: resultWithKeys } = renderHook(() => registry.Position.useWithKeys({ id: player }));
 
         // Update the position
-        const { args } = await updatePosition(components.Position, player);
+        const { args } = await updatePosition(registry.Position, player);
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
         expect(result.current).toEqual(resultWithKeys.current);
 
-        // Update the position again with different values
-        const { args: argsB } = await updatePosition(components.Position, player);
+        // Update the position again with different properties
+        const { args: argsB } = await updatePosition(registry.Position, player);
         expect(result.current).toHaveProperty("x", argsB.x);
         expect(result.current).toHaveProperty("y", argsB.y);
         expect(result.current).toEqual(resultWithKeys.current);
 
-        // Remove an entity
-        components.Position.remove(player);
+        // Remove an $record
+        registry.Position.remove(player);
         expect(result.current).toBeUndefined();
         expect(resultWithKeys.current).toBeUndefined();
       });
 
       it("pauseUpdates()", async () => {
-        const { components, entities } = await init();
-        assert(components);
-        const player = entities[0];
+        const { registry, $records } = await init();
+        assert(registry);
+        const player = $records[0];
 
-        const { result } = renderHook(() => components.Position.use(entities[0]));
+        const { result } = renderHook(() => registry.Position.use($records[0]));
 
         // Update the position
-        const { args } = await updatePosition(components.Position, player);
+        const { args } = await updatePosition(registry.Position, player);
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
 
         // Pause updates
-        components.Position.pauseUpdates(player, args);
+        registry.Position.pauseUpdates(player, args);
 
-        // Update the position again with different values
-        await updatePosition(components.Position, player);
+        // Update the position again with different properties
+        await updatePosition(registry.Position, player);
 
-        // It should still have the same values
+        // It should still have the same properties
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
       });
 
       it("resumeUpdates()", async () => {
-        const { components, entities } = await init();
-        assert(components);
-        const player = entities[0];
+        const { registry, $records } = await init();
+        assert(registry);
+        const player = $records[0];
 
-        const { result } = renderHook(() => components.Position.use(entities[0]));
+        const { result } = renderHook(() => registry.Position.use($records[0]));
 
         // Update the position
-        const { args } = await updatePosition(components.Position, player);
+        const { args } = await updatePosition(registry.Position, player);
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
 
         // Pause updates
-        components.Position.pauseUpdates(player, args);
+        registry.Position.pauseUpdates(player, args);
 
-        // Update the position again with different values
-        const { args: argsB } = await updatePosition(components.Position, player);
-        // It should keep the old values
+        // Update the position again with different properties
+        const { args: argsB } = await updatePosition(registry.Position, player);
+        // It should keep the old properties
         expect(result.current).toHaveProperty("x", args.x);
         expect(result.current).toHaveProperty("y", args.y);
 
         // Resume updates
-        components.Position.resumeUpdates(player);
-        // It should update to the new values
+        registry.Position.resumeUpdates(player);
+        // It should update to the new properties
         expect(result.current).toHaveProperty("x", argsB.x);
         expect(result.current).toHaveProperty("y", argsB.y);
       });
 
       it("useAll()", async () => {
-        const { components, entities } = await init();
-        assert(components);
+        const { registry, $records } = await init();
+        assert(registry);
 
-        const { result } = renderHook(() => components.Position.useAll());
+        const { result } = renderHook(() => registry.Position.useAll());
 
-        // Update the position for all entities
-        await Promise.all(entities.map(async (entity) => await updatePosition(components.Position, entity)));
-        expect(result.current.sort()).toEqual(entities.sort());
+        // Update the position for all $records
+        await Promise.all($records.map(async ($record) => await updatePosition(registry.Position, $record)));
+        expect(result.current.sort()).toEqual($records.sort());
 
         // Clear the positions
-        components.Position.clear();
+        registry.Position.clear();
         expect(result.current).toEqual([]);
 
-        // Update the position for a few entities
+        // Update the position for a few $records
         await Promise.all(
-          entities.slice(0, 2).map(async (entity) => await updatePosition(components.Position, entity)),
+          $records.slice(0, 2).map(async ($record) => await updatePosition(registry.Position, $record)),
         );
-        expect(result.current.sort()).toEqual(entities.slice(0, 2).sort());
+        expect(result.current.sort()).toEqual($records.slice(0, 2).sort());
 
-        // Remove an entity
-        components.Position.remove(entities[0]);
-        expect(result.current).toEqual([entities[1]]);
+        // Remove an $record
+        registry.Position.remove($records[0]);
+        expect(result.current).toEqual([$records[1]]);
       });
 
       it("useAllWith()", async () => {
-        const { components, entities } = await init();
-        assert(components);
+        const { registry, $records } = await init();
+        assert(registry);
 
         const targetPos = { x: 10, y: 10 };
-        const { result } = renderHook(() => components.Position.useAllWith(targetPos));
+        const { result } = renderHook(() => registry.Position.useAllWith(targetPos));
 
-        // Update the position for all entities (not to the target position)
+        // Update the position for all $records (not to the target position)
         await Promise.all(
-          entities.map(async (entity) => {
-            let args = getRandomArgs(entity);
+          $records.map(async ($record) => {
+            let args = getRandomArgs($record);
             while (args.x === targetPos.x && args.y === targetPos.y) {
-              args = getRandomArgs(entity);
+              args = getRandomArgs($record);
             }
 
-            const { blockNumber } = await setPositionForEntity(args);
-            await waitForBlockSynced(blockNumber, components.Position, entity);
+            const { blockNumber } = await setPositionFor$Record(args);
+            await waitForBlockSynced(blockNumber, registry.Position, $record);
           }),
         );
 
         expect(result.current).toEqual([]);
 
-        // Update the position for a few entities to the target position
-        const { blockNumber: blockNumberB } = await setPositionForEntity({ ...targetPos, entity: entities[0] });
-        await waitForBlockSynced(blockNumberB, components.Position, entities[0]);
-        expect(result.current).toEqual([entities[0]]);
+        // Update the position for a few $records to the target position
+        const { blockNumber: blockNumberB } = await setPositionFor$Record({ ...targetPos, $record: $records[0] });
+        await waitForBlockSynced(blockNumberB, registry.Position, $records[0]);
+        expect(result.current).toEqual([$records[0]]);
 
-        const { blockNumber: blockNumberC } = await setPositionForEntity({ ...targetPos, entity: entities[1] });
-        await waitForBlockSynced(blockNumberC, components.Position, entities[1]);
-        expect(result.current.sort()).toEqual([entities[0], entities[1]].sort());
+        const { blockNumber: blockNumberC } = await setPositionFor$Record({ ...targetPos, $record: $records[1] });
+        await waitForBlockSynced(blockNumberC, registry.Position, $records[1]);
+        expect(result.current.sort()).toEqual([$records[0], $records[1]].sort());
 
         // And with only part of the properties matching
-        const { blockNumber: blockNumberD } = await setPositionForEntity({ x: targetPos.x, y: 0, entity: entities[2] });
-        await waitForBlockSynced(blockNumberD, components.Position, entities[2]);
-        expect(result.current.sort()).toEqual([entities[0], entities[1]].sort());
+        const { blockNumber: blockNumberD } = await setPositionFor$Record({
+          x: targetPos.x,
+          y: 0,
+          $record: $records[2],
+        });
+        await waitForBlockSynced(blockNumberD, registry.Position, $records[2]);
+        expect(result.current.sort()).toEqual([$records[0], $records[1]].sort());
 
-        // Remove an entity
-        components.Position.remove(entities[0]);
-        expect(result.current).toEqual([entities[1]]);
+        // Remove an $record
+        registry.Position.remove($records[0]);
+        expect(result.current).toEqual([$records[1]]);
       });
 
       it("useAllWithout()", async () => {
-        const { components, entities } = await init();
-        assert(components);
+        const { registry, $records } = await init();
+        assert(registry);
 
         const targetPos = { x: 10, y: 10 };
-        const { result } = renderHook(() => components.Position.useAllWithout(targetPos));
+        const { result } = renderHook(() => registry.Position.useAllWithout(targetPos));
 
-        // Update the position for all entities (not to the target position)
+        // Update the position for all $records (not to the target position)
         await Promise.all(
-          entities.map(async (entity) => {
-            let args = getRandomArgs(entity);
+          $records.map(async ($record) => {
+            let args = getRandomArgs($record);
             while (args.x === targetPos.x && args.y === targetPos.y) {
-              args = getRandomArgs(entity);
+              args = getRandomArgs($record);
             }
-            const { blockNumber } = await setPositionForEntity(args);
-            await waitForBlockSynced(blockNumber, components.Position, entity);
+            const { blockNumber } = await setPositionFor$Record(args);
+            await waitForBlockSynced(blockNumber, registry.Position, $record);
           }),
         );
 
-        expect(result.current.sort()).toEqual(entities.sort());
+        expect(result.current.sort()).toEqual($records.sort());
 
-        // Update the position for a few entities to the target position
-        const { blockNumber: blockNumberB } = await setPositionForEntity({ ...targetPos, entity: entities[0] });
-        await waitForBlockSynced(blockNumberB, components.Position, entities[0]);
-        expect(result.current.sort()).toEqual(entities.slice(1).sort());
+        // Update the position for a few $records to the target position
+        const { blockNumber: blockNumberB } = await setPositionFor$Record({ ...targetPos, $record: $records[0] });
+        await waitForBlockSynced(blockNumberB, registry.Position, $records[0]);
+        expect(result.current.sort()).toEqual($records.slice(1).sort());
 
-        const { blockNumber: blockNumberC } = await setPositionForEntity({ ...targetPos, entity: entities[1] });
-        await waitForBlockSynced(blockNumberC, components.Position, entities[1]);
-        expect(result.current.sort()).toEqual(entities.slice(2).sort());
+        const { blockNumber: blockNumberC } = await setPositionFor$Record({ ...targetPos, $record: $records[1] });
+        await waitForBlockSynced(blockNumberC, registry.Position, $records[1]);
+        expect(result.current.sort()).toEqual($records.slice(2).sort());
 
         // And with only part of the properties matching
-        const { blockNumber: blockNumberD } = await setPositionForEntity({ x: targetPos.x, y: 0, entity: entities[2] });
-        await waitForBlockSynced(blockNumberD, components.Position, entities[2]);
-        expect(result.current.sort()).toEqual(entities.slice(2).sort());
+        const { blockNumber: blockNumberD } = await setPositionFor$Record({
+          x: targetPos.x,
+          y: 0,
+          $record: $records[2],
+        });
+        await waitForBlockSynced(blockNumberD, registry.Position, $records[2]);
+        expect(result.current.sort()).toEqual($records.slice(2).sort());
 
-        // Remove an entity
-        components.Position.remove(entities[2]);
-        expect(result.current).toEqual(entities.slice(3));
+        // Remove an $record
+        registry.Position.remove($records[2]);
+        expect(result.current).toEqual($records.slice(3));
       });
     });
 
     /* ---------------------------------- KEYS ---------------------------------- */
     describe("keys (contract-specific) methods", () => {
-      it("getEntityKeys()", async () => {
-        const { components, entities } = await init();
-        assert(components);
+      it("get$RecordKeys()", async () => {
+        const { registry, $records } = await init();
+        assert(registry);
 
-        const player = entities[0];
-        const keys = components.Position.getEntityKeys(player);
+        const player = $records[0];
+        const keys = registry.Position.get$RecordKeys(player);
         expect(keys).toEqual({ id: player });
       });
     });
@@ -708,98 +716,113 @@ describe("Wrapper", () => {
   /* -------------------------------------------------------------------------- */
 
   describe("queries: should emit appropriate update events with the correct data", () => {
-    const getRandomArgs = (entity: Entity) => {
+    const getRandomArgs = ($record: $Record) => {
       const nums = getRandomNumbers(2);
-      return { entity, x: nums[0], y: nums[1] };
+      return { $record, x: nums[0], y: nums[1] };
     };
 
     const updatePosition = async <
-      table extends ResolvedStoreConfig<storeToV1<typeof mockConfig>>["tables"]["Position"],
+      tableDef extends ResolvedStoreConfig<storeToV1<typeof mockConfig>>["tables"]["Position"],
     >(
-      Position: ContractTable<table>,
-      entity: Entity,
+      Position: ContractTable<tableDef>,
+      $record: $Record,
       to?: { x: number; y: number },
     ) => {
-      const args = to ? { entity, ...to } : getRandomArgs(entity);
-      const { blockNumber } = await setPositionForEntity(args);
-      await waitForBlockSynced(blockNumber, Position, entity);
+      const args = to ? { $record, ...to } : getRandomArgs($record);
+      const { blockNumber } = await setPositionFor$Record(args);
+      await waitForBlockSynced(blockNumber, Position, $record);
 
       return { args };
     };
 
     const preTest = async () => {
-      const { components, store, waitForSyncLive, entities } = await init();
-      assert(components);
-      // Just wait for sync for the test to be accurate (no system trigger due to storing synced values)
+      const { registry, store, waitForSyncLive, $records } = await init();
+      assert(registry);
+      // Just wait for sync for the test to be accurate (prevent tampering data by syncing during the test)
       await waitForSyncLive();
 
-      // Aggregate updates triggered by the system on component changes
-      const aggregator: TableQueryUpdate<typeof components.Position.schema | typeof components.Inventory.schema>[] = [];
+      // Aggregate updates triggered by the system on table changes
+      const aggregator: TableQueryUpdate<typeof registry.Position.schema | typeof registry.Inventory.schema>[] = [];
       const onChange = (update: (typeof aggregator)[number]) => aggregator.push(update);
 
-      return { components, store, entities, onChange, aggregator };
+      return { registry, store, $records, onChange, aggregator };
     };
 
     it("createQueryWrapper(): without query", async () => {
-      const { components, entities, onChange, aggregator } = await preTest();
-      const tableId = components.Position.id;
+      const { registry, $records, onChange, aggregator } = await preTest();
+      const tableId = registry.Position.id;
 
-      const { unsubscribe } = components.Position.createQuery({
+      const { unsubscribe } = registry.Position.createQuery({
         onChange,
         options: { runOnInit: false },
       });
       expect(aggregator).toEqual([]);
 
-      // Update the position for an entity (and enter the table)
-      const valueA = components.Position.get(entities[0]);
-      await updatePosition(components.Position, entities[0]);
-      const valueB = components.Position.get(entities[0]);
+      // Update the position for an $record (and enter the table)
+      const propsA = registry.Position.get($records[0]);
+      await updatePosition(registry.Position, $records[0]);
+      const propsB = registry.Position.get($records[0]);
 
       expect(aggregator).toEqual([
-        { tableId, entity: entities[0], value: { current: valueB, prev: valueA }, type: valueA ? "change" : "enter" },
+        {
+          tableId,
+          $record: $records[0],
+          properties: { current: propsB, prev: propsA },
+          type: propsA ? "change" : "enter",
+        },
       ]);
 
-      // Update entity[1]
-      const valueC = components.Position.get(entities[1]);
-      await updatePosition(components.Position, entities[1]);
-      const valueD = components.Position.get(entities[1]);
-      // Exit entity[0]
-      components.Position.remove(entities[0]);
-      // Enter again entity[0]
-      await updatePosition(components.Position, entities[0]);
-      const valueE = components.Position.get(entities[0]);
+      // Update $record[1]
+      const propsC = registry.Position.get($records[1]);
+      await updatePosition(registry.Position, $records[1]);
+      const propsD = registry.Position.get($records[1]);
+      // Exit $record[0]
+      registry.Position.remove($records[0]);
+      // Enter again $record[0]
+      await updatePosition(registry.Position, $records[0]);
+      const propsE = registry.Position.get($records[0]);
 
       expect(aggregator).toEqual([
-        { tableId, entity: entities[0], value: { current: valueB, prev: valueA }, type: valueA ? "change" : "enter" },
-        { tableId, entity: entities[1], value: { current: valueD, prev: valueC }, type: valueC ? "change" : "enter" },
-        { tableId, entity: entities[0], value: { current: undefined, prev: valueB }, type: "exit" },
-        { tableId, entity: entities[0], value: { current: valueE, prev: undefined }, type: "enter" },
+        {
+          tableId,
+          $record: $records[0],
+          properties: { current: propsB, prev: propsA },
+          type: propsA ? "change" : "enter",
+        },
+        {
+          tableId,
+          $record: $records[1],
+          properties: { current: propsD, prev: propsC },
+          type: propsC ? "change" : "enter",
+        },
+        { tableId, $record: $records[0], properties: { current: undefined, prev: propsB }, type: "exit" },
+        { tableId, $record: $records[0], properties: { current: propsE, prev: undefined }, type: "enter" },
       ]);
 
       unsubscribe();
     });
 
     it("createQueryWrapper(): run on init", async () => {
-      const { components, entities, onChange, aggregator } = await preTest();
+      const { registry, $records, onChange, aggregator } = await preTest();
 
-      // Enter entities
-      await Promise.all(entities.map(async (entity) => await updatePosition(components.Position, entity)));
+      // Enter $records
+      await Promise.all($records.map(async ($record) => await updatePosition(registry.Position, $record)));
 
-      const { unsubscribe } = components.Position.createQuery({
+      const { unsubscribe } = registry.Position.createQuery({
         onChange,
         options: { runOnInit: true },
       });
-      expect(aggregator).toHaveLength(entities.length);
+      expect(aggregator).toHaveLength($records.length);
 
       unsubscribe();
     });
 
     it("createQueryWrapper(): with query", async () => {
-      const { components, entities, onChange, aggregator } = await preTest();
-      const tableId = components.Position.id;
+      const { registry, $records, onChange, aggregator } = await preTest();
+      const tableId = registry.Position.id;
       const matchQuery = (x: number) => x > 5 && x < 15;
 
-      const { unsubscribe } = components.Position.createQuery({
+      const { unsubscribe } = registry.Position.createQuery({
         onChange,
         options: { runOnInit: false },
         query: ({ where }) => {
@@ -810,51 +833,51 @@ describe("Wrapper", () => {
       // Query didn't run on init so it should be empty
       expect(aggregator).toEqual([]);
 
-      // Move an entity inside the query condition
-      const valueA = components.Position.get(entities[0]);
-      await updatePosition(components.Position, entities[0], { x: 9, y: 9 });
-      const valueB = components.Position.get(entities[0]);
+      // Move an $record inside the query condition
+      const propsA = registry.Position.get($records[0]);
+      await updatePosition(registry.Position, $records[0], { x: 9, y: 9 });
+      const propsB = registry.Position.get($records[0]);
 
       expect(aggregator).toEqual([
         {
           tableId,
-          entity: entities[0],
-          value: { current: valueB, prev: valueA },
+          $record: $records[0],
+          properties: { current: propsB, prev: propsA },
           type: "enter", // because we didn't run on init so it's necessarily an enter
         },
       ]);
 
-      // Update entity[1] inside the query condition
-      const valueC = components.Position.get(entities[1]);
-      await updatePosition(components.Position, entities[1], { x: 10, y: 10 });
-      const valueD = components.Position.get(entities[1]);
+      // Update $record[1] inside the query condition
+      const propsC = registry.Position.get($records[1]);
+      await updatePosition(registry.Position, $records[1], { x: 10, y: 10 });
+      const propsD = registry.Position.get($records[1]);
 
       expect(aggregator[1]).toEqual({
         tableId,
-        entity: entities[1],
-        value: { current: valueD, prev: valueC },
+        $record: $records[1],
+        properties: { current: propsD, prev: propsC },
         type: "enter",
       });
 
-      // Exit entity[0]
-      components.Position.remove(entities[0]);
+      // Exit $record[0]
+      registry.Position.remove($records[0]);
 
       expect(aggregator[2]).toEqual({
         tableId,
-        entity: entities[0],
-        value: { current: undefined, prev: valueB },
+        $record: $records[0],
+        properties: { current: undefined, prev: propsB },
         type: "exit",
       });
 
-      // Move out entity[1] from the query condition
-      await updatePosition(components.Position, entities[1], { x: 20, y: 20 });
-      const valueE = components.Position.get(entities[1]);
+      // Move out $record[1] from the query condition
+      await updatePosition(registry.Position, $records[1], { x: 20, y: 20 });
+      const propsE = registry.Position.get($records[1]);
 
       expect(aggregator).toHaveLength(4);
       expect(aggregator[3]).toEqual({
         tableId,
-        entity: entities[1],
-        value: { current: valueE, prev: valueD },
+        $record: $records[1],
+        properties: { current: propsE, prev: propsD },
         type: "exit",
       });
 
@@ -862,8 +885,8 @@ describe("Wrapper", () => {
     });
 
     it("query() (queryAllMatching)", async () => {
-      const { components, store, entities } = await init();
-      const [player, A, B, C] = entities;
+      const { registry, store, $records } = await init();
+      const [player, A, B, C] = $records;
       const emptyData = {
         __staticData: "0x",
         __encodedLengths: "0x",
@@ -871,61 +894,61 @@ describe("Wrapper", () => {
         __lastSyncedAtBlock: BigInt(0),
       };
 
-      // Prepare entities
-      components.Position.set({ x: 10, y: 10, ...emptyData }, player);
-      components.Position.set({ x: 5, y: 5, ...emptyData }, A);
-      components.Position.set({ x: 10, y: 10, ...emptyData }, B);
-      components.Position.set({ x: 15, y: 10, ...emptyData }, C);
-      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6), ...emptyData }, player);
-      components.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6), ...emptyData }, A);
-      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3), ...emptyData }, B);
+      // Prepare $records
+      registry.Position.set({ x: 10, y: 10, ...emptyData }, player);
+      registry.Position.set({ x: 5, y: 5, ...emptyData }, A);
+      registry.Position.set({ x: 10, y: 10, ...emptyData }, B);
+      registry.Position.set({ x: 15, y: 10, ...emptyData }, C);
+      registry.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6), ...emptyData }, player);
+      registry.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6), ...emptyData }, A);
+      registry.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3), ...emptyData }, B);
 
-      // Entities inside the Position component
+      // Entities inside the Position table
       expect(
         query(store(), {
-          inside: [components.Position],
+          inside: [registry.Position],
         }).sort(),
       ).toEqual([player, A, B, C].sort());
 
-      // Entities inside the Position component but not inside the Inventory component
+      // Entities inside the Position table but not inside the Inventory table
       expect(
         query(store(), {
-          inside: [components.Position],
-          notInside: [components.Inventory],
+          inside: [registry.Position],
+          notInside: [registry.Inventory],
         }),
       ).toEqual([C]);
 
-      // Entities with a specific value inside the Inventory component, and without a specific value inside the Position component
+      // Entities with a specific property inside the Inventory table, and without a specific property inside the Position table
       expect(
         query(store(), {
           with: [
             {
-              component: components.Inventory,
-              value: { totalWeight: BigInt(6) },
+              table: registry.Inventory,
+              properties: { totalWeight: BigInt(6) },
             },
           ],
           without: [
             {
-              component: components.Position,
-              value: { x: 5, y: 5 },
+              table: registry.Position,
+              properties: { x: 5, y: 5 },
             },
           ],
         }),
       ).toEqual([player]);
 
-      // Entities with a specific value inside the Inventory component, not another one
+      // Entities with a specific property inside the Inventory table, not another one
       expect(
         query(store(), {
           with: [
             {
-              component: components.Inventory,
-              value: { totalWeight: BigInt(6) },
+              table: registry.Inventory,
+              properties: { totalWeight: BigInt(6) },
             },
           ],
           without: [
             {
-              component: components.Inventory,
-              value: { weights: [1, 2, 3] },
+              table: registry.Inventory,
+              properties: { weights: [1, 2, 3] },
             },
           ],
         }),
@@ -935,8 +958,8 @@ describe("Wrapper", () => {
     // TODO: fix this very weird case where assigning `synced` makes it hang forever in `waitForSyncLive`
     // When removing it, the while loop works, but whenever `synced` is assigned inside the loop, it hangs right at the `await wait(1000)`
     it.todo("createGlobalQuery(), useQuery() (useQueryAllMatching)", async () => {
-      const { components, store, entities, onChange, aggregator } = await preTest();
-      const [player, A, B, C] = entities;
+      const { registry, store, $records, onChange, aggregator } = await preTest();
+      const [player, A, B, C] = $records;
       const emptyData = {
         __staticData: "0x",
         __encodedLengths: "0x",
@@ -945,26 +968,25 @@ describe("Wrapper", () => {
       };
 
       // We need another aggregator for the global query
-      const globalAggregator: TableQueryUpdate<
-        typeof components.Position.schema | typeof components.Inventory.schema
-      >[] = [];
+      const globalAggregator: TableQueryUpdate<typeof registry.Position.schema | typeof registry.Inventory.schema>[] =
+        [];
       const globalOnChange = (update: (typeof globalAggregator)[number]) => globalAggregator.push(update);
 
-      // Prepare entities
-      components.Position.set({ x: 10, y: 10, ...emptyData }, player);
-      components.Position.set({ x: 5, y: 5, ...emptyData }, A);
-      components.Position.set({ x: 10, y: 10, ...emptyData }, B);
-      components.Position.set({ x: 15, y: 10, ...emptyData }, C);
-      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6), ...emptyData }, player);
-      components.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6), ...emptyData }, A);
-      components.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3), ...emptyData }, B);
+      // Prepare $records
+      registry.Position.set({ x: 10, y: 10, ...emptyData }, player);
+      registry.Position.set({ x: 5, y: 5, ...emptyData }, A);
+      registry.Position.set({ x: 10, y: 10, ...emptyData }, B);
+      registry.Position.set({ x: 15, y: 10, ...emptyData }, C);
+      registry.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6), ...emptyData }, player);
+      registry.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6), ...emptyData }, A);
+      registry.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3), ...emptyData }, B);
 
       const query = {
-        inside: [components.Position],
+        inside: [registry.Position],
         with: [
           {
-            component: components.Inventory,
-            value: { totalWeight: BigInt(6) },
+            table: registry.Inventory,
+            properties: { totalWeight: BigInt(6) },
           },
         ],
       };
@@ -982,28 +1004,28 @@ describe("Wrapper", () => {
       expect(globalAggregator.sort()).toEqual([
         {
           tableId: undefined, // on init we don't know about specific tables
-          entity: player,
-          value: { current: undefined, prev: undefined }, // same for values
+          $record: player,
+          properties: { current: undefined, prev: undefined }, // same for properties
           type: "enter",
         },
         {
           tableId: undefined,
-          entity: A,
-          value: { current: undefined, prev: undefined },
+          $record: A,
+          properties: { current: undefined, prev: undefined },
           type: "enter",
         },
       ]);
 
       // Update the totalWeight of player
-      const valueA = components.Inventory.get(player);
-      components.Inventory.update({ totalWeight: BigInt(3) }, player);
-      const valueB = components.Inventory.get(player);
+      const propsA = registry.Inventory.get(player);
+      registry.Inventory.update({ totalWeight: BigInt(3) }, player);
+      const propsB = registry.Inventory.get(player);
 
       expect(result.current).toEqual([A]);
       const expectedAggregatorItem = {
-        tableId: components.Inventory.id,
-        entity: player,
-        value: { current: valueB, prev: valueA },
+        tableId: registry.Inventory.id,
+        $record: player,
+        properties: { current: propsB, prev: propsA },
         type: "exit", // out of the query
       };
       expect(aggregator).toEqual([expectedAggregatorItem]);
@@ -1011,15 +1033,15 @@ describe("Wrapper", () => {
       expect(globalAggregator[2]).toEqual(expectedAggregatorItem);
 
       // Update the totalWeight of A
-      const valueC = components.Inventory.get(A);
-      components.Inventory.update({ totalWeight: BigInt(3) }, A);
-      const valueD = components.Inventory.get(A);
+      const propsC = registry.Inventory.get(A);
+      registry.Inventory.update({ totalWeight: BigInt(3) }, A);
+      const propsD = registry.Inventory.get(A);
 
       expect(result.current).toEqual([]);
       const expectedAggregatorItemB = {
-        tableId: components.Inventory.id,
-        entity: A,
-        value: { current: valueD, prev: valueC },
+        tableId: registry.Inventory.id,
+        $record: A,
+        properties: { current: propsD, prev: propsC },
         type: "exit",
       };
       expect(aggregator).toHaveLength(2);
@@ -1028,15 +1050,15 @@ describe("Wrapper", () => {
       expect(globalAggregator[3]).toEqual(expectedAggregatorItemB);
 
       // Update the totalWeight of B
-      const valueE = components.Inventory.get(B);
-      components.Inventory.update({ totalWeight: BigInt(6) }, B);
-      const valueF = components.Inventory.get(B);
+      const propsE = registry.Inventory.get(B);
+      registry.Inventory.update({ totalWeight: BigInt(6) }, B);
+      const propsF = registry.Inventory.get(B);
 
       expect(result.current).toEqual([B]);
       const expectedAggregatorItemC = {
-        tableId: components.Inventory.id,
-        entity: B,
-        value: { current: valueF, prev: valueE },
+        tableId: registry.Inventory.id,
+        $record: B,
+        properties: { current: propsF, prev: propsE },
         type: "enter",
       };
       expect(aggregator).toHaveLength(3);
@@ -1045,22 +1067,22 @@ describe("Wrapper", () => {
       expect(globalAggregator[4]).toEqual(expectedAggregatorItemC);
 
       // Update, then remove B
-      const valueG = components.Position.get(B);
-      components.Position.update({ x: 20, y: 20 }, B);
-      const valueH = components.Position.get(B);
-      components.Position.remove(B);
+      const propsG = registry.Position.get(B);
+      registry.Position.update({ x: 20, y: 20 }, B);
+      const propsH = registry.Position.get(B);
+      registry.Position.remove(B);
 
       expect(result.current).toEqual([]);
       const expectedAggregatorItemD = {
-        tableId: components.Position.id,
-        entity: B,
-        value: { current: valueH, prev: valueG },
+        tableId: registry.Position.id,
+        $record: B,
+        properties: { current: propsH, prev: propsG },
         type: "change",
       };
       const expectedAggregatorItemE = {
-        tableId: components.Position.id,
-        entity: B,
-        value: { current: undefined, prev: valueH },
+        tableId: registry.Position.id,
+        $record: B,
+        properties: { current: undefined, prev: propsH },
         type: "exit",
       };
       expect(aggregator).toHaveLength(5);

@@ -1,9 +1,8 @@
-import { Entity, Schema } from "@latticexyz/recs";
 import { GetResultCellChange } from "tinybase/queries";
 
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
-import { encodedDataKeys, internalKeys, TinyBaseQueries } from "@/lib";
-import { ComponentValue } from "@/components/types";
+import { encodedDataKeys, internalKeys, $Record, Schema, TinyBaseQueries } from "@/lib";
+import { Properties } from "@/tables";
 
 /* ---------------------------------- TYPES --------------------------------- */
 type ResultRow = { [key: string]: TinyBaseFormattedType[typeof key] | undefined };
@@ -11,8 +10,8 @@ type ResultRow = { [key: string]: TinyBaseFormattedType[typeof key] | undefined 
 export type UpdateType = "enter" | "exit" | "change";
 export type TableQueryUpdate<S extends Schema = Schema, T = unknown> = {
   tableId: string | undefined; // undefined if run on init on global query
-  entity: Entity;
-  value: { current: ComponentValue<S, T> | undefined; prev: ComponentValue<S, T> | undefined };
+  $record: $Record;
+  properties: { current: Properties<S, T> | undefined; prev: Properties<S, T> | undefined };
   type: UpdateType;
 };
 
@@ -56,44 +55,44 @@ export const createQuery = <S extends Schema, T = unknown>({
   }
 
   const store = queries.getStore();
-  // Get the keys to be able to aggregate the full value from each cell
+  // Get the keys to be able to aggregate the full properties from each cell
   const keys = Object.keys(schema);
 
-  // Remember the previous entities matching the query to figure out if it's an enter or an exit
+  // Remember the previous records matching the query to figure out if it's an enter or an exit
   // This is a trick we need because we can't listen to entire row changes within the query when only some cells have changed
-  let previousEntities: Entity[] = [];
+  let previous$Records: $Record[] = [];
 
   // Init listener
   // Unfortunatly `addResultRowListener()` won't work here as it's not triggered for cell changes
   // So we need to use a regular listener associated with the query instead
-  const listenerId = store.addRowListener(tableId, null, (_, __, entityKey, getCellChange) => {
+  const listenerId = store.addRowListener(tableId, null, (_, __, rowId, getCellChange) => {
     if (!getCellChange) return;
-    const entity = entityKey as Entity;
+    const $record = rowId as $Record;
 
-    // Get the entities matching the query
-    const matchingEntities = queries.getResultRowIds(queryId);
+    // Get the records matching the query
+    const matching$Records = queries.getResultRowIds(queryId);
 
     // Figure out if it's an enter or an exit
     let type = "change" as UpdateType;
-    const inPrev = previousEntities.includes(entity);
-    const inCurrent = matchingEntities.includes(entity);
+    const inPrev = previous$Records.includes($record);
+    const inCurrent = matching$Records.includes($record);
 
     if (!inPrev && !inCurrent) return; // not in the query, we're not interested
 
-    // Gather the previous and current values
-    const args = getValueAndTypeFromRowChange(getCellChange, keys, tableId, entity) as TableQueryUpdate<S, T>;
+    // Gather the previous and current properties
+    const args = getPropsAndTypeFromRowChange(getCellChange, keys, tableId, $record) as TableQueryUpdate<S, T>;
 
     // Run the callbacks
     if (!inPrev && inCurrent) {
       type = "enter";
       onEnter?.({ ...args, type });
 
-      previousEntities.push(entity);
+      previous$Records.push($record);
     } else if (inPrev && !inCurrent) {
       type = "exit";
       onExit?.({ ...args, type });
 
-      previousEntities = previousEntities.filter((e) => e !== entity);
+      previous$Records = previous$Records.filter((e) => e !== $record);
     } else {
       onUpdate?.({ ...args, type });
     }
@@ -104,20 +103,20 @@ export const createQuery = <S extends Schema, T = unknown>({
   if (options.runOnInit) {
     const rows = store.getTable(tableId);
 
-    // Run callbacks for all entities in the query
-    queries.forEachResultRow(queryId, (entity) => {
-      const value = TinyBaseAdapter.parse(rows[entity]) as ComponentValue<S, T>;
+    // Run callbacks for all records in the query
+    queries.forEachResultRow(queryId, ($record) => {
+      const currentProps = TinyBaseAdapter.parse(rows[$record]) as Properties<S, T>;
 
       const args = {
         tableId,
-        entity: entity as Entity,
-        value: { current: value, prev: undefined },
+        $record: $record as $Record,
+        properties: { current: currentProps, prev: undefined },
         type: "enter" as UpdateType,
       };
       onEnter?.(args);
       onChange?.(args);
 
-      previousEntities.push(entity as Entity);
+      previous$Records.push($record as $Record);
     });
   }
 
@@ -126,12 +125,12 @@ export const createQuery = <S extends Schema, T = unknown>({
   };
 };
 
-// Get accurate new and previous values, and the corresponding type of update, from the changes in a row
-export const getValueAndTypeFromRowChange = <S extends Schema, T = unknown>(
+// Get accurate new and previous properties, and the corresponding type of update, from the changes in a row
+export const getPropsAndTypeFromRowChange = <S extends Schema, T = unknown>(
   getCellChange: GetResultCellChange,
   keys: string[],
   tableId: string,
-  entity: Entity,
+  $record: $Record,
 ) => {
   let type = "change" as UpdateType;
   // Add the type information to the keys
@@ -144,7 +143,7 @@ export const getValueAndTypeFromRowChange = <S extends Schema, T = unknown>(
   // Get the old and new rows
   const { current: newRow, prev: previousRow } = keys.reduce(
     (acc, key) => {
-      const [, oldValueAtKey, newValueAtKey] = getCellChange(tableId, entity, key);
+      const [, oldValueAtKey, newValueAtKey] = getCellChange(tableId, $record, key);
       acc.current[key] = newValueAtKey as ResultRow[typeof key];
       acc.prev[key] = oldValueAtKey as ResultRow[typeof key];
 
@@ -160,13 +159,11 @@ export const getValueAndTypeFromRowChange = <S extends Schema, T = unknown>(
     type = "enter";
   }
 
-  // Parse the values
-  const newValue =
-    type === "exit" ? undefined : (TinyBaseAdapter.parse(newRow as TinyBaseFormattedType) as ComponentValue<S, T>);
-  const oldValue =
-    type === "enter"
-      ? undefined
-      : (TinyBaseAdapter.parse(previousRow as TinyBaseFormattedType) as ComponentValue<S, T>);
+  // Parse the properties
+  const newProps =
+    type === "exit" ? undefined : (TinyBaseAdapter.parse(newRow as TinyBaseFormattedType) as Properties<S, T>);
+  const prevProps =
+    type === "enter" ? undefined : (TinyBaseAdapter.parse(previousRow as TinyBaseFormattedType) as Properties<S, T>);
 
-  return { tableId, entity, value: { current: newValue, prev: oldValue }, type };
+  return { tableId, $record, properties: { current: newProps, prev: prevProps }, type };
 };

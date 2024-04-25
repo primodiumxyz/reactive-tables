@@ -4,7 +4,8 @@ export {
 } from "@/queries/templates/queryAllMatching";
 export { useAllMatching as useQuery } from "@/queries/templates/useAllMatching";
 
-export * from "@/queries/templates/queryAllWithValue";
-export * from "@/queries/templates/queryAllWithoutValue";
-export * from "@/queries/templates/useAllWithValue";
-export * from "@/queries/templates/useAllWithoutValue";
+export * from "@/queries/templates/queryAllWithProps";
+export * from "@/queries/templates/queryAllWithoutProps";
+export * from "@/queries/templates/useAllWithProps";
+export * from "@/queries/templates/useAllWithoutProps";
+export * from "@/queries/templates/types";

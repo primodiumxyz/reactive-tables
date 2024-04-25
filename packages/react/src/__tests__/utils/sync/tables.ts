@@ -1,7 +1,5 @@
-import { Type } from "@latticexyz/recs";
-
-import { createInternalComponent, createInternalNumberComponent } from "@/components/internal";
-import { Store } from "@/lib";
+import { createLocalTable, createLocalNumberTable } from "@/tables/local";
+import { Store, Type } from "@/lib";
 
 export enum SyncSourceType {
   Indexer,
@@ -15,11 +13,11 @@ export enum SyncStep {
   Live,
 }
 
-export const createInternalSyncComponents = (store: Store) => ({
-  SyncSource: createInternalNumberComponent(store, {
+export const createLocalSyncTables = (store: Store) => ({
+  SyncSource: createLocalNumberTable(store, {
     id: "SyncSource",
   }),
-  SyncStatus: createInternalComponent(
+  SyncStatus: createLocalTable(
     store,
     {
       step: Type.Number,

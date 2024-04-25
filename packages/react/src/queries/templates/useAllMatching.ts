@@ -1,37 +1,35 @@
-import { Entity, Schema } from "@latticexyz/recs";
-
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { queryAllMatching, QueryAllMatchingOptions } from "@/queries/templates/queryAllMatching";
-import { getValueAndTypeFromRowChange, TableQueryCallbacks, TableQueryUpdate, UpdateType } from "@/queries/createQuery";
-import { MUDTable, TinyBaseStore } from "@/lib";
+import { getPropsAndTypeFromRowChange, TableQueryCallbacks, TableQueryUpdate, UpdateType } from "@/queries/createQuery";
+import { ContractTableDef, $Record, Schema, TinyBaseStore } from "@/lib";
 
-// Listen to all entities matching multiple conditions across tables
+// Listen to all $records matching multiple conditions across tables
 // TODO: this will clearly need to be optimized; there are probably a few options:
-// - setup a table listener by default on each component, then when setting up a query listener let that component know so it adds this callback to its array
+// - setup a table listener by default on each table, then when setting up a query listener let that table know so it adds this callback to its array
 // - keep a single useAllMatching listening to all tables, then on change see across all actual useQuery hooks which ones need to be triggered
-// This won't be trigerred on creation for all initial matching entities, but only on change after the hook is mounted
+// This won't be trigerred on creation for all initial matching $records, but only on change after the hook is mounted
 // TODO: maybe this hook doesn't need any callback, as we already have createGlobalQuery for that?
-export const useAllMatching = <tables extends MUDTable[], S extends Schema, T = unknown>(
+export const useAllMatching = <tableDefs extends ContractTableDef[], S extends Schema, T = unknown>(
   store: TinyBaseStore,
-  options: QueryAllMatchingOptions<tables, T>,
+  options: QueryAllMatchingOptions<tableDefs, T>,
   { onChange, onEnter, onExit, onUpdate }: TableQueryCallbacks<S, T>,
-): Entity[] => {
-  const [entities, setEntities] = useState<Entity[]>([]);
-  // Create a ref for previous entities (to provide the update type in the callback)
-  const prevEntities = useRef<Entity[]>([]);
+): $Record[] => {
+  const [$records, set$Records] = useState<$Record[]>([]);
+  // Create a ref for previous records (to provide the update type in the callback)
+  const prev$Records = useRef<$Record[]>([]);
 
   // Gather ids and schemas of all table we need to listen to
   // tableId => schema keys
   const tables = useMemo(() => {
-    const { inside, notInside, with: withValues, without: withoutValues } = options;
+    const { inside, notInside, with: withProps, without: withoutProps } = options;
     const tables: Record<string, string[]> = {};
 
-    (inside ?? []).concat(notInside ?? []).forEach((component) => {
-      tables[component.id] = Object.keys(component.schema);
+    (inside ?? []).concat(notInside ?? []).forEach((table) => {
+      tables[table.id] = Object.keys(table.schema);
     });
-    (withValues ?? []).concat(withoutValues ?? []).forEach(({ component }) => {
-      tables[component.id] = Object.keys(component.schema);
+    (withProps ?? []).concat(withoutProps ?? []).forEach(({ table }) => {
+      tables[table.id] = Object.keys(table.schema);
     });
 
     return tables;
@@ -39,26 +37,26 @@ export const useAllMatching = <tables extends MUDTable[], S extends Schema, T = 
 
   useEffect(() => {
     // Initial query
-    const currEntities = queryAllMatching(store, options);
-    setEntities(currEntities);
-    prevEntities.current = currEntities;
+    const curr$Records = queryAllMatching(store, options);
+    set$Records(curr$Records);
+    prev$Records.current = curr$Records;
 
     // Listen to all tables (at each row)
-    const listenerId = store.addRowListener(null, null, (_, tableId, entityKey, getCellChange) => {
+    const listenerId = store.addRowListener(null, null, (_, tableId, $recordKey, getCellChange) => {
       if (!getCellChange) return;
-      const entity = entityKey as Entity;
+      const $record = $recordKey as $Record;
 
-      // Refetch matching entities if one of the tables included in the query changes
+      // Refetch matching $records if one of the tables included in the query changes
       if (Object.keys(tables).includes(tableId)) {
-        const newEntities = queryAllMatching(store, options);
+        const new$Records = queryAllMatching(store, options);
 
         // Figure out if it's an enter or an exit
         let type = "change" as UpdateType;
-        const inPrev = prevEntities.current.includes(entity);
-        const inCurrent = newEntities.includes(entity);
+        const inPrev = prev$Records.current.includes($record);
+        const inCurrent = new$Records.includes($record);
 
-        // Gather the previous and current values
-        const args = getValueAndTypeFromRowChange(getCellChange, tables[tableId], tableId, entity) as TableQueryUpdate<
+        // Gather the previous and current properties
+        const args = getPropsAndTypeFromRowChange(getCellChange, tables[tableId], tableId, $record) as TableQueryUpdate<
           S,
           T
         >;
@@ -77,8 +75,8 @@ export const useAllMatching = <tables extends MUDTable[], S extends Schema, T = 
         onChange?.({ ...args, type });
 
         // Update ref and state
-        setEntities(newEntities);
-        prevEntities.current = newEntities;
+        set$Records(new$Records);
+        prev$Records.current = new$Records;
       }
     });
 
@@ -87,5 +85,5 @@ export const useAllMatching = <tables extends MUDTable[], S extends Schema, T = 
     };
   }, [store /* tableIds */]); // TODO: tests get stuck with this, not sure why; but we shouldn't give some mutable options anyway afaik?
 
-  return entities;
+  return $records;
 };

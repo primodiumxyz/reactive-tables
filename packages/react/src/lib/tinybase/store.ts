@@ -19,11 +19,11 @@ export type Store = {
 const STORAGE_KEY = "TINYBASE_STATE_MANAGER_PERSISTER";
 
 export const createStore = () => {
-  // Create base store and queries object for contract and non-persistent internal components
+  // Create base store and queries object for contract and non-persistent local tables
   const store = createTinyBaseStore();
   const queries = createQueries(store);
 
-  // Same for persistent components
+  // Same for persistent tables
   // We don't want to setup the browser persister in node
   const isBrowser = typeof window !== "undefined";
   const getPersistentStore = (): PersistentStore => {

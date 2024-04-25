@@ -1,13 +1,14 @@
-import { Entity } from "@latticexyz/recs";
 import { waitForTransactionReceipt } from "viem/actions";
 import { Hex, TransactionReceipt } from "viem";
+
+import { $Record } from "@/lib";
 
 import { getMockNetworkConfig } from "@/__tests__/utils/init";
 
 const networkConfig = getMockNetworkConfig();
 
-export type ComponentNames = (typeof mockFunctionToComponent)[keyof typeof mockFunctionToComponent];
-const mockFunctionToComponent = {
+export type TableNames = (typeof mockFunctionToTable)[keyof typeof mockFunctionToTable];
+const mockFunctionToTable = {
   move: "Position",
   increment: "Counter",
   storeItems: "Inventory",
@@ -16,15 +17,15 @@ const mockFunctionToComponent = {
 // We don't want to run everything with Promise.all because it will quickly cause an issue with Viem (transaction underpriced)
 // This way it should at least reduce a bit the waiting time
 export const fuzz = async (iterations: number) => {
-  const allFunctionNames = Object.keys(mockFunctionToComponent) as Array<keyof typeof mockFunctionToComponent>;
-  const tasks: Array<{ name: ComponentNames; task: () => Promise<TransactionReceipt> }> = [];
+  const allFunctionNames = Object.keys(mockFunctionToTable) as Array<keyof typeof mockFunctionToTable>;
+  const tasks: Array<{ name: TableNames; task: () => Promise<TransactionReceipt> }> = [];
   // Remember function called - tx block number
-  const txInfo = Object.entries(mockFunctionToComponent).reduce(
+  const txInfo = Object.entries(mockFunctionToTable).reduce(
     (acc, [, comp]) => {
       acc[comp] = BigInt(0);
       return acc;
     },
-    {} as Record<ComponentNames, bigint>,
+    {} as Record<TableNames, bigint>,
   );
 
   for (let i = 0; i < iterations; i++) {
@@ -32,7 +33,7 @@ export const fuzz = async (iterations: number) => {
     const functionName = allFunctionNames[rand];
     const randomFunction = mockFunctions[functionName];
     tasks.push({
-      name: mockFunctionToComponent[functionName],
+      name: mockFunctionToTable[functionName],
       task: randomFunction,
     });
 
@@ -54,7 +55,7 @@ export const fuzz = async (iterations: number) => {
 
 // Test functions
 export const mockFunctions = {
-  // Update an entity's position
+  // Update an record's position
   move: async () => {
     const hash = await networkConfig.worldContract.write.move([random(-100, 100), random(-100, 100)], {
       chain: networkConfig.chain,
@@ -95,10 +96,10 @@ export const setItems = async (args: { items: number[]; weights: number[]; total
   return await waitForTransactionReceipt(networkConfig.publicClient, { hash });
 };
 
-// Set the position of an entity
-export const setPositionForEntity = async (args: { entity: Entity; x: number; y: number }) => {
-  const { entity, x, y } = args;
-  const hash = await networkConfig.worldContract.write.moveWithArbitraryKey([entity as Hex, x, y], {
+// Set the position of a record
+export const setPositionFor$Record = async (args: { $record: $Record; x: number; y: number }) => {
+  const { $record, x, y } = args;
+  const hash = await networkConfig.worldContract.write.moveWithArbitraryKey([$record as Hex, x, y], {
     chain: networkConfig.chain,
     account: networkConfig.burnerAccount.address,
   });

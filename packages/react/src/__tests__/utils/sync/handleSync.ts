@@ -1,9 +1,9 @@
 import { NetworkConfig } from "@/__tests__/utils/init";
 import { OnSyncCallbacks, Sync as SyncType } from "@/__tests__/utils/sync/types";
-import { SyncSourceType, SyncStep, createInternalSyncComponents } from "@/__tests__/utils/sync/components";
+import { SyncSourceType, SyncStep, createLocalSyncTables } from "@/__tests__/utils/sync/tables";
 
 export const hydrateFromIndexer = (
-  components: ReturnType<typeof createInternalSyncComponents>,
+  components: ReturnType<typeof createLocalSyncTables>,
   networkConfig: NetworkConfig,
   sync: SyncType,
   onSync: OnSyncCallbacks,
@@ -33,7 +33,7 @@ export const hydrateFromIndexer = (
 };
 
 export const hydrateFromRpc = (
-  components: ReturnType<typeof createInternalSyncComponents>,
+  components: ReturnType<typeof createLocalSyncTables>,
   sync: SyncType,
   onSync: OnSyncCallbacks,
 ) => {
@@ -75,7 +75,7 @@ export const hydrateFromRpc = (
   );
 };
 
-export const subToRpc = (components: ReturnType<typeof createInternalSyncComponents>, sync: SyncType) => {
+export const subToRpc = (components: ReturnType<typeof createLocalSyncTables>, sync: SyncType) => {
   const { SyncStatus } = components;
   sync.start(
     (_, blockNumber) => {

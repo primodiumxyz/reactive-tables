@@ -10,7 +10,6 @@ import {
   SchemaToPrimitives,
   staticDataLength,
   ValueArgs,
-  ValueSchema,
 } from "@latticexyz/protocol-parser/internal";
 import { readHex } from "@latticexyz/common";
 import {
@@ -21,45 +20,46 @@ import {
 } from "@latticexyz/schema-type/internal";
 import { Hex } from "viem";
 
-import { formatValueForTinyBase } from "@/adapter/formatValueForTinyBase";
+import { formatPropsForTinyBase } from "@/adapter/formatPropsForTinyBase";
+import { PropsSchema } from "@/tables/contract";
 
-export function decodeValueArgs<TSchema extends ValueSchema>(
-  valueSchema: TSchema,
+export function decodeValueArgs<TSchema extends PropsSchema>(
+  propsSchema: TSchema,
   { staticData, encodedLengths, dynamicData }: ValueArgs,
 ): SchemaToPrimitives<TSchema> {
   return decodeValue(
-    valueSchema,
+    propsSchema,
     concatHex([
-      readHex(staticData, 0, staticDataLength(Object.values(valueSchema).filter(isStaticAbiType))),
+      readHex(staticData, 0, staticDataLength(Object.values(propsSchema).filter(isStaticAbiType))),
       encodedLengths,
       dynamicData,
     ]),
   );
 }
 
-export function decodeValue<TSchema extends ValueSchema>(valueSchema: TSchema, data: Hex): SchemaToPrimitives<TSchema> {
-  const staticFields = Object.values(valueSchema).filter(isStaticAbiType);
-  const dynamicFields = Object.values(valueSchema).filter(isDynamicAbiType);
+export function decodeValue<TSchema extends PropsSchema>(propsSchema: TSchema, data: Hex): SchemaToPrimitives<TSchema> {
+  const staticFields = Object.values(propsSchema).filter(isStaticAbiType);
+  const dynamicFields = Object.values(propsSchema).filter(isDynamicAbiType);
 
   const valueTuple = decodeRecord({ staticFields, dynamicFields }, data);
   // Modified: encode for TinyBase
   // This will include formatted values + their types (e.g. `type__name` for `name`)
-  return formatValueForTinyBase(Object.keys(valueSchema), valueTuple) as SchemaToPrimitives<TSchema>;
+  return formatPropsForTinyBase(Object.keys(propsSchema), valueTuple) as SchemaToPrimitives<TSchema>;
 }
 
-export function decodeRecord(valueSchema: Schema, data: Hex): readonly (StaticPrimitiveType | DynamicPrimitiveType)[] {
-  const values: (StaticPrimitiveType | DynamicPrimitiveType)[] = [];
+export function decodeRecord(propsSchema: Schema, data: Hex): readonly (StaticPrimitiveType | DynamicPrimitiveType)[] {
+  const properties: (StaticPrimitiveType | DynamicPrimitiveType)[] = [];
 
   let bytesOffset = 0;
-  valueSchema.staticFields.forEach((fieldType) => {
+  propsSchema.staticFields.forEach((fieldType) => {
     const fieldByteLength = staticAbiTypeToByteLength[fieldType];
-    const value = decodeStaticField(fieldType, readHex(data, bytesOffset, bytesOffset + fieldByteLength));
+    const prop = decodeStaticField(fieldType, readHex(data, bytesOffset, bytesOffset + fieldByteLength));
     bytesOffset += fieldByteLength;
-    values.push(value);
+    properties.push(prop);
   });
 
   // Warn user if static data length doesn't match the value schema, because data corruption might be possible.
-  const schemaStaticDataLength = staticDataLength(valueSchema.staticFields);
+  const schemaStaticDataLength = staticDataLength(propsSchema.staticFields);
   const actualStaticDataLength = bytesOffset;
   if (actualStaticDataLength !== schemaStaticDataLength) {
     console.warn(
@@ -72,18 +72,18 @@ export function decodeRecord(valueSchema: Schema, data: Hex): readonly (StaticPr
     );
   }
 
-  if (valueSchema.dynamicFields.length > 0) {
+  if (propsSchema.dynamicFields.length > 0) {
     const dataLayout = hexToEncodedLengths(readHex(data, bytesOffset, bytesOffset + 32));
     bytesOffset += 32;
 
-    valueSchema.dynamicFields.forEach((fieldType, i) => {
+    propsSchema.dynamicFields.forEach((fieldType, i) => {
       const dataLength = dataLayout.fieldByteLengths[i];
       if (dataLength > 0) {
-        const value = decodeDynamicField(fieldType, readHex(data, bytesOffset, bytesOffset + dataLength));
+        const prop = decodeDynamicField(fieldType, readHex(data, bytesOffset, bytesOffset + dataLength));
         bytesOffset += dataLength;
-        values.push(value);
+        properties.push(prop);
       } else {
-        values.push(dynamicAbiTypeToDefaultValue[fieldType]);
+        properties.push(dynamicAbiTypeToDefaultValue[fieldType]);
       }
     });
 
@@ -102,5 +102,5 @@ export function decodeRecord(valueSchema: Schema, data: Hex): readonly (StaticPr
     }
   }
 
-  return values;
+  return properties;
 }

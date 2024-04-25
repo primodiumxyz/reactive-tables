@@ -1,27 +1,19 @@
 import { hexToResource, spliceHex } from "@latticexyz/common";
-import { StoreEventsAbiItem, StoreEventsAbi } from "@latticexyz/store";
-import { UnionPick } from "@latticexyz/common/type-utils";
-import { Hex, Log, size } from "viem";
+import { Hex, size } from "viem";
 import { Write } from "@primodiumxyz/sync-stack";
 
-import { TinyBaseAdapter } from "@/adapter";
-import { debug, hexKeyTupleToEntity, getValueSchema, TinyBaseStore } from "@/lib";
+import { StorageAdapterLog, TinyBaseAdapter } from "@/adapter";
+import { debug, hexKeyTupleTo$Record, getPropertiesSchema, TinyBaseStore } from "@/lib";
 
-type StoreEventsLog = Log<bigint, number, false, StoreEventsAbiItem, true, StoreEventsAbi>;
-export type StorageAdapterLog = Partial<StoreEventsLog> & UnionPick<StoreEventsLog, "address" | "eventName" | "args">;
-
-export type CustomWriter = ReturnType<typeof createCustomWriter>;
-
-// in order to store it in the table, at component creation
 export const createCustomWriter = ({ store }: { store: TinyBaseStore }) => {
   const processLog = (log: StorageAdapterLog) => {
     const { namespace, name } = hexToResource(log.args.tableId);
-    const entity = hexKeyTupleToEntity(log.args.keyTuple);
+    const $record = hexKeyTupleTo$Record(log.args.keyTuple);
 
-    // Check if there are any values registered for this component
+    // Check if there are any properties registered for this table
     const exists = store.hasTable(`table__${log.args.tableId}`);
     if (!exists) {
-      debug(`unknown component: ${log.args.tableId} (${namespace}:${name})`);
+      debug(`unknown table: ${log.args.tableId} (${namespace}:${name})`);
       return;
     }
 
@@ -30,32 +22,32 @@ export const createCustomWriter = ({ store }: { store: TinyBaseStore }) => {
       id: log.args.tableId,
       namespace,
       name,
-      // We stored the value schema for each contract component on creation for convenient access
-      valueSchema: getValueSchema(store, log.args.tableId),
+      // We stored the properties schema for each contract table on creation for convenient access
+      propsSchema: getPropertiesSchema(store, log.args.tableId),
     };
 
-    return { entity, table };
+    return { $record, table };
   };
 
   return Write.toCustom({
     /* ----------------------------------- SET ---------------------------------- */
     set: (log) => {
-      const values = processLog(log);
+      const processed = processLog(log);
 
-      if (!values) return;
-      const { entity, table } = values;
+      if (!processed) return;
+      const { $record, table } = processed;
 
-      const value = TinyBaseAdapter.decodeArgs(table.valueSchema, log.args);
+      const properties = TinyBaseAdapter.decodeArgs(table.propsSchema, log.args);
 
-      debug("setting component", {
+      debug("setting properties", {
         namespace: table.namespace,
         name: table.name,
-        entity,
-        value,
+        $record,
+        properties,
       });
 
-      store.setRow(table.id, entity, {
-        ...value,
+      store.setRow(table.id, $record, {
+        ...properties,
         __staticData: log.args.staticData,
         __encodedLengths: log.args.encodedLengths,
         __dynamicData: log.args.dynamicData,
@@ -64,65 +56,65 @@ export const createCustomWriter = ({ store }: { store: TinyBaseStore }) => {
     },
     /* --------------------------------- STATIC --------------------------------- */
     updateStatic: (log) => {
-      const values = processLog(log);
-      if (!values) return;
-      const { entity, table } = values;
+      const processed = processLog(log);
+      if (!processed) return;
+      const { $record, table } = processed;
 
-      const previousValue = store.getRow(table.id, entity);
-      const previousStaticData = (previousValue?.__staticData as Hex) ?? "0x";
+      const previousProps = store.getRow(table.id, $record);
+      const previousStaticData = (previousProps?.__staticData as Hex) ?? "0x";
       const newStaticData = spliceHex(previousStaticData, log.args.start, size(log.args.data), log.args.data);
-      const newValue = TinyBaseAdapter.decodeArgs(table.valueSchema, {
+      const newProps = TinyBaseAdapter.decodeArgs(table.propsSchema, {
         staticData: newStaticData,
-        encodedLengths: (previousValue?.__encodedLengths as Hex) ?? "0x",
-        dynamicData: (previousValue?.__dynamicData as Hex) ?? "0x",
+        encodedLengths: (previousProps?.__encodedLengths as Hex) ?? "0x",
+        dynamicData: (previousProps?.__dynamicData as Hex) ?? "0x",
       });
 
-      debug("setting component via splice static", {
+      debug("setting properties via splice static", {
         namespace: table.namespace,
         name: table.name,
-        entity,
+        $record,
         previousStaticData,
         newStaticData,
-        previousValue,
-        newValue,
+        previousProps,
+        newProps,
       });
 
-      store.setRow(table.id, entity, {
-        // We need to pass previous values to keep the encodedLengths and dynamicData (if any)
+      store.setRow(table.id, $record, {
+        // We need to pass previous properties to keep the encodedLengths and dynamicData (if any)
         // and be consistent with RECS
-        ...previousValue,
-        ...newValue,
+        ...previousProps,
+        ...newProps,
         __staticData: newStaticData,
         __lastSyncedAtBlock: log.blockNumber?.toString() ?? "unknown",
       });
     },
     /* --------------------------------- DYNAMIC -------------------------------- */
     updateDynamic: (log) => {
-      const values = processLog(log);
-      if (!values) return;
-      const { entity, table } = values;
+      const processed = processLog(log);
+      if (!processed) return;
+      const { $record, table } = processed;
 
-      const previousValue = store.getRow(table.id, entity);
-      const previousDynamicData = (previousValue?.__dynamicData as Hex) ?? "0x";
+      const previousProps = store.getRow(table.id, $record);
+      const previousDynamicData = (previousProps?.__dynamicData as Hex) ?? "0x";
       const newDynamicData = spliceHex(previousDynamicData, log.args.start, log.args.deleteCount, log.args.data);
-      const newValue = TinyBaseAdapter.decodeArgs(table.valueSchema, {
-        staticData: (previousValue?.__staticData as Hex) ?? "0x",
+      const newProps = TinyBaseAdapter.decodeArgs(table.propsSchema, {
+        staticData: (previousProps?.__staticData as Hex) ?? "0x",
         encodedLengths: log.args.encodedLengths,
         dynamicData: newDynamicData,
       });
 
-      debug("setting component via splice dynamic", {
+      debug("setting properties via splice dynamic", {
         namespace: table.namespace,
         name: table.name,
-        entity,
+        $record,
         previousDynamicData,
         newDynamicData,
-        previousValue,
-        newValue,
+        previousProps,
+        newProps,
       });
 
-      store.setRow(table.id, entity, {
-        ...newValue,
+      store.setRow(table.id, $record, {
+        ...newProps,
         __encodedLengths: log.args.encodedLengths,
         __dynamicData: newDynamicData,
         __lastSyncedAtBlock: log.blockNumber?.toString() ?? "unknown",
@@ -130,17 +122,17 @@ export const createCustomWriter = ({ store }: { store: TinyBaseStore }) => {
     },
     /* --------------------------------- DELETE --------------------------------- */
     delete: (log) => {
-      const values = processLog(log);
-      if (!values) return;
-      const { entity, table } = values;
+      const processed = processLog(log);
+      if (!processed) return;
+      const { $record, table } = processed;
 
-      debug("deleting component", {
+      debug("deleting properties", {
         namespace: table.namespace,
         name: table.name,
-        entity,
+        $record,
       });
 
-      store.delRow(table.id, entity);
+      store.delRow(table.id, $record);
     },
   });
 };

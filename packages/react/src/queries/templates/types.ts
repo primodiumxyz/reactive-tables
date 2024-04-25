@@ -1,18 +1,16 @@
-import { Entity } from "@latticexyz/recs";
-
 import { TinyBaseFormattedType } from "@/adapter";
-import { ComponentValue } from "@/components/types";
-import { AbiToSchemaPlusMetadata } from "@/components/contract/types";
-import { MUDTable, TinyBaseQueries } from "@/lib";
+import { Properties } from "@/tables";
+import { AbiToSchemaPlusMetadata } from "@/tables/contract";
+import { ContractTableDef, $Record, TinyBaseQueries } from "@/lib";
 
-export type QueryOptions<table extends MUDTable> = {
+export type QueryTableOptions<tableDef extends ContractTableDef> = {
   queries: TinyBaseQueries;
   tableId: string;
-  value: Partial<ComponentValue<AbiToSchemaPlusMetadata<table["valueSchema"]>>>;
-  formattedValue?: TinyBaseFormattedType;
+  properties: Partial<Properties<AbiToSchemaPlusMetadata<tableDef["valueSchema"]>>>;
+  formattedProps?: TinyBaseFormattedType;
 };
 
-export type QueryResult = {
+export type QueryTableResult = {
   id: string;
-  entities: Entity[];
+  $records: $Record[];
 };

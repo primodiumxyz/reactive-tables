@@ -1,6 +1,7 @@
 import { Read, Sync } from "@primodiumxyz/sync-stack";
 
 import { createStorageAdapter } from "@/adapter";
+
 import {
   CreateSyncOptions,
   CreateIndexerSyncOptions,
@@ -15,16 +16,16 @@ import { hydrateFromIndexer, hydrateFromRpc, subToRpc } from "@/__tests__/utils/
 /* -------------------------------------------------------------------------- */
 
 export const createSync = ({
-  components,
+  registry,
   store,
-  tables,
+  tableDefs,
   networkConfig,
   onSync,
 }: CreateSyncOptions): CreateSyncResult => {
   const { complete: onComplete } = onSync;
   const { publicClient, indexerUrl, initialBlockNumber } = networkConfig;
 
-  const logFilters = Object.values(tables).map((table) => ({ tableId: table.tableId as string }));
+  const logFilters = Object.values(tableDefs).map((table) => ({ tableId: table.tableId as string }));
 
   const unsubs: (() => void)[] = [];
   const startSync = () => {
@@ -33,7 +34,7 @@ export const createSync = ({
       const sync = createIndexerSync({ store, networkConfig, logFilters });
       unsubs.push(sync.unsubscribe);
 
-      hydrateFromIndexer(components, networkConfig, sync, {
+      hydrateFromIndexer(registry, networkConfig, sync, {
         ...onSync,
         // When it's complete, sync remaining blocks from RPC
         complete: async (lastBlock) => startRpcSync(lastBlock),
@@ -62,12 +63,12 @@ export const createSync = ({
     unsubs.push(rpcSync.historical.unsubscribe);
     unsubs.push(rpcSync.live.unsubscribe);
 
-    hydrateFromRpc(components, rpcSync.historical, {
+    hydrateFromRpc(registry, rpcSync.historical, {
       ...onSync,
       // Once historical sync is complete, subscribe to new blocks
       complete: (blockNumber) => {
         onComplete(blockNumber);
-        subToRpc(components, rpcSync.live);
+        subToRpc(registry, rpcSync.live);
       },
     });
   };

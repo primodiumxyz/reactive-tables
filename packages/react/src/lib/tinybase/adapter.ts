@@ -1,18 +1,18 @@
-import { ValueSchema } from "@latticexyz/protocol-parser/internal";
 import { Hex } from "viem";
 
+import { PropsSchema } from "@/tables/contract";
 import { TinyBaseStore } from "@/lib";
 
-// Utility to store a value schema and access it efficiently in the storage adapter
-export const storeValueSchema = (store: TinyBaseStore, tableId: Hex, valueSchema: ValueSchema) => {
+// Utility to store a properties schema and access it efficiently in the storage adapter
+export const storePropertiesSchema = (store: TinyBaseStore, tableId: Hex, propsSchema: PropsSchema) => {
   store.setTable(`table__${tableId}`, {
-    valueSchema: valueSchema,
+    propsSchema,
   });
 };
 
-export const getValueSchema = (store: TinyBaseStore, tableId: Hex): ValueSchema => {
-  const row = store.getRow(`table__${tableId}`, "valueSchema");
+export const getPropertiesSchema = (store: TinyBaseStore, tableId: Hex): PropsSchema => {
+  const row = store.getRow(`table__${tableId}`, "propsSchema");
   if (Object.keys(row).length === 0) throw new Error(`Table with id ${tableId} is empty`);
 
-  return row as ValueSchema;
+  return row as PropsSchema;
 };

@@ -1,4 +1,4 @@
-import { Entity } from "@latticexyz/recs";
+import { $Record } from "@/lib";
 
 /**
  * Type enum is used to specify value types to be able to access type values in JavaScript in addition to TypeScript type checks.
@@ -18,17 +18,17 @@ export enum Type {
   OptionalBigIntArray,
   StringArray,
   OptionalStringArray,
-  Entity,
-  OptionalEntity,
-  EntityArray,
-  OptionalEntityArray,
+  $Record,
+  Optional$Record,
+  $RecordArray,
+  Optional$RecordArray,
   T,
   OptionalT,
 }
 
 /**
- * Used to define the schema of a {@link ContractTable} or {@link InternalTable}.
- * Uses {@link Type} enum to be able to access the component type in JavaScript as well as have TypeScript type checks.
+ * Used to define the schema of a {@link ContractTable} or {@link LocalTable}.
+ * Uses {@link Type} enum to be able to access the tables type in JavaScript as well as have TypeScript type checks.
  * @see MUD
  */
 export type Schema = {
@@ -39,7 +39,7 @@ export type Schema = {
  * Mapping between JavaScript {@link Type} enum and corresponding TypeScript type.
  * @see MUD
  */
-export type ValueType<T = unknown> = {
+export type PropsType<T = unknown> = {
   [Type.Boolean]: boolean;
   [Type.Number]: number;
   [Type.BigInt]: bigint;
@@ -47,16 +47,16 @@ export type ValueType<T = unknown> = {
   [Type.NumberArray]: number[];
   [Type.BigIntArray]: bigint[];
   [Type.StringArray]: string[];
-  [Type.Entity]: Entity;
-  [Type.EntityArray]: Entity[];
+  [Type.$Record]: $Record;
+  [Type.$RecordArray]: $Record[];
   [Type.OptionalNumber]: number | undefined;
   [Type.OptionalBigInt]: bigint | undefined;
   [Type.OptionalBigIntArray]: bigint[] | undefined;
   [Type.OptionalString]: string | undefined;
   [Type.OptionalNumberArray]: number[] | undefined;
   [Type.OptionalStringArray]: string[] | undefined;
-  [Type.OptionalEntity]: Entity | undefined;
-  [Type.OptionalEntityArray]: Entity[] | undefined;
+  [Type.Optional$Record]: $Record | undefined;
+  [Type.Optional$RecordArray]: $Record[] | undefined;
   [Type.T]: T;
   [Type.OptionalT]: T | undefined;
 };
