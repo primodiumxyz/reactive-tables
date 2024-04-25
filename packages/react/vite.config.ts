@@ -8,6 +8,7 @@ export default defineConfig({
     testTimeout: 50000,
     pool: "forks",
     hookTimeout: 20000,
+    hideSkippedTests: true,
   },
   resolve: {
     alias: [{ find: "@", replacement: resolve(__dirname, "src") }],

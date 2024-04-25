@@ -161,7 +161,7 @@ describe("Wrapper", () => {
     expect(storageAdapter).toBeDefined();
   });
 
-  it.only("should be able to create components from internal tables passed during initialization", async () => {
+  it("should be able to create components from internal tables passed during initialization", async () => {
     // Initialize wrapper
     const { store } = createWrapper({
       mudConfig: mockConfig,
@@ -932,7 +932,9 @@ describe("Wrapper", () => {
       ).toEqual([A]);
     });
 
-    it.skip("createGlobalQuery(), useQuery() (useQueryAllMatching)", async () => {
+    // TODO: fix this very weird case where assigning `synced` makes it hang forever in `waitForSyncLive`
+    // When removing it, the while loop works, but whenever `synced` is assigned inside the loop, it hangs right at the `await wait(1000)`
+    it.todo("createGlobalQuery(), useQuery() (useQueryAllMatching)", async () => {
       const { components, store, entities, onChange, aggregator } = await preTest();
       const [player, A, B, C] = entities;
       const emptyData = {
