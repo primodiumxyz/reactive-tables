@@ -1,10 +1,17 @@
-import { Store as StoreConfig } from "@latticexyz/store";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { resolveConfig } from "@latticexyz/store/internal";
 
 import { ContractTables, createRegistry } from "@/tables/contract";
 import { StorageAdapter, createStorageAdapter } from "@/adapter";
-import { AllTableDefs, createStore, ContractTableDefs, Store, storeTableDefs, worldTableDefs } from "@/lib";
+import {
+  AllTableDefs,
+  createStore,
+  ContractTableDefs,
+  Store,
+  StoreConfig,
+  storeTableDefs,
+  worldTableDefs,
+} from "@/lib";
 
 /**
  * Defines the options for creating a TinyBase wrapper.

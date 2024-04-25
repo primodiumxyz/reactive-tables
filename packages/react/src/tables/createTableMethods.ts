@@ -191,7 +191,8 @@ export const createTableMethods = <
 
   /* --------------------------------- SYSTEM --------------------------------- */
   // Create a query tied to this table, with callbacks on change, enter & exit from the query conditions
-  const createQuery = (options: Omit<CreateQueryWrapperOptions<S, T>, "queries" | "tableId" | "schema">) => {
+  // or if no query, on any change in the table
+  const watch = (options: Omit<CreateQueryWrapperOptions<S, T>, "queries" | "tableId" | "schema">) => {
     // Add a `select` on top of the query to abstract selecting at least a cell from the properties => selecting all $records
     // This is required with TinyQL to at least select a cell so it considers all rows
     const query: CreateQueryWrapperOptions<S, T>["query"] = options.query
@@ -224,7 +225,7 @@ export const createTableMethods = <
     has,
     pauseUpdates,
     resumeUpdates,
-    createQuery,
+    watch,
   };
 
   // Add hooks only if not in a node environment

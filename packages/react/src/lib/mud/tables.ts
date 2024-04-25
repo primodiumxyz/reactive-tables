@@ -3,7 +3,7 @@ import { ResolvedStoreConfig, resolveConfig } from "@latticexyz/store/config";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 
 import { Table as ContractTableDef, Tables as ContractTableDefs } from "@latticexyz/store/internal";
-export { ContractTableDefs, ContractTableDef };
+export { ContractTableDefs, ContractTableDef, StoreConfig };
 
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -35,3 +35,21 @@ export type AllTableDefs<config extends StoreConfig, extraTableDefs extends Cont
   (extraTableDefs extends ContractTableDefs ? extraTableDefs : Record<string, never>) &
   typeof storeTableDefs &
   typeof worldTableDefs;
+
+/**
+ * Utility function to map a source object to an object with the same keys but mapped values
+ * @param source Source object to be mapped
+ * @param valueMap Mapping values of the source object to values of the target object
+ * @returns An object with the same keys as the source object but mapped values
+ * @from @latticexyz/utils
+ */
+export function mapObject<S extends { [key: string]: unknown }, T extends { [key in keyof S]: unknown }>(
+  source: S,
+  valueMap: (value: S[keyof S], key: keyof S) => T[keyof S],
+): T {
+  const target: Partial<{ [key in keyof typeof source]: T[keyof S] }> = {};
+  for (const key in source) {
+    target[key] = valueMap(source[key], key);
+  }
+  return target as T;
+}

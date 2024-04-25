@@ -78,7 +78,7 @@ export type ContractTableMethods<VS extends Schema, T = unknown> = OriginalTable
   pauseUpdates: ($record?: $Record, properties?: Properties<VS, T>) => void;
   resumeUpdates: ($record?: $Record) => void;
 
-  createQuery: (options: Omit<CreateQueryWrapperOptions<VS, T>, "queries" | "tableId" | "schema">) => CreateQueryResult;
+  watch: (options: Omit<CreateQueryWrapperOptions<VS, T>, "queries" | "tableId" | "schema">) => CreateQueryResult;
 };
 
 export type ContractTableWithKeysMethods<VS extends Schema, KS extends Schema, T = unknown> = {

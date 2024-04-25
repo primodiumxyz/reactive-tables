@@ -1,9 +1,6 @@
-import { Store as StoreConfig } from "@latticexyz/store";
-import { mapObject } from "@latticexyz/utils";
-
 import { createTableMethods } from "@/tables/createTableMethods";
 import { createMetadata } from "@/tables/contract/createMetadata";
-import { ContractTableDefs, storePropertiesSchema } from "@/lib";
+import { ContractTableDefs, StoreConfig, mapObject, storePropertiesSchema } from "@/lib";
 import { CreateContractTablesOptions } from "@/tables/types";
 import { ContractTables } from "@/tables/contract/types";
 

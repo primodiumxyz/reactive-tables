@@ -10,10 +10,21 @@ import { storeToV1 } from "@latticexyz/store/config/v2";
 import { padHex, toHex } from "viem";
 
 // src
-import { ContractTable, createGlobalQuery, createWrapper, useQuery } from "@/index";
-import { createLocalTable, createLocalCoordTable } from "@/tables/local";
-import { TableQueryUpdate, query } from "@/queries";
-import { ContractTableDef, $Record, Type, empty$Record } from "@/lib";
+import {
+  ContractTable,
+  ContractTableDef,
+  createGlobalQuery,
+  createLocalTable,
+  createLocalCoordTable,
+  createWrapper,
+  empty$Record,
+  query,
+  $Record,
+  PropType,
+  TableWatchUpdate,
+  useQuery,
+} from "@/index";
+
 // mocks
 import {
   TableNames,
@@ -32,7 +43,6 @@ const FUZZ_ITERATIONS = 20;
 
 type TestOptions = {
   useIndexer?: boolean;
-  startSync?: boolean;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -152,7 +162,7 @@ describe("Wrapper", () => {
   /* -------------------------------------------------------------------------- */
 
   it("should properly initialize and return expected objects", async () => {
-    const { registry, tableDefs, store, storageAdapter } = await init({ startSync: false });
+    const { registry, tableDefs, store, storageAdapter } = await init();
 
     // Verify the existence of the result
     expect(registry).toBeDefined();
@@ -169,9 +179,9 @@ describe("Wrapper", () => {
 
     const registry = {
       A: createLocalCoordTable(store, { id: "A" }),
-      B: createLocalTable(store, { bool: Type.Boolean, array: Type.$RecordArray }),
+      B: createLocalTable(store, { bool: PropType.Boolean, array: PropType.$RecordArray }),
       // with default properties
-      C: createLocalTable(store, { value: Type.Number }, { id: "C" }, { value: 10 }),
+      C: createLocalTable(store, { value: PropType.Number }, { id: "C" }, { value: 10 }),
     };
 
     registry.A.set({ x: 1, y: 1 });
@@ -742,7 +752,7 @@ describe("Wrapper", () => {
       await waitForSyncLive();
 
       // Aggregate updates triggered by the system on table changes
-      const aggregator: TableQueryUpdate<typeof registry.Position.schema | typeof registry.Inventory.schema>[] = [];
+      const aggregator: TableWatchUpdate<typeof registry.Position.schema | typeof registry.Inventory.schema>[] = [];
       const onChange = (update: (typeof aggregator)[number]) => aggregator.push(update);
 
       return { registry, store, $records, onChange, aggregator };
@@ -752,7 +762,7 @@ describe("Wrapper", () => {
       const { registry, $records, onChange, aggregator } = await preTest();
       const tableId = registry.Position.id;
 
-      const { unsubscribe } = registry.Position.createQuery({
+      const { unsubscribe } = registry.Position.watch({
         onChange,
         options: { runOnInit: false },
       });
@@ -808,7 +818,7 @@ describe("Wrapper", () => {
       // Enter $records
       await Promise.all($records.map(async ($record) => await updatePosition(registry.Position, $record)));
 
-      const { unsubscribe } = registry.Position.createQuery({
+      const { unsubscribe } = registry.Position.watch({
         onChange,
         options: { runOnInit: true },
       });
@@ -822,7 +832,7 @@ describe("Wrapper", () => {
       const tableId = registry.Position.id;
       const matchQuery = (x: number) => x > 5 && x < 15;
 
-      const { unsubscribe } = registry.Position.createQuery({
+      const { unsubscribe } = registry.Position.watch({
         onChange,
         options: { runOnInit: false },
         query: ({ where }) => {
@@ -968,7 +978,7 @@ describe("Wrapper", () => {
       };
 
       // We need another aggregator for the global query
-      const globalAggregator: TableQueryUpdate<typeof registry.Position.schema | typeof registry.Inventory.schema>[] =
+      const globalAggregator: TableWatchUpdate<typeof registry.Position.schema | typeof registry.Inventory.schema>[] =
         [];
       const globalOnChange = (update: (typeof globalAggregator)[number]) => globalAggregator.push(update);
 

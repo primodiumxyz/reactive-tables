@@ -1,7 +1,7 @@
 import { DecodedTinyBaseType, TinyBaseFormattedType } from "@/adapter";
-import { encodedDataKeys } from "@/lib";
+import { metadataProperties } from "@/lib";
 
-const ignoreKey = (key: string) => encodedDataKeys.includes(key) || key.startsWith("type__");
+const ignoreKey = (key: string) => metadataProperties.includes(key) || key.startsWith("type__");
 
 export const decodePropsFromTinyBase = (formattedProps: TinyBaseFormattedType): DecodedTinyBaseType => {
   if (Object.keys(formattedProps).length === 0) return undefined;
@@ -36,7 +36,7 @@ export const decodePropsFromTinyBase = (formattedProps: TinyBaseFormattedType): 
     }
 
     // Write encoded data
-    encodedDataKeys.forEach((encodedKey) => {
+    metadataProperties.forEach((encodedKey) => {
       decodedProps[encodedKey] = formattedProps[encodedKey];
     });
 

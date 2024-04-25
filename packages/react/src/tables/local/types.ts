@@ -45,5 +45,5 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
   pauseUpdates: ($record?: $Record, properties?: Properties<S, T>) => void;
   resumeUpdates: ($record?: $Record) => void;
 
-  createQuery: (options: Omit<CreateQueryWrapperOptions<S, T>, "queries" | "tableId" | "schema">) => CreateQueryResult;
+  watch: (options: Omit<CreateQueryWrapperOptions<S, T>, "queries" | "tableId" | "schema">) => CreateQueryResult;
 };

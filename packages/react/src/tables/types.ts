@@ -1,4 +1,3 @@
-import { Store as StoreConfig } from "@latticexyz/store";
 import { Hex } from "viem";
 
 import { ContractTableMetadata } from "@/tables/contract";
@@ -12,6 +11,7 @@ import {
   TinyBaseQueries,
   TinyBaseStore,
   PropsType,
+  StoreConfig,
 } from "@/lib";
 
 export type CreateContractTablesOptions<config extends StoreConfig, extraTableDefs extends ContractTableDefs> = {

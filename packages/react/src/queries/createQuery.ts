@@ -1,7 +1,7 @@
 import { GetResultCellChange } from "tinybase/queries";
 
 import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
-import { encodedDataKeys, internalKeys, $Record, Schema, TinyBaseQueries } from "@/lib";
+import { metadataProperties, localProperties, $Record, Schema, TinyBaseQueries } from "@/lib";
 import { Properties } from "@/tables";
 
 /* ---------------------------------- TYPES --------------------------------- */
@@ -135,10 +135,10 @@ export const getPropsAndTypeFromRowChange = <S extends Schema, T = unknown>(
   let type = "change" as UpdateType;
   // Add the type information to the keys
   keys = keys
-    .map((key) => (encodedDataKeys.includes(key) ? key : [key, `type__${key}`]))
+    .map((key) => (metadataProperties.includes(key) ? key : [key, `type__${key}`]))
     .flat()
     // Add any internal keys (utilities)
-    .concat(internalKeys);
+    .concat(localProperties);
 
   // Get the old and new rows
   const { current: newRow, prev: previousRow } = keys.reduce(
