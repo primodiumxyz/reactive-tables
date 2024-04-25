@@ -38,6 +38,7 @@ export type AllTableDefs<config extends StoreConfig, extraTableDefs extends Cont
 
 /**
  * Utility function to map a source object to an object with the same keys but mapped values
+ *
  * @param source Source object to be mapped
  * @param valueMap Mapping values of the source object to values of the target object
  * @returns An object with the same keys as the source object but mapped values

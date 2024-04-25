@@ -13,8 +13,13 @@ import {
   worldTableDefs,
 } from "@/lib";
 
+// (jsdocs)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { createLocalTable } from "@/tables/local";
+
 /**
  * Defines the options for creating a TinyBase wrapper.
+ *
  * @template config The type of the configuration object specifying tables definitions for contracts codegen.
  * @template extraTableDefs The types of any additional custom definitions to generate tables for.
  * @param mudConfig The actual MUD configuration, usually retrieved for the contracts package.
@@ -29,6 +34,7 @@ export type WrapperOptions<config extends StoreConfig, extraTableDefs extends Co
  * The result of going through the TinyBase wrapper creation process.
  *
  * The registry is the main entry point to all kind of data retrieval and manipulation.
+ *
  * @template config The type of the configuration object specifying tables definitions for contracts codegen.
  * @template tableDefs The types of the definitions used for generating tables.
  * @param registry The tables generated from all definitions (see {@link createRegistry}).
@@ -54,6 +60,11 @@ export type WrapperResult<config extends StoreConfig, tableDefs extends Contract
  * - creating and reacting to queries, both in TinyBase queries and RECS-like formats.
  *
  * This is the main entry point into the library.
+ *
+ * Note: if the wrapper is used in a browser environment, and you intend to use persistent tables, you MUST wait for the
+ * sync with local storage to be started; otherwise, there will be inconsistencies with properties from the last and current sessions.
+ * See the example in the {@link createLocalTable} function for more information.
+ *
  * @param options The {@link WrapperOptions} object specifying the MUD configuration and custom definitions.
  * @returns A {@link WrapperResult} object containing the tables, definitions, store, queries instance, and storage adapter.
  * @example
