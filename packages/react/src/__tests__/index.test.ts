@@ -161,7 +161,7 @@ describe("Wrapper", () => {
     expect(storageAdapter).toBeDefined();
   });
 
-  it("should be able to create components from internal tables passed during initialization", async () => {
+  it.only("should be able to create components from internal tables passed during initialization", async () => {
     // Initialize wrapper
     const { store } = createWrapper({
       mudConfig: mockConfig,
@@ -170,6 +170,8 @@ describe("Wrapper", () => {
     const components = {
       A: createInternalCoordComponent(store, { id: "A" }),
       B: createInternalComponent(store, { bool: Type.Boolean, array: Type.EntityArray }),
+      // with a default value
+      C: createInternalComponent(store, { value: Type.Number }, { id: "C" }, { value: 10 }),
     };
 
     components.A.set({ x: 1, y: 1 });
@@ -179,6 +181,7 @@ describe("Wrapper", () => {
     expect(components.A.get()).toHaveProperty("y", 1);
     expect(components.B.get()).toHaveProperty("bool", true);
     expect(components.B.get()).toHaveProperty("array", [singletonEntity]);
+    expect(components.C.get()).toHaveProperty("value", 10);
   });
 
   /* -------------------------------------------------------------------------- */

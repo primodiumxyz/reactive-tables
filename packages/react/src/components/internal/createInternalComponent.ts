@@ -3,6 +3,7 @@ import { uuid } from "@latticexyz/utils";
 import { keccak256, toHex } from "viem";
 
 import { createComponentMethods } from "@/components/createComponentMethods";
+import { ComponentValue } from "@/components/types";
 import { InternalTable, InternalTableMetadata } from "@/components/internal/types";
 import { Store } from "@/lib";
 
@@ -20,6 +21,7 @@ export const createInternalComponent = <S extends Schema, M extends Metadata, T 
   store: Store,
   schema: S,
   options?: CreateInternalComponentOptions<M>,
+  defaultValue?: ComponentValue<S, T>,
 ): InternalTable<S, M, InternalTableMetadata<S, M>, T> => {
   const { id } = options ?? { id: uuid() };
   // Get the appropriate store instance
@@ -33,7 +35,7 @@ export const createInternalComponent = <S extends Schema, M extends Metadata, T 
     schema,
   } as InternalTableMetadata<S, M>;
 
-  return {
+  const component = {
     // Table data
     id: metadata.tableId,
     schema,
@@ -45,6 +47,17 @@ export const createInternalComponent = <S extends Schema, M extends Metadata, T 
     // Methods
     ...createComponentMethods({ store: storeInstance, queries: storeInstance.getQueries(), metadata }),
   } as unknown as InternalTable<S, M, typeof metadata, T>;
+
+  // Set the default value if provided; if the store is persistent, find out first if there is not already a value
+  // from a previous session
+  if (defaultValue) {
+    const value = options?.persist ? component.get() : undefined;
+    if (value === undefined) {
+      component.set(defaultValue);
+    }
+  }
+
+  return component;
 };
 
 // Modified from primodium
