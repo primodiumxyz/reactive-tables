@@ -1,8 +1,17 @@
 import { $Record } from "@/lib";
 
+// (jsdocs)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { ContractTable } from "@/tables/contract";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { LocalTable } from "@/tables/local";
+
 /**
- * Type enum is used to specify value types to be able to access type values in JavaScript in addition to TypeScript type checks.
- * @see MUD
+ * Used to specify the types for properties, and infer their TypeScript type.
+ *
+ * Note: This is modified from RECS.
+ *
+ * @category Tables
  */
 export enum Type {
   Boolean,
@@ -27,17 +36,20 @@ export enum Type {
 }
 
 /**
- * Used to define the schema of a {@link ContractTable} or {@link LocalTable}.
- * Uses {@link Type} enum to be able to access the tables type in JavaScript as well as have TypeScript type checks.
- * @see MUD
+ * Defines the schema of a properties record inside a {@link ContractTable} or {@link LocalTable}.
+ *
+ * It uses a {@link Type} enum to be able to infer the TypeScript type of each property.
+ *
+ * @category Tables
  */
 export type Schema = {
   [key: string]: Type;
 };
 
 /**
- * Mapping between JavaScript {@link Type} enum and corresponding TypeScript type.
- * @see MUD
+ * Defines a mapping between JavaScript {@link Type} enums and their corresponding TypeScript types.
+ *
+ * @category Tables
  */
 export type PropsType<T = unknown> = {
   [Type.Boolean]: boolean;
@@ -61,7 +73,11 @@ export type PropsType<T = unknown> = {
   [Type.OptionalT]: T | undefined;
 };
 
-// Add arbitrary metadata to the table
+/**
+ * Defines any additional metadata that can be attached to a {@link ContractTable} or {@link LocalTable}.
+ *
+ * @category Tables
+ */
 export type Metadata =
   | {
       [key: string]: unknown;

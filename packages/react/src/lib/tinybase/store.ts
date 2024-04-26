@@ -3,21 +3,50 @@ import { createStore as createTinyBaseStore, Store as TinyBaseStore } from "tiny
 import { createLocalPersister } from "tinybase/persisters/persister-browser";
 export { TinyBaseStore, TinyBaseQueries }; // for more explicit types
 
+/**
+ * Defines a native non-persistent TinyBase store, appended with its associated queries object.
+ *
+ * @category Tables
+ */
 type BaseStore = TinyBaseStore & {
   getQueries: () => TinyBaseQueries;
 };
+
+/**
+ * Defines a persistent TinyBase store, appended with its associated queries object, and additional methods to dispose of
+ * the synchronization with the local storage and to check if the sync is ready.
+ *
+ * @category Tables
+ */
 type PersistentStore = BaseStore & {
   dispose: () => void;
   ready: Promise<boolean>;
 };
 
+/**
+ * Defines a function that returns a TinyBase store, either a base store or a persistent store.
+ *
+ * Note: The persistent store is only available on the browser.
+ *
+ * Note: The persistent store can be used for storing properties inside a local table.
+ *
+ * @category Tables
+ */
 export type Store = {
   (): BaseStore;
   (key: "PERSIST"): PersistentStore;
 };
 
+// The local storage key for the persistent store's data
 const STORAGE_KEY = "TINYBASE_STATE_MANAGER_PERSISTER";
 
+/**
+ * Creates a function that returns a TinyBase store, either a base store or a persistent store.
+ *
+ * @returns The {@link Store} function.
+ * @see {@link BaseStore} and {@link PersistentStore} for additional methods.
+ * @category Tables
+ */
 export const createStore = () => {
   // Create base store and queries object for contract and non-persistent local tables
   const store = createTinyBaseStore();

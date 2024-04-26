@@ -6,3 +6,8 @@ export const error = createDebug("primodium:tiny-base-wrapper");
 debug.log = console.debug.bind(console);
 // Pipe error output to stderr
 error.log = console.error.bind(console);
+
+if (process.env.DEBUG) {
+  debug.enabled = true;
+  error.enabled = true;
+}

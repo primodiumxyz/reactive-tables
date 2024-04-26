@@ -31,8 +31,8 @@ export const default$Record = hexKeyTupleTo$Record([]);
  *
  * Note: This is used when decoding a log inside the storage adapter to get the concerned record.
  *
- * @param hexKeyTuple - Tuple of hex keys
- * @returns A single record
+ * @param hexKeyTuple - Tuple of hex keys.
+ * @returns A single record.
  *
  * @category Record
  */
@@ -43,8 +43,8 @@ export function hexKeyTupleTo$Record(hexKeyTuple: readonly Hex[]): $Record {
 /**
  * Convert a record into a tuple of hex keys.
  *
- * @param $record - A single record
- * @returns Tuple of hex keys
+ * @param $record - A single record.
+ * @returns Tuple of hex keys.
  *
  * @category Record
  */
@@ -114,8 +114,8 @@ export const decode$Record = <TKeySchema extends KeySchema>(
  * Note: This is used for providing an iterator for all records inside a table, and provide a similar
  * API to the one provided by RECS (entities iterator).
  *
- * @param array - Any array
- * @returns An iterable iterator
+ * @param array - Any array.
+ * @returns An iterable iterator.
  * @category Record
  */
 export const arrayToIterator = <T>(array: T[]): IterableIterator<T> => {
