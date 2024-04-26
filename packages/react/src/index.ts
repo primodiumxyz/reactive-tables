@@ -11,7 +11,7 @@ export * from "@/tables/local/createLocalTable";
 export { createQuery, query, useQuery } from "@/queries";
 
 /* -------------------------------- CONSTANTS ------------------------------- */
-export { empty$Record, localProperties, metadataProperties } from "@/lib";
+export { default$Record, localProperties, metadataProperties } from "@/lib";
 
 /* --------------------------------- TYPES --------------------------------- */
 export type {

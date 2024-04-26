@@ -1,17 +1,53 @@
 import { SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
 import { concatHex, decodeAbiParameters, encodeAbiParameters, Hex, isHex, size, sliceHex } from "viem";
 
-import { Properties } from "@/tables";
 import { KeySchema } from "@/tables/contract";
-import { Schema } from "@/lib/mud/types";
 
-export type $Record = string & { readonly __opaque__: "$Record" };
+// (jsdocs)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { createTableKeyMethods } from "@/tables/contract";
 
-export const empty$Record = hexKeyTupleTo$Record([]);
+/**
+ * A record is a string that represents a tuple of hex keys, to identify a row in a table.
+ *
+ * Note: Replaces RECS Entity.
+ *
+ * @category Record
+ */
+// TODO(review): This was a string before, but shouldn't it be a hex string?
+export type $Record = Hex & { readonly __opaque__: "$Record" };
+
+/**
+ * A singleton $Record associated with a table including a single row.
+ *
+ * Note: Replaces RECS singletonEntity.
+ *
+ * @category Record
+ */
+export const default$Record = hexKeyTupleTo$Record([]);
+
+/**
+ * Concatenate a tuple of hex keys into a single record.
+ *
+ * Note: This is used when decoding a log inside the storage adapter to get the concerned record.
+ *
+ * @param hexKeyTuple - Tuple of hex keys
+ * @returns A single record
+ *
+ * @category Record
+ */
 export function hexKeyTupleTo$Record(hexKeyTuple: readonly Hex[]): $Record {
   return concatHex(hexKeyTuple as Hex[]) as $Record;
 }
 
+/**
+ * Convert a record into a tuple of hex keys.
+ *
+ * @param $record - A single record
+ * @returns Tuple of hex keys
+ *
+ * @category Record
+ */
 export function $recordToHexKeyTuple($record: $Record): readonly Hex[] {
   if (!isHex($record)) {
     throw new Error(`$record ${$record} is not a hex string`);
@@ -23,9 +59,17 @@ export function $recordToHexKeyTuple($record: $Record): readonly Hex[] {
   return new Array(length / 32).fill(0).map((_, index) => sliceHex($record, index * 32, (index + 1) * 32));
 }
 
-export const encode$Record = <S extends Schema, TKeySchema extends KeySchema>(
+/**
+ * Concatenate a tuple of hex keys into a single record, after encoding them into hex strings.
+ *
+ * Note: This is especially useful when trying to retrieve a record using its separate key properties, as it is done in the table key
+ * methods attached to contract tables (see {@link createTableKeyMethods}).
+ *
+ * @category Record
+ */
+export const encode$Record = <TKeySchema extends KeySchema>(
   keySchema: TKeySchema,
-  keys: Properties<S>,
+  keys: SchemaToPrimitives<TKeySchema>,
 ) => {
   if (Object.keys(keySchema).length !== Object.keys(keys).length) {
     throw new Error(
@@ -34,11 +78,17 @@ export const encode$Record = <S extends Schema, TKeySchema extends KeySchema>(
   }
 
   return hexKeyTupleTo$Record(
-    // TODO: handle this type, let the compiler know that we won't pass a string (as not expected from the possible types)
     Object.entries(keySchema).map(([keyName, type]) => encodeAbiParameters([{ type }], [keys[keyName]])),
   );
 };
 
+/**
+ * Decode a record into a tuple of hex keys, after decoding them from hex strings.
+ *
+ * Note: This is useful for retrieving the values of each separate key property from a record, using its schema and actual record string.
+ *
+ * @category Record
+ */
 export const decode$Record = <TKeySchema extends KeySchema>(
   keySchema: TKeySchema,
   $record: $Record,
@@ -58,6 +108,16 @@ export const decode$Record = <TKeySchema extends KeySchema>(
   ) as SchemaToPrimitives<TKeySchema>;
 };
 
+/**
+ * Convert an array into an iterable iterator.
+ *
+ * Note: This is used for providing an iterator for all records inside a table, and provide a similar
+ * API to the one provided by RECS (entities iterator).
+ *
+ * @param array - Any array
+ * @returns An iterable iterator
+ * @category Record
+ */
 export const arrayToIterator = <T>(array: T[]): IterableIterator<T> => {
   let i = 0;
 

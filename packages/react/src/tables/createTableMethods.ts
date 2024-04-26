@@ -13,7 +13,7 @@ import { createTableKeyMethods } from "@/tables/contract";
 import { ContractTableMetadata } from "@/tables/contract/types";
 import { LocalTableMetadata } from "@/tables/local/types";
 import { Properties, PropertiesSansMetadata, CreateTableMethodsOptions } from "@/tables/types";
-import { arrayToIterator, createTableMethodsUtils, Metadata, $Record, Schema, empty$Record } from "@/lib";
+import { arrayToIterator, createTableMethodsUtils, Metadata, $Record, Schema, default$Record } from "@/lib";
 
 const inContractTableMetadata = <S extends Schema, M extends Metadata>(
   metadata: LocalTableMetadata<S, M> | ContractTableMetadata<S, M>,
@@ -38,7 +38,7 @@ export const createTableMethods = <
   /* --------------------------------- STREAMS -------------------------------- */
   // Pause updates for an record (don't react to changes in the store)
   const pauseUpdates = ($record?: $Record, properties?: Properties<S, T>) => {
-    $record = $record ?? empty$Record;
+    $record = $record ?? default$Record;
 
     paused.set($record, true);
     if (properties) set(properties, $record);
@@ -46,7 +46,7 @@ export const createTableMethods = <
 
   // Enable updates for an record (react to changes in the store, e.g. useproperties)
   const resumeUpdates = ($record?: $Record) => {
-    $record = $record ?? empty$Record;
+    $record = $record ?? default$Record;
 
     if (!paused.get($record)) return;
     paused.set($record, false);
@@ -54,7 +54,7 @@ export const createTableMethods = <
 
   /* ----------------------------------- SET ---------------------------------- */
   const set = (properties: Properties<S, T>, $record?: $Record) => {
-    $record = $record ?? empty$Record;
+    $record = $record ?? default$Record;
 
     // Encode the properties and set them in the store
     const formattedProps = TinyBaseAdapter.encode(properties as Record<string, Primitive>);
@@ -63,7 +63,7 @@ export const createTableMethods = <
 
   // Utility function to save on computation when we want to set the formatted data directly
   const setRaw = (properties: TinyBaseFormattedType, $record: $Record) => {
-    $record = $record ?? empty$Record;
+    $record = $record ?? default$Record;
     store.setRow(tableId, $record, properties);
   };
 
@@ -72,7 +72,7 @@ export const createTableMethods = <
   function get($record: $Record | undefined): Properties<S, T> | undefined;
   function get($record?: $Record | undefined, defaultProps?: PropertiesSansMetadata<S, T>): Properties<S, T>;
   function get($record?: $Record, defaultProps?: PropertiesSansMetadata<S, T>) {
-    $record = $record ?? empty$Record;
+    $record = $record ?? default$Record;
     const row = store.getRow(tableId, $record);
 
     const decoded = Object.entries(row).length > 0 ? TinyBaseAdapter.decode(row) : undefined; // empty object should be undefined
@@ -130,13 +130,13 @@ export const createTableMethods = <
 
   /* --------------------------------- REMOVE --------------------------------- */
   const remove = ($record?: $Record) => {
-    $record = $record ?? empty$Record;
+    $record = $record ?? default$Record;
     store.delRow(tableId, $record);
   };
 
   /* --------------------------------- UPDATE --------------------------------- */
   const update = (properties: Partial<Properties<S, T>>, $record?: $Record) => {
-    $record = $record ?? empty$Record;
+    $record = $record ?? default$Record;
     const currentProps = getRaw($record);
     if (!currentProps) throw new Error(`$Record ${$record} does not exist in table ${tableId}`);
 
@@ -154,7 +154,7 @@ export const createTableMethods = <
   function useProps($record?: $Record | undefined): Properties<S, T> | undefined;
   function useProps($record: $Record | undefined, defaultProps?: PropertiesSansMetadata<S, T>): Properties<S, T>;
   function useProps($record?: $Record, defaultProps?: PropertiesSansMetadata<S, T>) {
-    $record = $record ?? empty$Record;
+    $record = $record ?? default$Record;
     const [properties, setProps] = useState(get($record));
 
     useEffect(() => {

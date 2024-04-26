@@ -32,7 +32,7 @@ import { PropsSchema } from "@/tables/contract";
  * @param propsSchema The schema of the properties to decode.
  * @param args The encoded metadata to decode the properties from.
  * @returns The decoded properties.
- * @see @latticexyz/protocol-parser/internal:decodeValueArgs
+ * @see [@]latticexyz/protocol-parser/internal/decodeValueArgs.ts
  * @category Adapter
  */
 export function decodeValueArgs<TSchema extends PropsSchema>(
@@ -62,7 +62,7 @@ export function decodeValueArgs<TSchema extends PropsSchema>(
  * @param propsSchema The schema of the properties to decode.
  * @param data The encoded hex data to decode the properties from.
  * @returns The decoded properties in a TinyBase-friendly format.
- * @see @latticexyz/protocol-parser/internal:decodeValue
+ * @see [@]latticexyz/protocol-parser/internal/decodeValue.ts
  * @see {@link encodePropsToTinyBase}
  * @category Adapter
  */
@@ -86,7 +86,7 @@ export function decodeValue<TSchema extends PropsSchema>(propsSchema: TSchema, d
  * @param propsSchema The schema of the properties to decode.
  * @param data The encoded hex data to decode the properties from.
  * @returns The decoded properties.
- * @see @latticexyz/protocol-parser/internal:decodeRecord
+ * @see [@]latticexyz/protocol-parser/internal/decodeRecord.ts
  * @category Adapter
  */
 export function decodeRecord(propsSchema: Schema, data: Hex): readonly (StaticPrimitiveType | DynamicPrimitiveType)[] {

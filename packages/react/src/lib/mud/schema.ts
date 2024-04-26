@@ -2,8 +2,14 @@ import { SchemaAbiType } from "@latticexyz/schema-type/internal";
 
 import { Type } from "@/lib/mud/types";
 
-/* ---------------------------------- RECS ---------------------------------- */
-// Copied from https://github.com/latticexyz/mud/blob/ade94a7fa761070719bcd4b4dac6cb8cc7783c3b/packages/store-sync/src/recs/schemaAbiTypeToRecsType.ts#L205
+/**
+ * Convert a schema ABI type to an TypeScript understandable type.
+ *
+ * Note: This is copied from the RECS library.
+ *
+ * @see [@]latticexyz/store-sync/recs/schemaAbiTypeToRecsType.ts
+ * @category RECS
+ */
 export const schemaAbiTypeToRecsType = {
   uint8: Type.Number,
   uint16: Type.Number,
@@ -205,4 +211,12 @@ export const schemaAbiTypeToRecsType = {
   string: Type.String,
 } as const satisfies Record<SchemaAbiType, Type>;
 
+/**
+ * Infer a TypeScript-understandable type (an enum associated with the type) from a schema ABI type.
+ *
+ * Note: This is copied from the RECS library.
+ *
+ * @see [@]latticexyz/store-sync/recs/schemaAbiTypeToRecsType.ts
+ * @category RECS
+ */
 export type SchemaAbiTypeToRecsType<T extends SchemaAbiType> = (typeof schemaAbiTypeToRecsType)[T];
