@@ -4,7 +4,6 @@ import { renderHook } from "@testing-library/react-hooks";
 // libs
 import { createWorld, getComponentValue } from "@latticexyz/recs";
 import { encodeEntity, singletonEntity, syncToRecs } from "@latticexyz/store-sync/recs";
-import { wait } from "@latticexyz/common/utils";
 import { ResolvedStoreConfig } from "@latticexyz/store/config";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { padHex, toHex } from "viem";
@@ -12,7 +11,6 @@ import { padHex, toHex } from "viem";
 // src
 import {
   ContractTable,
-  ContractTableDef,
   createGlobalQuery,
   createLocalTable,
   createLocalCoordTable,
@@ -23,36 +21,38 @@ import {
   PropType,
   TableWatchUpdate,
   useQuery,
+  ContractTableDef,
 } from "@/index";
 
-// mocks
+// tests
 import {
+  SyncStep,
   TableNames,
+  createLocalSyncTables,
+  createSync,
   fuzz,
-  getMockNetworkConfig,
+  getNetworkConfig,
   getRandomBigInts,
   getRandomNumbers,
   setItems,
   setPositionFor$Record,
 } from "@/__tests__/utils";
-import mockConfig from "@/__tests__/mocks/contracts/mud.config";
-import { createSync } from "@/__tests__/utils/sync";
-import { createLocalSyncTables, SyncStep } from "@/__tests__/utils/sync/tables";
+import mudConfig from "@/__tests__/mocks/contracts/mud.config";
 
 const FUZZ_ITERATIONS = 20;
+
+/* -------------------------------------------------------------------------- */
+/*                                    SETUP                                   */
+/* -------------------------------------------------------------------------- */
 
 type TestOptions = {
   useIndexer?: boolean;
 };
 
-/* -------------------------------------------------------------------------- */
-/*                                    INIT                                    */
-/* -------------------------------------------------------------------------- */
-
-const init = async (options: TestOptions = { useIndexer: false }) => {
+const setup = async (options: TestOptions = { useIndexer: false }) => {
   const { useIndexer } = options;
   const world = createWorld();
-  const networkConfig = getMockNetworkConfig();
+  const networkConfig = getNetworkConfig();
 
   // Initialize wrapper
   const {
@@ -61,7 +61,7 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
     store,
     storageAdapter,
   } = createWrapper({
-    mudConfig: mockConfig,
+    mudConfig: mudConfig,
   });
   const localRegistry = createLocalSyncTables(store);
   const registry = { ...contractRegistry, ...localRegistry };
@@ -87,7 +87,7 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
   // Sync RECS registry for comparison
   const { components: recsComponents } = await syncToRecs({
     world,
-    config: mockConfig,
+    config: mudConfig,
     address: networkConfig.worldAddress,
     publicClient: networkConfig.publicClient,
     startBlock: networkConfig.initialBlockNumber,
@@ -106,7 +106,7 @@ const init = async (options: TestOptions = { useIndexer: false }) => {
     let synced = false;
 
     while (!synced) {
-      await wait(1000);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const tinyBaseSync = registry.SyncStatus.get();
       const recsSync = getComponentValue(recsComponents.SyncProgress, singletonEntity);
@@ -149,7 +149,7 @@ const waitForBlockSynced = async <table extends ContractTableDef>(
       );
     }
 
-    await wait(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     const lastSyncedBlock = table.get(key)?.__lastSyncedAtBlock;
     synced = lastSyncedBlock ? lastSyncedBlock >= txBlock : false;
     counter++;
@@ -162,7 +162,7 @@ describe("Wrapper", () => {
   /* -------------------------------------------------------------------------- */
 
   it("should properly initialize and return expected objects", async () => {
-    const { registry, tableDefs, store, storageAdapter } = await init();
+    const { registry, tableDefs, store, storageAdapter } = await setup();
 
     // Verify the existence of the result
     expect(registry).toBeDefined();
@@ -174,7 +174,7 @@ describe("Wrapper", () => {
   it("should be able to create tables from local definitions passed during initialization", async () => {
     // Initialize wrapper
     const { store } = createWrapper({
-      mudConfig: mockConfig,
+      mudConfig: mudConfig,
     });
 
     const registry = {
@@ -200,7 +200,7 @@ describe("Wrapper", () => {
 
   describe("sync: should properly sync similar properties to RECS registry", () => {
     const runTest = async (options: TestOptions, txs: Record<TableNames, bigint>) => {
-      const { registry, recsComponents, $records, waitForSyncLive } = await init(options);
+      const { registry, recsComponents, $records, waitForSyncLive } = await setup(options);
       const player = $records[0];
       assert(registry);
       await waitForSyncLive();
@@ -277,7 +277,7 @@ describe("Wrapper", () => {
     describe("basic methods", () => {
       // Init and return registry and utils
       const preTest = async () => {
-        const { registry, $records } = await init();
+        const { registry, $records } = await setup();
         const player = $records[0];
         assert(registry);
 
@@ -374,7 +374,7 @@ describe("Wrapper", () => {
     describe("native methods", () => {
       // Records iterator
       it("$records()", async () => {
-        const { registry, $records, waitForSyncLive } = await init();
+        const { registry, $records, waitForSyncLive } = await setup();
         assert(registry);
 
         await Promise.all($records.map(async ($record) => await setPositionFor$Record({ $record, x: 1, y: 1 })));
@@ -398,7 +398,7 @@ describe("Wrapper", () => {
       };
 
       const preTest = async () => {
-        const { registry, networkConfig, $records, waitForSyncLive } = await init();
+        const { registry, networkConfig, $records, waitForSyncLive } = await setup();
         assert(registry);
 
         // 4 $records: A has some properties, B has different properties, C & D have the same properties
@@ -496,7 +496,7 @@ describe("Wrapper", () => {
       };
 
       const updatePosition = async <
-        tableDef extends ResolvedStoreConfig<storeToV1<typeof mockConfig>>["tables"]["Position"],
+        tableDef extends ResolvedStoreConfig<storeToV1<typeof mudConfig>>["tables"]["Position"],
       >(
         Position: ContractTable<tableDef>,
         $record: $Record,
@@ -517,7 +517,7 @@ describe("Wrapper", () => {
       };
 
       it("use(), useWithKeys()", async () => {
-        const { registry, $records } = await init();
+        const { registry, $records } = await setup();
         assert(registry);
         const player = $records[0];
 
@@ -543,7 +543,7 @@ describe("Wrapper", () => {
       });
 
       it("pauseUpdates()", async () => {
-        const { registry, $records } = await init();
+        const { registry, $records } = await setup();
         assert(registry);
         const player = $records[0];
 
@@ -566,7 +566,7 @@ describe("Wrapper", () => {
       });
 
       it("resumeUpdates()", async () => {
-        const { registry, $records } = await init();
+        const { registry, $records } = await setup();
         assert(registry);
         const player = $records[0];
 
@@ -594,7 +594,7 @@ describe("Wrapper", () => {
       });
 
       it("useAll()", async () => {
-        const { registry, $records } = await init();
+        const { registry, $records } = await setup();
         assert(registry);
 
         const { result } = renderHook(() => registry.Position.useAll());
@@ -619,7 +619,7 @@ describe("Wrapper", () => {
       });
 
       it("useAllWith()", async () => {
-        const { registry, $records } = await init();
+        const { registry, $records } = await setup();
         assert(registry);
 
         const targetPos = { x: 10, y: 10 };
@@ -664,7 +664,7 @@ describe("Wrapper", () => {
       });
 
       it("useAllWithout()", async () => {
-        const { registry, $records } = await init();
+        const { registry, $records } = await setup();
         assert(registry);
 
         const targetPos = { x: 10, y: 10 };
@@ -711,7 +711,7 @@ describe("Wrapper", () => {
     /* ---------------------------------- KEYS ---------------------------------- */
     describe("keys (contract-specific) methods", () => {
       it("get$RecordKeys()", async () => {
-        const { registry, $records } = await init();
+        const { registry, $records } = await setup();
         assert(registry);
 
         const player = $records[0];
@@ -732,7 +732,7 @@ describe("Wrapper", () => {
     };
 
     const updatePosition = async <
-      tableDef extends ResolvedStoreConfig<storeToV1<typeof mockConfig>>["tables"]["Position"],
+      tableDef extends ResolvedStoreConfig<storeToV1<typeof mudConfig>>["tables"]["Position"],
     >(
       Position: ContractTable<tableDef>,
       $record: $Record,
@@ -746,7 +746,7 @@ describe("Wrapper", () => {
     };
 
     const preTest = async () => {
-      const { registry, store, waitForSyncLive, $records } = await init();
+      const { registry, store, waitForSyncLive, $records } = await setup();
       assert(registry);
       // Just wait for sync for the test to be accurate (prevent tampering data by syncing during the test)
       await waitForSyncLive();
@@ -895,7 +895,7 @@ describe("Wrapper", () => {
     });
 
     it("query() (queryAllMatching)", async () => {
-      const { registry, store, $records } = await init();
+      const { registry, store, $records } = await setup();
       const [player, A, B, C] = $records;
       const emptyData = {
         __staticData: "0x",

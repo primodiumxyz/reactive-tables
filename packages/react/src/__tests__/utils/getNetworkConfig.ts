@@ -59,8 +59,8 @@ const worldContract: GetContractReturnType<typeof IWorldAbi, typeof publicClient
   client: { public: publicClient, wallet: createWalletClient({ ...clientOptions, account: burnerAccount }) },
 });
 
-export type NetworkConfig = ReturnType<typeof getMockNetworkConfig>;
-export const getMockNetworkConfig = (): BaseNetworkConfig & {
+export type NetworkConfig = ReturnType<typeof getNetworkConfig>;
+export const getNetworkConfig = (): BaseNetworkConfig & {
   publicClient: PublicClient;
   burnerAccount: Account;
   worldContract: GetContractReturnType<typeof IWorldAbi, typeof publicClient>;

@@ -3,9 +3,9 @@ import { Hex, TransactionReceipt } from "viem";
 
 import { $Record } from "@/lib";
 
-import { getMockNetworkConfig } from "@/__tests__/utils/init";
+import { getNetworkConfig } from "@/__tests__/utils/getNetworkConfig";
 
-const networkConfig = getMockNetworkConfig();
+const networkConfig = getNetworkConfig();
 
 export type TableNames = (typeof mockFunctionToTable)[keyof typeof mockFunctionToTable];
 const mockFunctionToTable = {
