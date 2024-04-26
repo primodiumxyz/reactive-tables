@@ -1,3 +1,5 @@
+export { TinyBaseAdapter } from "@/adapter";
+
 export {
   // Decoding/encoding keys from/into a record
   decode$Record,

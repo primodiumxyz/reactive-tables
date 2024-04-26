@@ -1,3 +1,5 @@
+// TODO: also document all methods inside a table
+
 /* -------------------------------- FUNCTIONS ------------------------------- */
 // Wrapper (main entry point) for the library
 export * from "@/createWrapper";
@@ -6,7 +8,7 @@ export * from "@/createWrapper";
 export * from "@/tables/local/createLocalTable";
 
 // Queries: global (filtering keys and callbacks), query (direct query returning $Record[]), useQuery (React hook returning $Record[] with callbacks)
-export { createGlobalQuery, query, useQuery } from "@/queries";
+export { createQuery, query, useQuery } from "@/queries";
 
 /* -------------------------------- CONSTANTS ------------------------------- */
 export { empty$Record, localProperties, metadataProperties } from "@/lib";
@@ -25,12 +27,7 @@ export type {
 } from "@/lib";
 export { Type as PropType } from "@/lib/mud/types";
 
-export type {
-  QueryOptions,
-  TableQueryCallbacks as TableWatchCallbacks,
-  TableQueryUpdate as TableWatchUpdate,
-  UpdateType,
-} from "@/queries";
+export type { QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
 
 export type { ContractTable, ContractTables, KeySchema, PropsSchema } from "@/tables/contract";
 export type { LocalTable } from "@/tables/local";

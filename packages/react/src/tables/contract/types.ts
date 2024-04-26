@@ -2,7 +2,7 @@ import { SchemaAbiType } from "@latticexyz/schema-type/internal";
 import { KeySchema as UnparsedKeySchema, ValueSchema as UnparsedPropsSchema } from "@latticexyz/store/internal";
 import { KeySchema, ValueSchema as PropsSchema } from "@latticexyz/protocol-parser/internal";
 
-import { CreateQueryResult, CreateQueryWrapperOptions } from "@/queries";
+import { CreateTableWatcherResult, CreateQueryWrapperOptions } from "@/queries";
 import { BaseTableMetadata, OriginalTableMethods, Properties, PropertiesSansMetadata } from "@/tables";
 import { ContractTableDef, ContractTableDefs, Metadata, $Record, Schema, SchemaAbiTypeToRecsType, Type } from "@/lib";
 
@@ -78,7 +78,9 @@ export type ContractTableMethods<VS extends Schema, T = unknown> = OriginalTable
   pauseUpdates: ($record?: $Record, properties?: Properties<VS, T>) => void;
   resumeUpdates: ($record?: $Record) => void;
 
-  watch: (options: Omit<CreateQueryWrapperOptions<VS, T>, "queries" | "tableId" | "schema">) => CreateQueryResult;
+  watch: (
+    options: Omit<CreateQueryWrapperOptions<VS, T>, "queries" | "tableId" | "schema">,
+  ) => CreateTableWatcherResult;
 };
 
 export type ContractTableWithKeysMethods<VS extends Schema, KS extends Schema, T = unknown> = {

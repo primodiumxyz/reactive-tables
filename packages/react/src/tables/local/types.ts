@@ -1,5 +1,5 @@
 import { BaseTableMetadata, OriginalTableMethods, Properties } from "@/tables";
-import { CreateQueryResult, CreateQueryWrapperOptions } from "@/queries";
+import { CreateTableWatcherResult, CreateQueryWrapperOptions } from "@/queries";
 import { Metadata, $Record, Schema } from "@/lib";
 
 export type LocalTable<
@@ -45,5 +45,5 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
   pauseUpdates: ($record?: $Record, properties?: Properties<S, T>) => void;
   resumeUpdates: ($record?: $Record) => void;
 
-  watch: (options: Omit<CreateQueryWrapperOptions<S, T>, "queries" | "tableId" | "schema">) => CreateQueryResult;
+  watch: (options: Omit<CreateQueryWrapperOptions<S, T>, "queries" | "tableId" | "schema">) => CreateTableWatcherResult;
 };

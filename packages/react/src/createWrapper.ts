@@ -70,7 +70,7 @@ export type WrapperResult<config extends StoreConfig, extraTableDefs extends Con
  * @example
  * This example creates a wrapper from MUD config and sets the properties for a specific record in the "Counter" table.
  *
- * ```js
+ * ```ts
  * const mudConfig = defineWorld({
  *   tables: {
  *     Counter: {

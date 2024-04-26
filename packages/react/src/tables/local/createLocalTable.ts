@@ -37,7 +37,7 @@ export type CreateLocalTableOptions<M extends Metadata> = {
  * @example
  * This example creates a local table with a single property, "darkMode", set to false.
  *
- * ```js
+ * ```ts
  * const darkModeTable = createLocalTable(store, { darkMode: PropType.Boolean }, { id: "DarkMode" }, { darkMode: false });
  * console.log(darkModeTable.get());
  * // -> { darkMode: false }
@@ -51,7 +51,7 @@ export type CreateLocalTableOptions<M extends Metadata> = {
  * @example
  * This example creates a persistent local table with coordinates properties.
  *
- * ```js
+ * ```ts
  * // Wait for the sync with local storage to be started after creating the wrapper
  * const { store } = createWrapper({ mudConfig });
  * await store("PERSIST").ready();
