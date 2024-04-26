@@ -42,7 +42,6 @@ export const createStore = () => {
 
     // Enable autosave and autoload
     // We don't want to make the whole wrapper async so we can just let the consumr know when it's ready
-    // TODO: is this ok? Or should the wrapper just be async?
     (async () => {
       persistentStore.setValue("ready", false);
       await persister.startAutoLoad();

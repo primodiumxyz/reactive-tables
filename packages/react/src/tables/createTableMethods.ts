@@ -125,7 +125,7 @@ export const createTableMethods = <
 
   /* ---------------------------------- CLEAR --------------------------------- */
   const clear = () => {
-    getAll().forEach(($record) => remove($record));
+    store.delTable(tableId);
   };
 
   /* --------------------------------- REMOVE --------------------------------- */
