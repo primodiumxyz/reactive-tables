@@ -1,30 +1,40 @@
 import { createQueries } from "tinybase/queries";
 
 import { queryAllWithProps } from "@/queries/templates/queryAllWithProps";
-import { Properties } from "@/tables/types";
-import { AbiToSchemaPlusMetadata, ContractTable } from "@/tables/contract/types";
+import { QueryOptions } from "@/queries/types";
 import { ContractTableDef, $Record, TinyBaseStore } from "@/lib";
 
-type QueryMatchingProperties<tableDef extends ContractTableDef, T = unknown> = {
-  table: ContractTable<tableDef>;
-  properties: Properties<AbiToSchemaPlusMetadata<tableDef["valueSchema"]>, T>;
-};
-// Query all records matching all of the given conditions:
-// At least an inside or with condition needs to be provided for intial filtering
-// TODO: fix type inference on heterogeneous array (with single ContractTableDef it wants the same table as the first one for all items)
-export type QueryAllMatchingOptions<tableDefs extends ContractTableDef[], T = unknown> = {
-  inside?: ContractTable<tableDefs[number]>[]; // inside these tables
-  with?: QueryMatchingProperties<tableDefs[number], T>[]; // with the specified propertiess for their associated tables
-  notInside?: ContractTable<tableDefs[number]>[]; // not inside these tables
-  without?: QueryMatchingProperties<tableDefs[number], T>[]; // without the specified propertiess for their associated tables
-};
-
-// Query all records matching multiple conditions across tables
-// TODO: this surely can be optimized, but right now we need something that works at least
-// Needs to be benchmarked to see from which point it makes sense getting entire tables once and filtering them in memory
-export const queryAllMatching = <tableDefs extends ContractTableDef[], T = unknown>(
+/**
+ * Queries all records matching multiple provided conditions across tables.
+ *
+ * Note: See {@link QueryOptions} for more details on conditions criteria.
+ *
+ * @param store The TinyBase store containing the properties associated with contract tables.
+ * @param options The {@link QueryOptions} object containing the conditions to match.
+ * @returns An array of {@link $Record} objects matching all conditions.
+ * @example
+ * This example queries all records that have a score of 10 in the "Score" table and are not inside the "GameOver" table.
+ *
+ * ```ts
+ * const { registry, store } = createWrapper({ mudConfig });
+ * const {
+ *   recordA, // inside Score with score 10
+ *   recordB, // inside Score with score 10 and inside GameOver
+ *   recordC, // inside Score with score 3
+ * } = getRecords(); // for the sake of the example
+ *
+ * const records = query(store, {
+ *   with: [ { table: registry.Score, properties: { score: 10 } } ],
+ *   notInside: [ registry.GameOver ],
+ * });
+ * console.log(records);
+ * // -> [ recordA ]
+ * ```
+ * @category Queries
+ */
+export const query = <tableDefs extends ContractTableDef[], T = unknown>(
   store: TinyBaseStore,
-  options: QueryAllMatchingOptions<tableDefs, T>,
+  options: QueryOptions<tableDefs, T>,
 ): $Record[] => {
   const { inside, notInside, with: withProps, without: withoutProps } = options;
   if (!inside && !withProps) {

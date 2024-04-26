@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 
 import { TinyBaseAdapter } from "@/adapter";
 import { queryAllWithoutProps } from "@/queries/templates/queryAllWithoutProps";
-import { QueryTableOptions } from "@/queries/templates/types";
+import { TableQueryOptions } from "@/queries/types";
 import { ContractTableDef, $Record, TinyBaseQueries } from "@/lib";
 
 // Listen to all records inside a given table that DON'T have specific properties (or a single property)
 export const useAllWithoutProps = <tableDef extends ContractTableDef>(
   queries: TinyBaseQueries,
   tableId: string,
-  properties: QueryTableOptions<tableDef>["properties"],
+  properties: TableQueryOptions<tableDef>["properties"],
 ): $Record[] => {
   // Format the properties for TinyBase storage to compare it with the stored properties
   const formattedProps = useMemo(

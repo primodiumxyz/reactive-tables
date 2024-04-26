@@ -1,5 +1,5 @@
 import { PropertiesArray, TinyBaseAdapter } from "@/adapter";
-import { QueryTableOptions, QueryTableResult } from "@/queries/templates/types";
+import { TableQueryOptions, TableQueryResult } from "@/queries/types";
 import { ContractTableDef, $Record } from "@/lib";
 
 // Query all records for a given table that DON'T have specific properties (or partial properties)
@@ -8,7 +8,7 @@ export const queryAllWithoutProps = <tableDef extends ContractTableDef>({
   tableId,
   properties,
   formattedProps,
-}: QueryTableOptions<tableDef>): QueryTableResult => {
+}: TableQueryOptions<tableDef>): TableQueryResult => {
   const queryId = "internal__queryAllWithoutProps";
 
   // Format the properties for TinyBase storage to compare it with the stored ones

@@ -1,5 +1,5 @@
 import { TinyBaseAdapter, PropertiesArray } from "@/adapter";
-import { QueryTableOptions, QueryTableResult } from "@/queries";
+import { TableQueryOptions, TableQueryResult } from "@/queries";
 import { ContractTableDef, $Record } from "@/lib";
 
 // Query all records for a given table that have specific properties (or partial properties)
@@ -8,7 +8,7 @@ export const queryAllWithProps = <tableDef extends ContractTableDef>({
   tableId,
   properties,
   formattedProps,
-}: QueryTableOptions<tableDef>): QueryTableResult => {
+}: TableQueryOptions<tableDef>): TableQueryResult => {
   const queryId = "internal__queryAllWithProps";
 
   // Format the properties for TinyBase storage to compare it with the stored properties

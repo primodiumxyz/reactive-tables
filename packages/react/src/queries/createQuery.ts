@@ -1,169 +1,133 @@
-import { GetResultCellChange } from "tinybase/queries";
+import { query, QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
+import { ContractTableDef, $Record, Schema, TinyBaseStore, getPropsAndTypeFromRowChange } from "@/lib";
 
-import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
-import { metadataProperties, localProperties, $Record, Schema, TinyBaseQueries } from "@/lib";
-import { Properties } from "@/tables";
-
-/* ---------------------------------- TYPES --------------------------------- */
-type ResultRow = { [key: string]: TinyBaseFormattedType[typeof key] | undefined };
-
-export type UpdateType = "enter" | "exit" | "change";
-export type TableQueryUpdate<S extends Schema = Schema, T = unknown> = {
-  tableId: string | undefined; // undefined if run on init on global query
-  $record: $Record;
-  properties: { current: Properties<S, T> | undefined; prev: Properties<S, T> | undefined };
-  type: UpdateType;
-};
-
-// At least one callback has to be provided
-// We can't successfully typecheck complex union types with at least one required key
-export type TableQueryCallbacks<S extends Schema, T = unknown> = Partial<{
-  onChange: (update: TableQueryUpdate<S, T>) => void;
-  onEnter: (update: TableQueryUpdate<S, T>) => void;
-  onExit: (update: TableQueryUpdate<S, T>) => void;
-  onUpdate: (update: TableQueryUpdate<S, T>) => void;
-}>;
-
-export type CreateQueryOptions<S extends Schema, T = unknown> = {
-  queries: TinyBaseQueries;
-  queryId: string;
-  tableId: string;
-  schema: S;
-  options?: { runOnInit?: boolean };
-  // Opt in to any callback
-} & TableQueryCallbacks<S, T>;
-
-export type CreateQueryResult = {
-  unsubscribe: () => void;
-};
-
-/* ---------------------------------- QUERY --------------------------------- */
-// Create a listener associated with a query for a given table (or not), and run callbacks on enter, exit, and change
-export const createQuery = <S extends Schema, T = unknown>({
-  queries,
-  queryId,
-  tableId,
-  schema,
-  onChange,
-  onEnter,
-  onExit,
-  onUpdate,
-  options = { runOnInit: true },
-}: CreateQueryOptions<S, T>) => {
+/**
+ * Listen to all records matching multiple conditions across tables.
+ *
+ * This will trigger the provided callbacks whenever a record enters or exits the query conditions, or when its properties change
+ * within the query conditions.
+ *
+ * Note: This is related to ${@link query} (direct retrieval based on conditions) and ${@link useQuery} (React hook with callbacks + real-time retrieval).
+ *
+ * Note: See {@link QueryOptions} for more details on conditions criteria.
+ *
+ * @param store The TinyBase store containing the properties associated with contract tables.
+ * @param queryOptions The {@link QueryOptions} object containing the conditions to match.
+ * @param callbacks The {@link TableWatcherCallbacks} to trigger on changes. Including: onChange, onEnter, onExit, onUpdate.
+ * These will trigger a {@link TableUpdate} object with the id of the updated table, the record, the previous and new properties of the record and the type of update.
+ * @param options (optional) Additional options for the query. Currently only supports `runOnInit` to trigger the callbacks for all matching records on initialization.
+ * @returns An object with an `unsubscribe` method to stop listening to the query.
+ * @example
+ * This example creates a query that listens to all records that represent online players without a score of 0.
+ *
+ * ```ts
+ * const { registry, store } = createWrapper({ mudConfig });
+ * const {
+ *   recordA, // online, score 10
+ *   recordB, // online, score 0
+ *   recordC, // offline, score 10
+ * } = getRecords(); // for the sake of the example
+ *
+ * const query = createQuery(store, {
+ *   with: [ { table: registry.Player, properties: { online: true } } ],
+ *   without: [ { table: registry.Score, properties: { score: 0 } } ],
+ * }, {
+ *  onEnter: (update) => console.log(update),
+ *  onExit: (update) => console.log(update),
+ * }, { runOnInit: true }); // this is the default behavior
+ * // -> { table: undefined, $record: recordA, current: undefined, prev: undefined, type: "enter" }
+ *
+ * registry.Score.update({ score: 15 }, recordA);
+ * // -> { table: registry.Score, $record: recordA, current: { score: 15 }, prev: { score: 10 }, type: "change" }
+ *
+ * registry.Player.update({ online: false }, recordA);
+ * // -> { table: registry.Player, $record: recordA, current: { online: false }, prev: { online: true }, type: "exit" }
+ * ```
+ * @category Queries
+ */
+export const createQuery = <tableDefs extends ContractTableDef[], S extends Schema, T = unknown>(
+  store: TinyBaseStore,
+  queryOptions: QueryOptions<tableDefs, T>,
+  callbacks: TableWatcherCallbacks<S, T>,
+  options: { runOnInit?: boolean } = { runOnInit: true },
+) => {
+  const { onChange, onEnter, onExit, onUpdate } = callbacks;
   if (!onChange && !onEnter && !onExit && !onUpdate) {
     throw new Error("At least one callback has to be provided");
   }
 
-  const store = queries.getStore();
-  // Get the keys to be able to aggregate the full properties from each cell
-  const keys = Object.keys(schema);
+  // Remember previous records (to provide the update type in the callback)
+  let prev$Records: $Record[] = [];
 
-  // Remember the previous records matching the query to figure out if it's an enter or an exit
-  // This is a trick we need because we can't listen to entire row changes within the query when only some cells have changed
-  let previous$Records: $Record[] = [];
+  // Gather ids and schemas of all table we need to listen to
+  // tableId => schema keys
+  const tables: Record<string, string[]> = {};
+  const { inside, notInside, with: withProps, without: withoutProps } = queryOptions;
 
-  // Init listener
-  // Unfortunatly `addResultRowListener()` won't work here as it's not triggered for cell changes
-  // So we need to use a regular listener associated with the query instead
-  const listenerId = store.addRowListener(tableId, null, (_, __, rowId, getCellChange) => {
+  (inside ?? []).concat(notInside ?? []).forEach((table) => {
+    tables[table.id] = Object.keys(table.schema);
+  });
+  (withProps ?? []).concat(withoutProps ?? []).forEach(({ table }) => {
+    tables[table.id] = Object.keys(table.schema);
+  });
+
+  // Listen to all tables (at each row)
+  const listenerId = store.addRowListener(null, null, (_, tableId, rowId, getCellChange) => {
     if (!getCellChange) return;
     const $record = rowId as $Record;
 
-    // Get the records matching the query
-    const matching$Records = queries.getResultRowIds(queryId);
+    // Refetch matching records if one of the tables included in the query changes
+    if (Object.keys(tables).includes(tableId)) {
+      const matching$Records = query(store, queryOptions);
 
-    // Figure out if it's an enter or an exit
-    let type = "change" as UpdateType;
-    const inPrev = previous$Records.includes($record);
-    const inCurrent = matching$Records.includes($record);
+      // Figure out if it's an enter or an exit
+      let type = "change" as UpdateType;
+      const inPrev = prev$Records.includes($record);
+      const inCurrent = matching$Records.includes($record);
 
-    if (!inPrev && !inCurrent) return; // not in the query, we're not interested
+      if (!inPrev && !inCurrent) return; // not in the query, we're not interested
 
-    // Gather the previous and current properties
-    const args = getPropsAndTypeFromRowChange(getCellChange, keys, tableId, $record) as TableQueryUpdate<S, T>;
+      // Gather the previous and current properties
+      const args = getPropsAndTypeFromRowChange(getCellChange, tables[tableId], tableId, $record) as TableUpdate<S, T>;
 
-    // Run the callbacks
-    if (!inPrev && inCurrent) {
-      type = "enter";
-      onEnter?.({ ...args, type });
+      // Run the callbacks
+      if (!inPrev && inCurrent) {
+        type = "enter";
+        onEnter?.({ ...args, type });
 
-      previous$Records.push($record);
-    } else if (inPrev && !inCurrent) {
-      type = "exit";
-      onExit?.({ ...args, type });
+        prev$Records.push($record);
+      } else if (inPrev && !inCurrent) {
+        type = "exit";
+        onExit?.({ ...args, type });
 
-      previous$Records = previous$Records.filter((e) => e !== $record);
-    } else {
-      onUpdate?.({ ...args, type });
+        prev$Records = prev$Records.filter((e) => e !== $record);
+      } else {
+        onUpdate?.({ ...args, type });
+      }
+
+      onChange?.({ ...args, type });
     }
-
-    onChange?.({ ...args, type });
   });
 
   if (options.runOnInit) {
-    const rows = store.getTable(tableId);
+    const matching$Records = query(store, queryOptions);
 
     // Run callbacks for all records in the query
-    queries.forEachResultRow(queryId, ($record) => {
-      const currentProps = TinyBaseAdapter.parse(rows[$record]) as Properties<S, T>;
-
+    matching$Records.forEach(($record) => {
       const args = {
-        tableId,
-        $record: $record as $Record,
-        properties: { current: currentProps, prev: undefined },
+        tableId: undefined,
+        $record,
+        properties: { current: undefined, prev: undefined },
         type: "enter" as UpdateType,
       };
       onEnter?.(args);
       onChange?.(args);
 
-      previous$Records.push($record as $Record);
+      prev$Records.push($record);
     });
   }
 
   return {
-    unsubscribe: () => queries.delListener(listenerId),
+    unsubscribe: () => store.delListener(listenerId),
   };
-};
-
-// Get accurate new and previous properties, and the corresponding type of update, from the changes in a row
-export const getPropsAndTypeFromRowChange = <S extends Schema, T = unknown>(
-  getCellChange: GetResultCellChange,
-  keys: string[],
-  tableId: string,
-  $record: $Record,
-) => {
-  let type = "change" as UpdateType;
-  // Add the type information to the keys
-  keys = keys
-    .map((key) => (metadataProperties.includes(key) ? key : [key, `type__${key}`]))
-    .flat()
-    // Add any internal keys (utilities)
-    .concat(localProperties);
-
-  // Get the old and new rows
-  const { current: newRow, prev: previousRow } = keys.reduce(
-    (acc, key) => {
-      const [, oldValueAtKey, newValueAtKey] = getCellChange(tableId, $record, key);
-      acc.current[key] = newValueAtKey as ResultRow[typeof key];
-      acc.prev[key] = oldValueAtKey as ResultRow[typeof key];
-
-      return acc;
-    },
-    { current: {}, prev: {} } as { current: ResultRow; prev: ResultRow },
-  );
-
-  // Find if it's an entry or an exit
-  if (Object.values(newRow).every((v) => v === undefined)) {
-    type = "exit";
-  } else if (Object.values(previousRow).every((v) => v === undefined)) {
-    type = "enter";
-  }
-
-  // Parse the properties
-  const newProps =
-    type === "exit" ? undefined : (TinyBaseAdapter.parse(newRow as TinyBaseFormattedType) as Properties<S, T>);
-  const prevProps =
-    type === "enter" ? undefined : (TinyBaseAdapter.parse(previousRow as TinyBaseFormattedType) as Properties<S, T>);
-
-  return { tableId, $record, properties: { current: newProps, prev: prevProps }, type };
 };
