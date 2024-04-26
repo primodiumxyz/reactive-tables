@@ -127,7 +127,7 @@ export const createTableWatcher = <S extends Schema, T = unknown>({
 
     // Run callbacks for all records in the query
     Object.entries(rows).forEach(([rowId, rowContent]) => {
-      const currentProps = TinyBaseAdapter.parse(rowContent) as Properties<S, T>;
+      const currentProps = TinyBaseAdapter.decode(rowContent) as Properties<S, T>;
 
       const args = {
         tableId,

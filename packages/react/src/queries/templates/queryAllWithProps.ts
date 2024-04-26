@@ -1,4 +1,4 @@
-import { TinyBaseAdapter, PropertiesArray } from "@/adapter";
+import { Primitive, TinyBaseAdapter } from "@/adapter";
 import { TableQueryOptions, TableQueryResult } from "@/queries";
 import { ContractTableDef, $Record } from "@/lib";
 
@@ -12,8 +12,7 @@ export const queryAllWithProps = <tableDef extends ContractTableDef>({
   const queryId = "internal__queryAllWithProps";
 
   // Format the properties for TinyBase storage to compare it with the stored properties
-  formattedProps =
-    formattedProps ?? TinyBaseAdapter.format(Object.keys(properties), Object.values(properties) as PropertiesArray);
+  formattedProps = formattedProps ?? TinyBaseAdapter.encode(properties as Record<string, Primitive>);
 
   queries.setQueryDefinition(queryId, tableId, ({ select, where }) => {
     // Select the first cell as all records with a properties should have this cell

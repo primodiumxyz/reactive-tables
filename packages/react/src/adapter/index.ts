@@ -7,6 +7,6 @@ import { encodePropsToTinyBase } from "@/adapter/encodePropsToTinyBase";
 
 export const TinyBaseAdapter = {
   decodeArgs: decodeValueArgs,
-  parse: decodePropsFromTinyBase,
-  format: encodePropsToTinyBase,
+  decode: decodePropsFromTinyBase,
+  encode: encodePropsToTinyBase,
 };

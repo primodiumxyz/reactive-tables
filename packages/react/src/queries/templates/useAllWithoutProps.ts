@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { TinyBaseAdapter } from "@/adapter";
+import { Primitive, TinyBaseAdapter } from "@/adapter";
 import { queryAllWithoutProps } from "@/queries/templates/queryAllWithoutProps";
 import { TableQueryOptions } from "@/queries/types";
 import { ContractTableDef, $Record, TinyBaseQueries } from "@/lib";
@@ -12,10 +12,7 @@ export const useAllWithoutProps = <tableDef extends ContractTableDef>(
   properties: TableQueryOptions<tableDef>["properties"],
 ): $Record[] => {
   // Format the properties for TinyBase storage to compare it with the stored properties
-  const formattedProps = useMemo(
-    () => TinyBaseAdapter.format(Object.keys(properties), Object.values(properties)),
-    [properties],
-  );
+  const formattedProps = useMemo(() => TinyBaseAdapter.encode(properties as Record<string, Primitive>), [properties]);
   const [$records, set$Records] = useState<$Record[]>([]);
 
   useEffect(() => {

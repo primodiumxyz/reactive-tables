@@ -1,4 +1,4 @@
-import { PropertiesArray, TinyBaseAdapter } from "@/adapter";
+import { Primitive, TinyBaseAdapter } from "@/adapter";
 import { TableQueryOptions, TableQueryResult } from "@/queries/types";
 import { ContractTableDef, $Record } from "@/lib";
 
@@ -12,8 +12,7 @@ export const queryAllWithoutProps = <tableDef extends ContractTableDef>({
   const queryId = "internal__queryAllWithoutProps";
 
   // Format the properties for TinyBase storage to compare it with the stored ones
-  formattedProps =
-    formattedProps ?? TinyBaseAdapter.format(Object.keys(properties), Object.values(properties) as PropertiesArray);
+  formattedProps = formattedProps ?? TinyBaseAdapter.encode(properties as Record<string, Primitive>);
 
   queries.setQueryDefinition(queryId, tableId, ({ select, where }) => {
     // We need to make one select for the row to be included

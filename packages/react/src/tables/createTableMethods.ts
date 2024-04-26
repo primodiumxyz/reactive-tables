@@ -8,7 +8,7 @@ import {
   useAllWithProps,
   useAllWithoutProps,
 } from "@/queries";
-import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
+import { Primitive, TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
 import { createTableKeyMethods } from "@/tables/contract";
 import { ContractTableMetadata } from "@/tables/contract/types";
 import { LocalTableMetadata } from "@/tables/local/types";
@@ -57,7 +57,7 @@ export const createTableMethods = <
     $record = $record ?? empty$Record;
 
     // Encode the properties and set them in the store
-    const formattedProps = TinyBaseAdapter.format(Object.keys(properties), Object.values(properties));
+    const formattedProps = TinyBaseAdapter.encode(properties as Record<string, Primitive>);
     store.setRow(tableId, $record, formattedProps);
   };
 
@@ -75,7 +75,7 @@ export const createTableMethods = <
     $record = $record ?? empty$Record;
     const row = store.getRow(tableId, $record);
 
-    const decoded = Object.entries(row).length > 0 ? TinyBaseAdapter.parse(row) : undefined; // empty object should be undefined
+    const decoded = Object.entries(row).length > 0 ? TinyBaseAdapter.decode(row) : undefined; // empty object should be undefined
     return (decoded ?? defaultProps) as Properties<S, T>;
   }
   // Utility function to save on computation when we're only interested in the raw data (to set again directly)
@@ -140,7 +140,7 @@ export const createTableMethods = <
     const currentProps = getRaw($record);
     if (!currentProps) throw new Error(`$Record ${$record} does not exist in table ${tableId}`);
 
-    const newProps = TinyBaseAdapter.format(Object.keys(properties), Object.values(properties));
+    const newProps = TinyBaseAdapter.encode(properties as Record<string, Primitive>);
     setRaw({ ...currentProps, ...newProps }, $record);
   };
 

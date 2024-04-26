@@ -37,4 +37,4 @@ export type TinyBaseFormattedType = {
     | "undefined"
     | "undefined[]";
 };
-export type PropertiesArray = readonly (StaticPrimitiveType | DynamicPrimitiveType | undefined)[];
+export type Primitive = StaticPrimitiveType | DynamicPrimitiveType | undefined;

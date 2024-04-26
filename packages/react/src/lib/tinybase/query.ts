@@ -41,9 +41,9 @@ export const getPropsAndTypeFromRowChange = <S extends Schema, T = unknown>(
 
   // Parse the properties
   const newProps =
-    type === "exit" ? undefined : (TinyBaseAdapter.parse(newRow as TinyBaseFormattedType) as Properties<S, T>);
+    type === "exit" ? undefined : (TinyBaseAdapter.decode(newRow as TinyBaseFormattedType) as Properties<S, T>);
   const prevProps =
-    type === "enter" ? undefined : (TinyBaseAdapter.parse(previousRow as TinyBaseFormattedType) as Properties<S, T>);
+    type === "enter" ? undefined : (TinyBaseAdapter.decode(previousRow as TinyBaseFormattedType) as Properties<S, T>);
 
   return { tableId, $record, properties: { current: newProps, prev: prevProps }, type };
 };

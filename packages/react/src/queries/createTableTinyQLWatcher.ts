@@ -121,7 +121,7 @@ export const createTableTinyQLWatcher = <S extends Schema, T = unknown>({
 
     // Run callbacks for all records in the query
     queries.forEachResultRow(queryId, ($record) => {
-      const currentProps = TinyBaseAdapter.parse(rows[$record]) as Properties<S, T>;
+      const currentProps = TinyBaseAdapter.decode(rows[$record]) as Properties<S, T>;
 
       const args = {
         tableId,
