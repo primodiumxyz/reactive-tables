@@ -392,6 +392,7 @@ describe("Wrapper", () => {
         assert(registry);
 
         // 4 $records: A has some properties, B has different properties, C & D have the same properties
+        // Obviously this might return similar values and break tests, or running tests a bunch of times over the same running local node might as well
         const argsA = getRandomArgs($records[0]);
         const argsB = getRandomArgs($records[1]);
         const argsC = getRandomArgs($records[2]);
