@@ -6,6 +6,19 @@ Every relevant functions and constants are exported from the main module, as wel
 
 All methods for communicating with a table are directly available on its object, with the exception of global query and watching methods—meant for usage across multiple tables—which must be imported from the main module.
 
+## Conventions
+
+This package follows new naming conventions, which are meant to be more explicit than RECS, and fit better with the new architecture, i.e. tabular data, similar to TinyBase storage.
+
+| Reference          | RECS reference | Details                                                                                     | Notes (TODO: only for internal review)                                                                                                                             |
+| ------------------ | -------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Table definition` | `Table`        | A contract table issued from the MUD config object, or provided directly to the wrapper     | Could be `specs` as well                                                                                                                                           |
+| `Registry`         | `Components`   | A collection of tables                                                                      | (I find it practical but not that much attached to it)                                                                                                             |
+| `Table`            | `Component`    | Either a contract or local table, including its metadata and methods                        |                                                                                                                                                                    |
+| `Record`           | `Entity`       | The key of a row inside a table, the content of the row being its properties (see below)    | This one is really explicit 95% of the time, but there is still that 5% where it is a bit confusing; could be identifier, id, tag (key is a bit confusing as well) |
+| `Properties`       | `Value`        | The content of a row associated with a record, which is made of multiple cells = properties |                                                                                                                                                                    |
+| `Property`         | ?              | A single cell, as a key-value pair                                                          |                                                                                                                                                                    |
+
 ## How to use
 
 ### Installation
