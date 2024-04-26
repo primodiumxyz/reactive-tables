@@ -109,6 +109,8 @@ export const setPositionFor$Record = async (args: { $record: $Record; x: number;
 const random = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
 
 export const getRandomNumbers = (length?: number, min?: number, max?: number) =>
-  Array.from({ length: length ?? 1 }, () => random(min ?? 1, max ?? 10000));
+  Array.from({ length: length ?? 1 }, () => random(min ?? 1, max ?? 1000000000));
 export const getRandomBigInts = (length?: number, min?: number, max?: number) =>
   getRandomNumbers(length, min, max).map((n) => BigInt(n));
+
+// max uint32 being: 4294967295

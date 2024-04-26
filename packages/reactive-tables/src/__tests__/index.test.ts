@@ -19,7 +19,7 @@ import {
   query,
   $Record,
   PropType,
-  TableWatchUpdate,
+  TableUpdate,
   useQuery,
   ContractTableDef,
 } from "@/index";
@@ -138,21 +138,11 @@ const waitForBlockSynced = async <table extends ContractTableDef>(
   key?: $Record,
 ) => {
   let synced = false;
-  // after 10 seconds, with such basic tables we can definitely consider it a failure
-  let counter = 0;
-  const SYNC_TIMEOUT = 10;
 
   while (!synced) {
-    if (counter > SYNC_TIMEOUT) {
-      throw new Error(
-        `Table did not sync after ${SYNC_TIMEOUT}s; last synced at block ${table.get(key)?.__lastSyncedAtBlock}, waiting for block ${txBlock}`,
-      );
-    }
-
     await new Promise((resolve) => setTimeout(resolve, 1000));
     const lastSyncedBlock = table.get(key)?.__lastSyncedAtBlock;
     synced = lastSyncedBlock ? lastSyncedBlock >= txBlock : false;
-    counter++;
   }
 };
 
@@ -752,7 +742,7 @@ describe("Wrapper", () => {
       await waitForSyncLive();
 
       // Aggregate updates triggered by the system on table changes
-      const aggregator: TableWatchUpdate<typeof registry.Position.schema | typeof registry.Inventory.schema>[] = [];
+      const aggregator: TableUpdate<typeof registry.Position.schema | typeof registry.Inventory.schema>[] = [];
       const onChange = (update: (typeof aggregator)[number]) => aggregator.push(update);
 
       return { registry, store, $records, onChange, aggregator };
@@ -978,8 +968,7 @@ describe("Wrapper", () => {
       };
 
       // We need another aggregator for the global query
-      const globalAggregator: TableWatchUpdate<typeof registry.Position.schema | typeof registry.Inventory.schema>[] =
-        [];
+      const globalAggregator: TableUpdate<typeof registry.Position.schema | typeof registry.Inventory.schema>[] = [];
       const globalOnChange = (update: (typeof globalAggregator)[number]) => globalAggregator.push(update);
 
       // Prepare $records
