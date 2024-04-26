@@ -16,7 +16,8 @@
     "lint:fix": "eslint --cache --fix",
     "prepare": "husky install",
     "sort-package-json": "npx sort-package-json package.json 'packages/*/package.json'",
-    "test": "cd packages/reactive-tables && pnpm test"
+    "test": "cd packages/reactive-tables && pnpm test",
+    "test:verbose": "cd packages/reactive-tables && pnpm test:verbose"
   },
   "lint-staged": {
     "*.{ts,tsx}": "eslint --cache --fix",

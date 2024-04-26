@@ -26,7 +26,8 @@
     "contracts:build": "cd src/__tests__/mocks/contracts && pnpm run build",
     "dev": "concurrently -n node,contracts,indexer -c yellow,cyan,red \"cd src/__tests__/mocks/contracts && pnpm run devnode\" \"cd src/__tests__/mocks/contracts && pnpm run deploy:local\" \"pnpm dev:indexer\"",
     "dev:indexer": "pnpm clean-local-docker-indexer && pnpm local-docker-indexer",
-    "test": "vitest"
+    "test": "vitest",
+    "test:verbose": "DEBUG=primodium:* vitest > testLogs.txt"
   },
   "dependencies": {
     "@latticexyz/common": "2.0.6",
