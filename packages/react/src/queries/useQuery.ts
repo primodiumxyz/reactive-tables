@@ -3,10 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { query, QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
 import { ContractTableDef, getPropsAndTypeFromRowChange, $Record, Schema, TinyBaseStore } from "@/lib";
 
-// TODO(review): maybe this hook doesn't need any callback, as we already have createQuery for that?
-// only useful if we have a use case for both retrieving all records AND reacting to changes
-
-// TODO(notes for future improvements): this will clearly need to be optimized; there are probably a few options:
+// TODO: this will clearly need to be optimized; there are probably a few options:
 // - setup a table listener by default on each table, then when setting up a query listener let that table know so it adds this callback to its array
 // - keep a single useQuery listening to all tables, then on change see across all actual useQuery hooks which ones need to be triggered
 
