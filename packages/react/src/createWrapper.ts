@@ -25,7 +25,7 @@ import { createLocalTable } from "@/tables/local";
  * @param mudConfig The actual MUD configuration, usually retrieved for the contracts package.
  * @param otherTableDefs (optional) Custom definitions to generate tables for as well.
  */
-export type WrapperOptions<config extends StoreConfig, extraTableDefs extends ContractTableDefs> = {
+export type WrapperOptions<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
   mudConfig: config;
   otherTableDefs?: extraTableDefs;
 };
@@ -43,9 +43,9 @@ export type WrapperOptions<config extends StoreConfig, extraTableDefs extends Co
  * as well as the queries instance (see {@link createStore}).
  * @param storageAdapter The storage adapter for formatting onchain logs into TinyBase tabular data (see {@link createStorageAdapter}).
  */
-export type WrapperResult<config extends StoreConfig, tableDefs extends ContractTableDefs> = {
-  registry: ContractTables<AllTableDefs<config, tableDefs>>;
-  tableDefs: AllTableDefs<config, tableDefs>;
+export type WrapperResult<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
+  registry: ContractTables<AllTableDefs<config, extraTableDefs>>;
+  tableDefs: AllTableDefs<config, extraTableDefs>;
   store: Store;
   storageAdapter: StorageAdapter;
 };
@@ -90,7 +90,7 @@ export type WrapperResult<config extends StoreConfig, tableDefs extends Contract
  * ```
  * @category Creation
  */
-export const createWrapper = <config extends StoreConfig, extraTableDefs extends ContractTableDefs>({
+export const createWrapper = <config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined>({
   mudConfig,
   otherTableDefs,
 }: WrapperOptions<config, extraTableDefs>): WrapperResult<config, extraTableDefs> => {

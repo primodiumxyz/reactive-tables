@@ -14,7 +14,10 @@ import {
   StoreConfig,
 } from "@/lib";
 
-export type CreateContractTablesOptions<config extends StoreConfig, extraTableDefs extends ContractTableDefs> = {
+export type CreateContractTablesOptions<
+  config extends StoreConfig,
+  extraTableDefs extends ContractTableDefs | undefined,
+> = {
   tableDefs: AllTableDefs<config, extraTableDefs>;
   store: TinyBaseStore;
   queries: TinyBaseQueries;

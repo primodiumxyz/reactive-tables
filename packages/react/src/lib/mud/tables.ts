@@ -29,9 +29,10 @@ export const worldTableDefs = resolveConfig(storeToV1(worldConfig)).tables;
  * @see {@link worldTableDefs}
  * @category Tables
  */
-export type AllTableDefs<config extends StoreConfig, extraTableDefs extends ContractTableDefs> = ResolvedStoreConfig<
-  storeToV1<config>
->["tables"] &
+export type AllTableDefs<
+  config extends StoreConfig,
+  extraTableDefs extends ContractTableDefs | undefined = undefined,
+> = ResolvedStoreConfig<storeToV1<config>>["tables"] &
   (extraTableDefs extends ContractTableDefs ? extraTableDefs : Record<string, never>) &
   typeof storeTableDefs &
   typeof worldTableDefs;

@@ -4,7 +4,7 @@ import { ContractTableDefs, StoreConfig, mapObject, storePropertiesSchema } from
 import { CreateContractTablesOptions } from "@/tables/types";
 import { ContractTables } from "@/tables/contract/types";
 
-export const createRegistry = <config extends StoreConfig, extraTableDefs extends ContractTableDefs>({
+export const createRegistry = <config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined>({
   tableDefs,
   store,
   queries,
