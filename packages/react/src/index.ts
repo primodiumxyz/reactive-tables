@@ -1,5 +1,3 @@
-// TODO: also document all methods inside a table
-
 /* -------------------------------- FUNCTIONS ------------------------------- */
 // Wrapper (main entry point) for the library
 export * from "@/createWrapper";

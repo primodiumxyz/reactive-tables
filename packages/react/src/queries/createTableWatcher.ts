@@ -1,5 +1,3 @@
-import { Group, Having, Join, Select, Where } from "tinybase/queries";
-
 import { TinyBaseAdapter } from "@/adapter";
 import {
   CreateTableWatcherOptions,
@@ -10,24 +8,6 @@ import {
 } from "@/queries";
 import { Properties } from "@/tables";
 import { Schema, $Record, uuid, getPropsAndTypeFromRowChange } from "@/lib";
-
-/**
- * Defines the options for creating a watcher for a table, either globally (on all changes) or within a TinyQL query.
- *
- * @template S The schema of the properties inside the table to watch.
- * @template T The type of the properties.
- * @param query A TinyQL query to filter the records. If not provided, it will watch all records in the table without discrimination.
- * @see {@link CreateTableWatcherOptions} for the base options.
- * @see TinyQL for writing a query: https://tinybase.org/guides/making-queries/tinyql/
- * @category Queries
- * @internal
- */
-export type CreateQueryWrapperOptions<S extends Schema, T = unknown> = Omit<
-  CreateTableWatcherOptions<S, T>,
-  "queryId"
-> & {
-  query?: (keywords: { select: Select; join: Join; where: Where; group: Group; having: Having }) => void;
-};
 
 /**
  * Create a watcher/listener for a table, either globally (on all changes) or within a TinyQL query.
@@ -84,7 +64,7 @@ export const createTableWatcher = <S extends Schema, T = unknown>({
   onExit,
   onUpdate,
   options = { runOnInit: true },
-}: CreateQueryWrapperOptions<S, T>): CreateTableWatcherResult => {
+}: CreateTableWatcherOptions<S, T>): CreateTableWatcherResult => {
   // If a query is provided, define it and create the listener
   if (query) {
     const queryId = uuid();

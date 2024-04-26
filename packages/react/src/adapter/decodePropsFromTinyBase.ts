@@ -1,14 +1,14 @@
 import { Hex } from "viem";
 
 import { DecodedTinyBaseType, TinyBaseFormattedType } from "@/adapter";
-import { metadataProperties } from "@/lib";
+import { localProperties, metadataProperties } from "@/lib";
 
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { encodePropsToTinyBase } from "./encodePropsToTinyBase";
 
 // We can ignore these keys as they either don't need to be decoded (metadataProperties) or represent type information
-const ignoreKey = (key: string) => metadataProperties.includes(key) || key.startsWith("type__");
+const ignoreKey = (key: string) => metadataProperties.concat(localProperties).includes(key) || key.startsWith("type__");
 
 /**
  * Decode the properties of a record from its TinyBase-formatted cells.

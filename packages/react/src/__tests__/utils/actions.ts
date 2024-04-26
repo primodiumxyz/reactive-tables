@@ -55,7 +55,7 @@ export const fuzz = async (iterations: number) => {
 
 // Test functions
 export const mockFunctions = {
-  // Update an record's position
+  // Update a record's position
   move: async () => {
     const hash = await networkConfig.worldContract.write.move([random(-100, 100), random(-100, 100)], {
       chain: networkConfig.chain,

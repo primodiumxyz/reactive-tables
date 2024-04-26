@@ -1,7 +1,7 @@
 import { Properties } from "@/tables";
 import { TinyBaseAdapter } from "@/adapter";
 import { getPropsAndTypeFromRowChange, $Record, Schema } from "@/lib";
-import { CreateTableWatcherOptions, TableUpdate, UpdateType } from "@/queries/types";
+import { CreateQueryWatcherOptions, TableUpdate, UpdateType } from "@/queries/types";
 
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -65,7 +65,7 @@ export const createTableTinyQLWatcher = <S extends Schema, T = unknown>({
   onExit,
   onUpdate,
   options = { runOnInit: true },
-}: CreateTableWatcherOptions<S, T>) => {
+}: CreateQueryWatcherOptions<S, T>) => {
   if (!onChange && !onEnter && !onExit && !onUpdate) {
     throw new Error("At least one callback has to be provided");
   }

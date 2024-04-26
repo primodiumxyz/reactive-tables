@@ -11,11 +11,11 @@ import { padHex, toHex } from "viem";
 // src
 import {
   ContractTable,
-  createGlobalQuery,
+  createQuery,
   createLocalTable,
   createLocalCoordTable,
   createWrapper,
-  empty$Record,
+  default$Record,
   query,
   $Record,
   PropType,
@@ -185,12 +185,12 @@ describe("Wrapper", () => {
     };
 
     registry.A.set({ x: 1, y: 1 });
-    registry.B.set({ bool: true, array: [empty$Record] });
+    registry.B.set({ bool: true, array: [default$Record] });
 
     expect(registry.A.get()).toHaveProperty("x", 1);
     expect(registry.A.get()).toHaveProperty("y", 1);
     expect(registry.B.get()).toHaveProperty("bool", true);
-    expect(registry.B.get()).toHaveProperty("array", [empty$Record]);
+    expect(registry.B.get()).toHaveProperty("array", [default$Record]);
     expect(registry.C.get()).toHaveProperty("value", 10);
   });
 
@@ -758,7 +758,7 @@ describe("Wrapper", () => {
       return { registry, store, $records, onChange, aggregator };
     };
 
-    it("createQueryWrapper(): without query", async () => {
+    it("createTableWatcher(): without query", async () => {
       const { registry, $records, onChange, aggregator } = await preTest();
       const tableId = registry.Position.id;
 
@@ -812,7 +812,7 @@ describe("Wrapper", () => {
       unsubscribe();
     });
 
-    it("createQueryWrapper(): run on init", async () => {
+    it("createTableWatcher(): run on init", async () => {
       const { registry, $records, onChange, aggregator } = await preTest();
 
       // Enter $records
@@ -827,7 +827,7 @@ describe("Wrapper", () => {
       unsubscribe();
     });
 
-    it("createQueryWrapper(): with query", async () => {
+    it("createTableWatcher(): with query", async () => {
       const { registry, $records, onChange, aggregator } = await preTest();
       const tableId = registry.Position.id;
       const matchQuery = (x: number) => x > 5 && x < 15;
@@ -837,7 +837,7 @@ describe("Wrapper", () => {
         options: { runOnInit: false },
         query: ({ where }) => {
           // Where x is between 5 and 15
-          where((getCell) => matchQuery(Number(getCell("x"))));
+          where((getCell) => matchQuery(getCell("x") as number));
         },
       });
       // Query didn't run on init so it should be empty
@@ -894,7 +894,7 @@ describe("Wrapper", () => {
       unsubscribe();
     });
 
-    it("query() (queryAllMatching)", async () => {
+    it("query() (query)", async () => {
       const { registry, store, $records } = await setup();
       const [player, A, B, C] = $records;
       const emptyData = {
@@ -967,7 +967,7 @@ describe("Wrapper", () => {
 
     // TODO: fix this very weird case where assigning `synced` makes it hang forever in `waitForSyncLive`
     // When removing it, the while loop works, but whenever `synced` is assigned inside the loop, it hangs right at the `await wait(1000)`
-    it.todo("createGlobalQuery(), useQuery() (useQueryAllMatching)", async () => {
+    it.todo("createQuery(), useQuery() (useQueryAllMatching)", async () => {
       const { registry, store, $records, onChange, aggregator } = await preTest();
       const [player, A, B, C] = $records;
       const emptyData = {
@@ -1006,7 +1006,7 @@ describe("Wrapper", () => {
           onChange,
         }),
       );
-      const { unsubscribe } = createGlobalQuery(store(), query, { onChange: globalOnChange });
+      const { unsubscribe } = createQuery(store(), query, { onChange: globalOnChange });
 
       expect(result.current.sort()).toEqual([player, A].sort());
       expect(aggregator).toEqual([]);

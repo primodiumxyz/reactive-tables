@@ -4,6 +4,17 @@ import { ContractTableDefs, StoreConfig, mapObject, storePropertiesSchema } from
 import { CreateContractTablesOptions } from "@/tables/types";
 import { ContractTables } from "@/tables/contract/types";
 
+/**
+ * Creates a registry of contract tables with both their metadata (see {@link createMetadata}) and methods to retrieve/update
+ * properties (see {@link createTableMethods}).
+ *
+ * @param tableDefs The contract table definitions.
+ * @param store The regular TinyBase store.
+ * @param queries The TinyBase queries object associated with the store.
+ * @returns The contract tables registry.
+ * @category Tables
+ * @internal
+ */
 export const createRegistry = <config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined>({
   tableDefs,
   store,

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import {
-  CreateQueryWrapperOptions,
+  CreateTableWatcherOptions,
   createTableWatcher,
   queryAllWithProps,
   queryAllWithoutProps,
@@ -36,7 +36,7 @@ export const createTableMethods = <
   const $records = () => arrayToIterator(store.getRowIds(tableId) as $Record[]);
 
   /* --------------------------------- STREAMS -------------------------------- */
-  // Pause updates for an record (don't react to changes in the store)
+  // Pause updates for a record (don't react to changes in hooks, e.g. useProps)
   const pauseUpdates = ($record?: $Record, properties?: Properties<S, T>) => {
     $record = $record ?? default$Record;
 
@@ -44,7 +44,8 @@ export const createTableMethods = <
     if (properties) set(properties, $record);
   };
 
-  // Enable updates for an record (react to changes in the store, e.g. useproperties)
+  // Enable updates for a record (react again to changes in the store, e.g. useProps)
+  // If any update happened during the pause, the state will be updated to the latest properties
   const resumeUpdates = ($record?: $Record) => {
     $record = $record ?? default$Record;
 
@@ -53,6 +54,7 @@ export const createTableMethods = <
   };
 
   /* ----------------------------------- SET ---------------------------------- */
+  // Set the properties for a record
   const set = (properties: Properties<S, T>, $record?: $Record) => {
     $record = $record ?? default$Record;
 
@@ -68,6 +70,7 @@ export const createTableMethods = <
   };
 
   /* ----------------------------------- GET ---------------------------------- */
+  // Get the properties for a record
   function get(): Properties<S, T> | undefined;
   function get($record: $Record | undefined): Properties<S, T> | undefined;
   function get($record?: $Record | undefined, defaultProps?: PropertiesSansMetadata<S, T>): Properties<S, T>;
@@ -78,6 +81,7 @@ export const createTableMethods = <
     const decoded = Object.entries(row).length > 0 ? TinyBaseAdapter.decode(row) : undefined; // empty object should be undefined
     return (decoded ?? defaultProps) as Properties<S, T>;
   }
+
   // Utility function to save on computation when we're only interested in the raw data (to set again directly)
   const getRaw = ($record: $Record) => {
     const row = store.getRow(tableId, $record);
@@ -85,24 +89,28 @@ export const createTableMethods = <
   };
 
   /* --------------------------------- QUERIES -------------------------------- */
+  // Get all records inside the table
   const getAll = () => {
     return store.getRowIds(tableId) as $Record[];
   };
 
+  // Get all records with specific properties
   const getAllWith = (properties: Partial<Properties<S, T>>) => {
     return queryAllWithProps({ queries, tableId, properties }).$records;
   };
 
+  // Get all records without specific properties
   const getAllWithout = (properties: Partial<Properties<S, T>>) => {
     return queryAllWithoutProps({ queries, tableId, properties }).$records;
   };
 
   /* ---------------------------------- HOOKS --------------------------------- */
+  // Hook to get all records inside the table
   function useAll() {
     const [$records, set$Records] = useState<$Record[]>(getAll());
 
     useEffect(() => {
-      // Whenever an record is added or removed (row ids changed), update the state
+      // Whenever a record is added or removed (row ids changed), update the state
       const subId = store.addRowIdsListener(tableId, () => {
         set$Records(getAll());
       });
@@ -115,26 +123,31 @@ export const createTableMethods = <
     return $records;
   }
 
+  // Hook to get all records with specific properties
   const useAllWith = (properties: Partial<Properties<S, T>>) => {
     return useAllWithProps(queries, tableId, properties);
   };
 
+  // Hook to get all records without specific properties
   const useAllWithout = (properties: Partial<Properties<S, T>>) => {
     return useAllWithoutProps(queries, tableId, properties);
   };
 
   /* ---------------------------------- CLEAR --------------------------------- */
+  // Clear the table (remove all records)
   const clear = () => {
     store.delTable(tableId);
   };
 
   /* --------------------------------- REMOVE --------------------------------- */
+  // Remove a record from the table (delete its properties)
   const remove = ($record?: $Record) => {
     $record = $record ?? default$Record;
     store.delRow(tableId, $record);
   };
 
   /* --------------------------------- UPDATE --------------------------------- */
+  // Update the properties for a record, possibly with partial properties
   const update = (properties: Partial<Properties<S, T>>, $record?: $Record) => {
     $record = $record ?? default$Record;
     const currentProps = getRaw($record);
@@ -145,12 +158,14 @@ export const createTableMethods = <
   };
 
   /* ----------------------------------- HAS ---------------------------------- */
+  // Check if a record exists in the table
   const has = ($record?: $Record) => {
     if (!$record) return false;
     return store.hasRow(tableId, $record);
   };
 
   /* -------------------------------- USE PROPS ------------------------------- */
+  // Hook to get the properties for a record in real-time
   function useProps($record?: $Record | undefined): Properties<S, T> | undefined;
   function useProps($record: $Record | undefined, defaultProps?: PropertiesSansMetadata<S, T>): Properties<S, T>;
   function useProps($record?: $Record, defaultProps?: PropertiesSansMetadata<S, T>) {
@@ -192,10 +207,10 @@ export const createTableMethods = <
   /* --------------------------------- SYSTEM --------------------------------- */
   // Create a query tied to this table, with callbacks on change, enter & exit from the query conditions
   // or if no query, on any change in the table
-  const watch = (options: Omit<CreateQueryWrapperOptions<S, T>, "queries" | "tableId" | "schema">) => {
+  const watch = (options: Omit<CreateTableWatcherOptions<S, T>, "queries" | "tableId" | "schema">) => {
     // Add a `select` on top of the query to abstract selecting at least a cell from the properties => selecting all $records
     // This is required with TinyQL to at least select a cell so it considers all rows
-    const query: CreateQueryWrapperOptions<S, T>["query"] = options.query
+    const query: CreateTableWatcherOptions<S, T>["query"] = options.query
       ? (keywords) => {
           keywords.select(Object.keys(schema)[0]);
           options.query!(keywords);

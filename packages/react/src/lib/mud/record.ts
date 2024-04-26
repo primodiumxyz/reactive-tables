@@ -6,6 +6,8 @@ import { KeySchema } from "@/tables/contract";
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { createTableKeyMethods } from "@/tables/contract";
+import { Schema } from "./types";
+import { Properties } from "@/tables";
 
 /**
  * A record is a string that represents a tuple of hex keys, to identify a row in a table.
@@ -31,7 +33,7 @@ export const default$Record = hexKeyTupleTo$Record([]);
  *
  * Note: This is used when decoding a log inside the storage adapter to get the concerned record.
  *
- * @param hexKeyTuple - Tuple of hex keys.
+ * @param hexKeyTuple Tuple of hex keys.
  * @returns A single record.
  *
  * @category Record
@@ -43,7 +45,7 @@ export function hexKeyTupleTo$Record(hexKeyTuple: readonly Hex[]): $Record {
 /**
  * Convert a record into a tuple of hex keys.
  *
- * @param $record - A single record.
+ * @param $record A single record.
  * @returns Tuple of hex keys.
  *
  * @category Record
@@ -67,9 +69,9 @@ export function $recordToHexKeyTuple($record: $Record): readonly Hex[] {
  *
  * @category Record
  */
-export const encode$Record = <TKeySchema extends KeySchema>(
-  keySchema: TKeySchema,
-  keys: SchemaToPrimitives<TKeySchema>,
+export const encode$Record = <S extends Schema, KS extends KeySchema, T = unknown>(
+  keySchema: KS,
+  keys: Properties<S, T>,
 ) => {
   if (Object.keys(keySchema).length !== Object.keys(keys).length) {
     throw new Error(
@@ -78,6 +80,7 @@ export const encode$Record = <TKeySchema extends KeySchema>(
   }
 
   return hexKeyTupleTo$Record(
+    // @ts-expect-error keys[keyName] could be undefined (it won't, but the given type needs to be adapted, which requires a more global refactor)
     Object.entries(keySchema).map(([keyName, type]) => encodeAbiParameters([{ type }], [keys[keyName]])),
   );
 };
@@ -114,7 +117,7 @@ export const decode$Record = <TKeySchema extends KeySchema>(
  * Note: This is used for providing an iterator for all records inside a table, and provide a similar
  * API to the one provided by RECS (entities iterator).
  *
- * @param array - Any array.
+ * @param array Any array.
  * @returns An iterable iterator.
  * @category Record
  */

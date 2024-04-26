@@ -10,10 +10,10 @@ import { $Record, Schema, localProperties, metadataProperties } from "@/lib";
  *
  * This uses the TinyBase store {@link GetResultCellChange} function to retrieve the specific changes in a cell.
  *
- * @param getCellChange - Native TinyBase function to get the changes in a cell.
- * @param keys - The list of keys for each cell to get the changes for (to get the full properties object).
- * @param tableId - The id of the table.
- * @param $record - The record that changed.
+ * @param getCellChange Native TinyBase function to get the changes in a cell.
+ * @param keys The list of keys for each cell to get the changes for (to get the full properties object).
+ * @param tableId The id of the table.
+ * @param $record The record that changed.
  * @returns The id of the table, the record, the properties object with the current and previous properties, and the type of update.
  * @category Queries
  */
