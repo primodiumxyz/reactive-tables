@@ -20,7 +20,7 @@ import {
 } from "@latticexyz/schema-type/internal";
 import { Hex } from "viem";
 
-import { formatPropsForTinyBase } from "@/adapter/formatPropsForTinyBase";
+import { encodePropsToTinyBase } from "@/adapter/encodePropsToTinyBase";
 import { PropsSchema } from "@/tables/contract";
 
 export function decodeValueArgs<TSchema extends PropsSchema>(
@@ -44,7 +44,7 @@ export function decodeValue<TSchema extends PropsSchema>(propsSchema: TSchema, d
   const valueTuple = decodeRecord({ staticFields, dynamicFields }, data);
   // Modified: encode for TinyBase
   // This will include formatted values + their types (e.g. `type__name` for `name`)
-  return formatPropsForTinyBase(Object.keys(propsSchema), valueTuple) as SchemaToPrimitives<TSchema>;
+  return encodePropsToTinyBase(Object.keys(propsSchema), valueTuple) as SchemaToPrimitives<TSchema>;
 }
 
 export function decodeRecord(propsSchema: Schema, data: Hex): readonly (StaticPrimitiveType | DynamicPrimitiveType)[] {
