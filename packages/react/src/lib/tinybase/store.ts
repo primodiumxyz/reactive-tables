@@ -28,12 +28,7 @@ export const createStore = () => {
   const isBrowser = typeof window !== "undefined";
   const getPersistentStore = (): PersistentStore => {
     if (!isBrowser) {
-      console.warn("Persistent store is not available in node");
-      return {
-        ...store,
-        getQueries: () => queries,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any;
+      throw new Error("Persistent store is only available on the browser");
     }
 
     const persistentStore = createTinyBaseStore();

@@ -46,9 +46,7 @@ export const createTableKeyMethods = <VS extends Schema, KS extends Schema = Sch
       typeof window !== "undefined"
         ? useWithKeys
         : () => {
-            console.warn("useWithKeys is only available in the browser");
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return undefined as any;
+            throw new Error("The method useWithKeys is only available in the browser");
           },
     setWithKeys,
     get$RecordKeys,

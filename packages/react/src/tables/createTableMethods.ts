@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 import {
   CreateQueryWrapperOptions,
-  createQueryWrapper,
+  createTableWatcher,
   queryAllWithProps,
   queryAllWithoutProps,
   useAllWithProps,
@@ -202,7 +202,7 @@ export const createTableMethods = <
         }
       : undefined;
 
-    return createQueryWrapper({
+    return createTableWatcher({
       queries,
       tableId,
       schema,
@@ -233,9 +233,7 @@ export const createTableMethods = <
   if (typeof window === "undefined") {
     Object.keys(hookMethods).forEach((key) => {
       hookMethods[key as keyof typeof hookMethods] = () => {
-        console.warn(`${key} is only available in the browser`);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return undefined as any;
+        throw new Error(`The method ${key} is only available in the browser`);
       };
     });
   }
