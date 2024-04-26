@@ -1,3 +1,0 @@
-packages:
-  - packages/*
-  - packages/react/src/__tests__/mocks/contracts

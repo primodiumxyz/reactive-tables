@@ -1,5 +1,5 @@
 {
-  "name": "@primodiumxyz/tinybase-state-manager",
+  "name": "@primodiumxyz/reactive-tables",
   "private": true,
   "description": "",
   "repository": {
@@ -10,13 +10,13 @@
   "scripts": {
     "build": "lerna run build",
     "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && find . -name 'pnpm-lock.yaml' -type f -prune -exec rm -rf '{}' +",
-    "dev": "cd packages/react && pnpm dev",
+    "dev": "cd packages/reactive-tables && pnpm dev",
     "lerna-publish": "lerna publish",
     "lint": "eslint --cache",
     "lint:fix": "eslint --cache --fix",
     "prepare": "husky install",
     "sort-package-json": "npx sort-package-json package.json 'packages/*/package.json'",
-    "test": "cd packages/react && pnpm test"
+    "test": "cd packages/reactive-tables && pnpm test"
   },
   "lint-staged": {
     "*.{ts,tsx}": "eslint --cache --fix",
