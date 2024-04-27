@@ -13,7 +13,9 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@primodiumxyz/reactive-tables": ["dist/index"],
+      "@primodiumxyz/reactive-tables/*": ["dist/*"]
     }
   },
   "include": ["src"],

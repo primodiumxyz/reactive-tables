@@ -11,6 +11,9 @@ export default defineConfig({
     hideSkippedTests: true,
   },
   resolve: {
-    alias: [{ find: "@", replacement: resolve(__dirname, "src") }],
+    alias: [
+      { find: "@", replacement: resolve(__dirname, "src") },
+      { find: "@primodiumxyz/reactive-tables", replacement: resolve(__dirname, "dist") },
+    ],
   },
 });

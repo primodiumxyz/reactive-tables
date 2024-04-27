@@ -4,7 +4,7 @@
   "description": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/primodiumxyz/tiny-base-integration"
+    "url": "https://github.com/primodiumxyz/reactive-tables"
   },
   "license": "MIT",
   "scripts": {

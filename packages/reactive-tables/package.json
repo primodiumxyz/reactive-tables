@@ -1,11 +1,11 @@
 {
-  "name": "@primodiumxyz/tinybase-state-manager-react",
+  "name": "@primodiumxyz/reactive-tables",
   "version": "0.0.0",
   "private": true,
   "description": "",
   "repository": {
     "type": "git",
-    "url": "https://github.com/primodiumxyz/tiny-base-integration"
+    "url": "https://github.com/primodiumxyz/reactive-tables"
   },
   "license": "MIT",
   "type": "module",
@@ -23,11 +23,11 @@
     "build:js": "tsup",
     "clean": "pnpm run clean:js",
     "clean:js": "rimraf dist",
-    "contracts:build": "cd src/__tests__/mocks/contracts && pnpm run build",
-    "dev": "concurrently -n node,contracts,indexer -c yellow,cyan,red \"cd src/__tests__/mocks/contracts && pnpm run devnode\" \"cd src/__tests__/mocks/contracts && pnpm run deploy:local\" \"pnpm dev:indexer\"",
+    "contracts:build": "cd src/__tests__/contracts && pnpm run build",
+    "dev": "concurrently -n node,contracts,indexer -c yellow,cyan,red \"cd src/__tests__/contracts && pnpm run devnode\" \"cd src/__tests__/contracts && pnpm run deploy:local\" \"pnpm dev:indexer\"",
     "dev:indexer": "pnpm clean-local-docker-indexer && pnpm local-docker-indexer",
-    "test": "vitest",
-    "test:verbose": "DEBUG=primodium:* vitest > testLogs.txt"
+    "test": "pnpm build && vitest",
+    "test:verbose": "pnpm build && DEBUG=primodium:* vitest > testLogs.txt"
   },
   "dependencies": {
     "@latticexyz/common": "2.0.6",
