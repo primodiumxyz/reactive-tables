@@ -22,7 +22,7 @@ export const createMetadata = <tableDef extends ContractTableDef>(def: tableDef)
     __encodedLengths: Type.OptionalString,
     __dynamicData: Type.OptionalString,
     __lastSyncedAtBlock: Type.OptionalBigInt,
-  };
+  } as const;
 
   return {
     id: def.tableId,
