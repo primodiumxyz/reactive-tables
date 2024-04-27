@@ -208,7 +208,7 @@ export type Local$RecordTable = ReturnType<typeof createLocal$RecordTable>;
 export const createLocal$RecordTable = <M extends Metadata>(
   store: Store,
   options?: CreateLocalTableOptions<M>,
-  defaultProperties?: Properties<{ $record: Type.$Record }>,
+  defaultProperties?: Properties<{ value: Type.$Record }>,
 ) => {
-  return createLocalTable(store, { $record: Type.$Record }, options, defaultProperties);
+  return createLocalTable(store, { value: Type.$Record }, options, defaultProperties);
 };
