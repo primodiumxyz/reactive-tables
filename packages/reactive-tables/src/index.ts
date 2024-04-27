@@ -27,5 +27,13 @@ export { Type as PropType } from "@/lib/external/mud/schema";
 
 export type { QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
 
-export type { ContractTable, ContractTables, KeySchema, PropsSchema } from "@/tables/contract";
+export type {
+  AbiToPropsSchema,
+  AbiToKeySchema,
+  ContractTable,
+  ContractTables,
+  KeySchema,
+  PropsSchema,
+} from "@/tables/contract";
 export type { LocalTable } from "@/tables/local";
+export type { Properties, PropertiesSansMetadata } from "@/tables";

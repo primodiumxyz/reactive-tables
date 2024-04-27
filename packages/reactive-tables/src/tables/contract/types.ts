@@ -40,12 +40,8 @@ export type ContractTable<
   S extends Schema = Schema,
   M extends Metadata = Metadata,
   T = unknown,
-> = ContractTableMethods<AbiToSchemaPlusMetadata<tableDef["valueSchema"]>, T> &
-  ContractTableWithKeysMethods<
-    AbiToSchemaPlusMetadata<tableDef["valueSchema"]>,
-    AbiToSchema<tableDef["keySchema"]>,
-    T
-  > & {
+> = ContractTableMethods<AbiToPropsSchema<tableDef["valueSchema"]>, T> &
+  ContractTableWithKeysMethods<AbiToPropsSchema<tableDef["valueSchema"]>, AbiToKeySchema<tableDef["keySchema"]>, T> & {
     readonly id: tableDef["tableId"];
     readonly schema: S;
     readonly metadata: M & {
@@ -73,30 +69,33 @@ export type ContractTableMetadata<S extends Schema, M extends Metadata = Metadat
     readonly propsSchema: PropsSchema;
   };
 
-/**
- * Converts an ABI type to its corresponding Typescript-understandable type.
- *
- * @category Table
- * @internal
- */
-export type AbiToSchema<schema extends UnparsedPropsSchema | UnparsedKeySchema | PropsSchema | KeySchema> = {
-  [fieldName in keyof schema & string]: SchemaAbiTypeToRecsType<
-    SchemaAbiType &
-      (schema extends UnparsedPropsSchema | UnparsedKeySchema ? schema[fieldName]["type"] : schema[fieldName])
-  >;
-};
+// or separate AbiToPropsSchema and AbiToKeySchema
 
 /**
- * Includes the metadata properties decoded from onchain logs in the schema.
+ * Converts an ABI type to its corresponding Typescript-understandable type (PropsSchema).
  *
  * @category Table
- * @internal
  */
-export type AbiToSchemaPlusMetadata<schema extends UnparsedPropsSchema> = AbiToSchema<schema> & {
+export type AbiToPropsSchema<schema extends UnparsedPropsSchema | PropsSchema> = {
+  [fieldName in keyof schema & string]: SchemaAbiTypeToRecsType<
+    SchemaAbiType & (schema extends UnparsedPropsSchema ? schema[fieldName]["type"] : schema[fieldName])
+  >;
+} & {
   __staticData: Type.OptionalString;
   __encodedLengths: Type.OptionalString;
   __dynamicData: Type.OptionalString;
   __lastSyncedAtBlock: Type.OptionalBigInt;
+};
+
+/**
+ * Converts an ABI type to its corresponding Typescript-understandable type (KeySchema).
+ *
+ * @category Table
+ */
+export type AbiToKeySchema<schema extends UnparsedKeySchema | KeySchema> = {
+  [fieldName in keyof schema & string]: SchemaAbiTypeToRecsType<
+    SchemaAbiType & (schema extends UnparsedKeySchema ? schema[fieldName]["type"] : schema[fieldName])
+  >;
 };
 
 /**

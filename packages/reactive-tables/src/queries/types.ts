@@ -2,7 +2,7 @@ import { Group, Having, Join, Select, Where } from "tinybase/queries";
 
 import { TinyBaseFormattedType } from "@/adapter";
 import { Properties } from "@/tables";
-import { AbiToSchemaPlusMetadata, ContractTable } from "@/tables/contract";
+import { AbiToPropsSchema, ContractTable } from "@/tables/contract";
 import { ContractTableDef, $Record, TinyBaseQueries, Schema } from "@/lib";
 
 /* --------------------------------- GLOBAL --------------------------------- */
@@ -70,7 +70,7 @@ export type TableWatcherCallbacks<S extends Schema, T = unknown> = Partial<{
  */
 type QueryMatchingProperties<tableDef extends ContractTableDef, T = unknown> = {
   table: ContractTable<tableDef>;
-  properties: Properties<AbiToSchemaPlusMetadata<tableDef["valueSchema"]>, T>;
+  properties: Properties<AbiToPropsSchema<tableDef["valueSchema"]>, T>;
 };
 
 /**
@@ -114,7 +114,7 @@ export type QueryOptions<tableDefs extends ContractTableDef[], T = unknown> = {
 export type TableQueryOptions<tableDef extends ContractTableDef> = {
   queries: TinyBaseQueries;
   tableId: string;
-  properties: Partial<Properties<AbiToSchemaPlusMetadata<tableDef["valueSchema"]>>>;
+  properties: Partial<Properties<AbiToPropsSchema<tableDef["valueSchema"]>>>;
   formattedProps?: TinyBaseFormattedType;
 };
 

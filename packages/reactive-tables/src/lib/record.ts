@@ -1,7 +1,7 @@
 import { SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
 import { concatHex, decodeAbiParameters, encodeAbiParameters, Hex, isHex, size, sliceHex } from "viem";
 
-import { AbiToSchema, KeySchema } from "@/tables/contract";
+import { AbiToKeySchema, KeySchema } from "@/tables/contract";
 import { Properties } from "@/tables";
 
 // (jsdocs)
@@ -70,7 +70,7 @@ export function $recordToHexKeyTuple($record: $Record): readonly Hex[] {
  */
 export const encode$Record = <KS extends KeySchema, T = unknown>(
   keySchema: KS,
-  keys: Properties<AbiToSchema<KS>, T>,
+  keys: Properties<AbiToKeySchema<KS>, T>,
 ) => {
   if (Object.keys(keySchema).length !== Object.keys(keys).length) {
     throw new Error(
