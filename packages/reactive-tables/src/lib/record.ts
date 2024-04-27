@@ -2,12 +2,12 @@ import { SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
 import { concatHex, decodeAbiParameters, encodeAbiParameters, Hex, isHex, size, sliceHex } from "viem";
 
 import { KeySchema } from "@/tables/contract";
+import { Properties } from "@/tables";
+import { Schema } from "@/lib/external/mud/schema";
 
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { createTableKeyMethods } from "@/tables/contract";
-import { Schema } from "./types";
-import { Properties } from "@/tables";
 
 /**
  * A record is a string that represents a tuple of hex keys, to identify a row in a table.
