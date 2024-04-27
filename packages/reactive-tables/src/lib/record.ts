@@ -1,9 +1,8 @@
 import { SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
 import { concatHex, decodeAbiParameters, encodeAbiParameters, Hex, isHex, size, sliceHex } from "viem";
 
-import { KeySchema } from "@/tables/contract";
+import { AbiToSchema, KeySchema } from "@/tables/contract";
 import { Properties } from "@/tables";
-import { Schema } from "@/lib/external/mud/schema";
 
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -69,9 +68,9 @@ export function $recordToHexKeyTuple($record: $Record): readonly Hex[] {
  *
  * @category Record
  */
-export const encode$Record = <S extends Schema, KS extends KeySchema, T = unknown>(
+export const encode$Record = <KS extends KeySchema, T = unknown>(
   keySchema: KS,
-  keys: Properties<S, T>,
+  keys: Properties<AbiToSchema<KS>, T>,
 ) => {
   if (Object.keys(keySchema).length !== Object.keys(keys).length) {
     throw new Error(
@@ -80,8 +79,11 @@ export const encode$Record = <S extends Schema, KS extends KeySchema, T = unknow
   }
 
   return hexKeyTupleTo$Record(
-    // @ts-expect-error keys[keyName] could be undefined (it won't, but the given type needs to be adapted, which requires a more global refactor)
-    Object.entries(keySchema).map(([keyName, type]) => encodeAbiParameters([{ type }], [keys[keyName]])),
+    // TODO(review): "Type 'string | number | bigint | boolean' is not assignable to type 'number | bigint | boolean | `0x${string}`'"
+    // Basically here it considers that `type` won't be of an ABI type that allows `keys[keyName]` to be a string; not sure what to do exactly about it
+    Object.entries(keySchema).map(([keyName, type]) =>
+      encodeAbiParameters([{ type }], [keys[keyName] as number | bigint | boolean | Hex]),
+    ),
   );
 };
 

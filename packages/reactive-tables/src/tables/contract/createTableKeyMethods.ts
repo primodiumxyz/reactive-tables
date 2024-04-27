@@ -1,5 +1,5 @@
 import { Properties, PropertiesSansMetadata, OriginalTableMethods } from "@/tables";
-import { ContractTableMethods, ContractTableWithKeysMethods, KeySchema } from "@/tables/contract";
+import { AbiToSchema, ContractTableMethods, ContractTableWithKeysMethods, KeySchema } from "@/tables/contract";
 import { decode$Record, encode$Record, default$Record, $Record, Schema } from "@/lib";
 
 /**
@@ -13,10 +13,15 @@ import { decode$Record, encode$Record, default$Record, $Record, Schema } from "@
  * @returns The key-specific table methods (see {@link ContractTableWithKeysMethods}).
  * @category Table
  */
-export const createTableKeyMethods = <VS extends Schema, KS extends Schema = Schema, T = unknown>({
+export const createTableKeyMethods = <
+  VS extends Schema,
+  TKeySchema extends KeySchema,
+  KS extends AbiToSchema<TKeySchema>,
+  T = unknown,
+>({
   keySchema,
   ...methods
-}: { keySchema: KeySchema } & ContractTableMethods<VS, T> & OriginalTableMethods): ContractTableWithKeysMethods<
+}: { keySchema: TKeySchema } & ContractTableMethods<VS, T> & OriginalTableMethods): ContractTableWithKeysMethods<
   VS,
   KS,
   T

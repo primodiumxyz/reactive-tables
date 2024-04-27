@@ -51,8 +51,8 @@ export type ContractTable<
     readonly metadata: M & {
       readonly name: tableDef["name"];
       readonly globalName: `${tableDef["namespace"]}__${tableDef["name"]}`;
-      readonly keySchema: tableDef["keySchema"];
-      readonly propsSchema: tableDef["valueSchema"];
+      readonly keySchema: { [name in keyof tableDef["keySchema"] & string]: tableDef["keySchema"][name]["type"] };
+      readonly propsSchema: { [name in keyof tableDef["valueSchema"] & string]: tableDef["valueSchema"][name]["type"] };
     };
   };
 
