@@ -1,14 +1,64 @@
 # Reactive Tables
 
-TODO: introduction (one-liner + short description)
+**A fully fledged, strictly typed library for generating and managing reactive tables in a MUD application, available for node and browser environments.**
 
-Every relevant functions and constants are exported from the main module, as well as a few utilities, mostly for encoding/decoding, under the `utils` namespace.
+The package encompasses a wide range of functionnalities, from creating a tables registry from a MUD config object, including metadata and typed methods for updating, fetching and querying data associated with each record, to decoding onchain logs into consumable properties, and creating/syncing local tables with minimal effort.
 
-All methods for communicating with a table are directly available on its object, with the exception of global query and watching methods—meant for usage across multiple tables—which must be imported from the main module.
+It is meant to be used inside a MUD application, as a replacement for the native RECS framework, meaning both in terms of technical state management and [in terms of conventions and architectural pattern](#conventions).
 
-## Conventions
+## Overview
 
-This package follows new naming conventions, which are meant to be more explicit than RECS, and fit better with the new architecture, i.e. tabular data, similar to TinyBase storage.
+### Entry points
+
+There are basically 3 entry points to the package, which are all exported from the main module:
+
+1. `createWrapper` - The main entry point, which takes the MUD configuration, and returns the registry, table definitions, the TinyBase store wrapper and a storage adapter for RPC/indexer-client sync.
+2. `createLocalTable` (and `createLocal<type>Table` templates) - A factory function for creating local tables, with the same API as contract tables.
+3. `query`, `createQuery`, `useQuery` - Global methods for querying multiple tables at once, and watching for changes.
+
+... as well as a few utilities for encoding/decoding, under the `utils` namespace.
+
+### Notable features
+
+- **Fully typed** - The package is fully typed, with strict types for all properties, methods and functions.
+- **Efficient storage and manipulation** - All properties are stored as tabular data using TinyBase, which allows for performant storage, retrieval, and savvy large-scale manipulation.
+- **Powerful queries** - Using multiple query languages, both over a single or multiple tables, including TinyQL (a typed and programmatic API) (TODO: link example), straightforward human-readable queries (TODO: link example), and built-in direct/hook queries.
+- **Dynamic and reactive** - The tables are reactive, meaning that each table (or group of tables) can be watched for changes, either globally or inside a precise query; including callbacks to trigger side effects, with details on the record and properties that were modified.
+- **Local tables** - Local tables are tailored for client-side state management, can be aggregated with contract tables, and include all the same methods, as well as optional local storage persistence over sessions.
+- **Storage adapter** - A built-in bridge between onchain logs and direct properties consumption on the client-side, which is a perfect fit for indexer/RPC sync using [the sync-stack](https://www.npmjs.com/package/@primodiumxyz/sync-stack), [as demonstrated in the tests](./packages//reactive-tables/src/__tests__/utils/sync/createSync.ts#83).
+
+## Details
+
+### Structure
+
+```ml
+packages/reactive-tables - "Entry point for the package"
+├── dist - "Compiled files for distribution"
+│   ├── index - "Main module"
+│   └── utils - "Utilities for encoding/decoding"
+└── src - "Source files"
+    ├── __tests__ - "Tests related to the library"
+    │   ├── contracts - "MUD contracts for testing various tables and systems"
+    │   └── utils - "Utilities for testing (sync, function calls, network config)"
+    ├── adapter - "Storage adapter (decode properties from logs), TinyBase adapter (encode/decode to/from TinyBase storable format)"
+    ├── lib - "Internal and external types, constants, and functions"
+    │   ├── external - "Any external utilities, e.g. non-modified MUD types"
+    │   └── tinybase - "Functionalities strictly specific to TinyBase, e.g. storage/retrieval utilities, store creation, cell change parsing"
+    ├── queries - "Table queries and listeners"
+    │   └── templates - "Templates for common queries (direct and hooks)"
+    ├── tables - "Generic table creation; definition -> table object with metadata and methods"
+    │   ├── contract - "Registry creation, contract-specific metadata and methods"
+    │   └── local - "Local table creation, including templates"
+    ├── createWrapper.ts - "Main entry point for the package, creates a tables registry from a MUD config object"
+    ├── index.ts - "Main module, exports all relevant functions and constants"
+    └── utils.ts - "Utilities for encoding/decoding"
+```
+
+### Conventions
+
+This package follows new naming conventions, which are meant to be more explicit than RECS, and fit better with the new architecture, i.e. tabular data, similar to TinyBase storage. Hence, it follows an architectural pattern that could be described as "reactive tables", which would encompass entities, components and systems (ECS) in a more explicit and relational way.
+
+See the table below for details on the differences with RECS.
 
 | Reference          | RECS reference | Details                                                                                     | Notes (TODO: only for internal review)                                                                                                                             |
 | ------------------ | -------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -19,11 +69,17 @@ This package follows new naming conventions, which are meant to be more explicit
 | `Properties`       | `Value`        | The content of a row associated with a record, which is made of multiple cells = properties |                                                                                                                                                                    |
 | `Property`         | ?              | A single cell, as a key-value pair                                                          |                                                                                                                                                                    |
 
+It's worth noting that _systems_, which are not mentioned above, are included as table watchers (or listeners) directly tied to each table, and global watchers and queries.
+
 ## How to use
 
 ### Installation
 
-TODO after publishing
+Just install the package from npm, preferably with pnpm.
+
+```bash
+pnpm add @primodiumxyz/reactive-tables
+```
 
 ### Usage
 
@@ -102,3 +158,9 @@ pnpm test
 # or write the logs into a file for debugging
 pnpm test:verbose
 ```
+
+### Building
+
+The package can be built for production using `pnpm build`.
+
+If there are any issues with dependencies at some point, e.g. after updating them, you can run `pnpm clean && pnpm i`, which will recursively clean up all `node_modules` and reinstall all dependencies.
