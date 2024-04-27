@@ -22,7 +22,7 @@ import {
   TableUpdate,
   useQuery,
   ContractTableDef,
-} from "@/index";
+} from "@primodiumxyz/reactive-tables";
 
 // tests
 import {
@@ -37,7 +37,7 @@ import {
   setItems,
   setPositionFor$Record,
 } from "@/__tests__/utils";
-import mudConfig from "@/__tests__/mocks/contracts/mud.config";
+import mudConfig from "@/__tests__/contracts/mud.config";
 
 const FUZZ_ITERATIONS = 20;
 

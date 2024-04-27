@@ -122,7 +122,7 @@ importers:
         specifier: ^1.5.2
         version: 1.5.2(@types/node@18.19.31)(happy-dom@14.7.1)(jsdom@24.0.0)
 
-  packages/reactive-tables/src/__tests__/mocks/contracts:
+  packages/reactive-tables/src/__tests__/contracts:
     dependencies:
       "@latticexyz/cli":
         specifier: 2.0.6
