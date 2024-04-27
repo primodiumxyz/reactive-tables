@@ -39,10 +39,5 @@
   "engines": {
     "node": "18.x",
     "pnpm": "8.x"
-  },
-  "pnpm": {
-    "patchedDependencies": {
-      "@latticexyz/common@2.0.6": "patches/@latticexyz__common@2.0.6.patch"
-    }
   }
 }

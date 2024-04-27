@@ -23,7 +23,7 @@ export type {
   TinyBaseQueries,
   TinyBaseStore,
 } from "@/lib";
-export { Type as PropType } from "@/lib/mud/types";
+export { Type as PropType } from "@/lib/external/mud/schema";
 
 export type { QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
 
