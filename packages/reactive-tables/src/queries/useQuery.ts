@@ -18,7 +18,7 @@ import { ContractTableDef, getPropsAndTypeFromRowChange, $Record, Schema, TinyBa
  *
  * @param store The TinyBase store containing the properties associated with contract tables.
  * @param options The {@link QueryOptions} object containing the conditions to match.
- * @param callbacks The {@link TableWatcherCallbacks} to trigger on changes. Including: onChange, onEnter, onExit, onUpdate.
+ * @param callbacks (optional) The {@link TableWatcherCallbacks} to trigger on changes. Including: onChange, onEnter, onExit, onUpdate.
  * These will trigger a {@link TableUpdate} object with the id of the updated table, the record, the previous and new properties of the record and the type of update.
  * @returns An array of {@link $Record} matching all conditions.
  * @example
@@ -51,9 +51,9 @@ import { ContractTableDef, getPropsAndTypeFromRowChange, $Record, Schema, TinyBa
 export const useQuery = <tableDefs extends ContractTableDef[], S extends Schema, T = unknown>(
   store: TinyBaseStore,
   options: QueryOptions<tableDefs, T>,
-  callbacks: TableWatcherCallbacks<S, T>,
+  callbacks?: TableWatcherCallbacks<S, T>,
 ): $Record[] => {
-  const { onChange, onEnter, onExit, onUpdate } = callbacks;
+  const { onChange, onEnter, onExit, onUpdate } = callbacks ?? {};
   const [$records, set$Records] = useState<$Record[]>([]);
   // Create a ref for previous records (to provide the update type in the callback)
   const prev$Records = useRef<$Record[]>([]);
