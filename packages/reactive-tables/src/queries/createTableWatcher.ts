@@ -7,7 +7,7 @@ import {
   createTableTinyQLWatcher,
 } from "@/queries";
 import { Properties } from "@/tables";
-import { Schema, $Record, uuid, getPropsAndTypeFromRowChange } from "@/lib";
+import { Schema, $Record, uuid, getPropertiesAndTypeFromRowChange } from "@/lib";
 
 /**
  * Create a watcher/listener for a table, either globally (on all changes) or within a TinyQL query.
@@ -88,7 +88,7 @@ export const createTableWatcher = <S extends Schema, T = unknown>({
     const $record = rowId as $Record;
 
     // Gather the properties and type of the change
-    const args = getPropsAndTypeFromRowChange(getCellChange, keys, tableId, $record) as TableUpdate<S, T>;
+    const args = getPropertiesAndTypeFromRowChange(getCellChange, keys, tableId, $record) as TableUpdate<S, T>;
 
     // Run the callbacks
     if (args.type === "enter") {
@@ -107,12 +107,12 @@ export const createTableWatcher = <S extends Schema, T = unknown>({
 
     // Run callbacks for all records in the query
     Object.entries(rows).forEach(([rowId, rowContent]) => {
-      const currentProps = TinyBaseAdapter.decode(rowContent) as Properties<S, T>;
+      const currentProperties = TinyBaseAdapter.decode(rowContent) as Properties<S, T>;
 
       const args = {
         tableId,
         $record: rowId as $Record,
-        properties: { current: currentProps, prev: undefined },
+        properties: { current: currentProperties, prev: undefined },
         type: "enter" as UpdateType,
       };
       onEnter?.(args);

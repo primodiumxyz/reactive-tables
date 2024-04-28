@@ -1,6 +1,6 @@
 import { Properties } from "@/tables";
 import { TinyBaseAdapter } from "@/adapter";
-import { getPropsAndTypeFromRowChange, $Record, Schema } from "@/lib";
+import { getPropertiesAndTypeFromRowChange, $Record, Schema } from "@/lib";
 import { CreateQueryWatcherOptions, TableUpdate, UpdateType } from "@/queries/types";
 
 // (jsdocs)
@@ -96,7 +96,7 @@ export const createTableTinyQLWatcher = <S extends Schema, T = unknown>({
     if (!inPrev && !inCurrent) return; // not in the query, we're not interested
 
     // Gather the previous and current properties
-    const args = getPropsAndTypeFromRowChange(getCellChange, keys, tableId, $record) as TableUpdate<S, T>;
+    const args = getPropertiesAndTypeFromRowChange(getCellChange, keys, tableId, $record) as TableUpdate<S, T>;
 
     // Run the callbacks
     if (!inPrev && inCurrent) {
@@ -121,12 +121,12 @@ export const createTableTinyQLWatcher = <S extends Schema, T = unknown>({
 
     // Run callbacks for all records in the query
     queries.forEachResultRow(queryId, ($record) => {
-      const currentProps = TinyBaseAdapter.decode(rows[$record]) as Properties<S, T>;
+      const currentProperties = TinyBaseAdapter.decode(rows[$record]) as Properties<S, T>;
 
       const args = {
         tableId,
         $record: $record as $Record,
-        properties: { current: currentProps, prev: undefined },
+        properties: { current: currentProperties, prev: undefined },
         type: "enter" as UpdateType,
       };
       onEnter?.(args);

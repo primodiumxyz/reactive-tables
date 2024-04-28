@@ -11,7 +11,7 @@ import { padHex, toHex } from "viem";
 // src
 import {
   ContractTable,
-  createQuery,
+  $query,
   createLocalTable,
   createLocalCoordTable,
   createWrapper,
@@ -132,9 +132,9 @@ const setup = async (options: TestOptions = { useIndexer: false }) => {
 /* -------------------------------------------------------------------------- */
 
 // Wait for a table to be synced at the specified block
-const waitForBlockSynced = async <table extends ContractTableDef>(
+const waitForBlockSynced = async <tableDef extends ContractTableDef>(
   txBlock: bigint,
-  table: ContractTable<table>,
+  table: ContractTable<tableDef>,
   key?: $Record,
 ) => {
   let synced = false;
@@ -236,8 +236,8 @@ describe("sync: should properly sync similar properties to RECS registry", () =>
       }
 
       // Test properties schema
-      const propsSchema = registry[key].metadata.propsSchema ?? {};
-      for (const key of Object.keys(propsSchema)) {
+      const propertiesSchema = registry[key].metadata.propertiesSchema ?? {};
+      for (const key of Object.keys(propertiesSchema)) {
         if (!(key in table)) {
           expect(recsComp[key]).toBeUndefined();
         } else {
@@ -301,10 +301,10 @@ describe("methods: should set and return intended properties", () => {
       const { blockNumber } = await setItems(args);
       await waitForBlockSynced(blockNumber, registry.Inventory, player);
 
-      const props = registry.Inventory.get(player);
+      const properties = registry.Inventory.get(player);
       const propsWithKeys = registry.Inventory.getWithKeys({ id: player });
-      postTest({ ...args, block: blockNumber }, { ...props, block: props?.__lastSyncedAtBlock });
-      expect(props).toEqual(propsWithKeys);
+      postTest({ ...args, block: blockNumber }, { ...properties, block: properties?.__lastSyncedAtBlock });
+      expect(properties).toEqual(propsWithKeys);
     });
 
     // Set table properties locally
@@ -321,11 +321,11 @@ describe("methods: should set and return intended properties", () => {
       };
       registry.Inventory.set(args, player);
 
-      const props = registry.Inventory.get(player);
+      const properties = registry.Inventory.get(player);
       const propsWithKeys = registry.Inventory.getWithKeys({ id: player });
-      assert(props);
-      postTest(args, props);
-      expect(props).toEqual(propsWithKeys);
+      assert(properties);
+      postTest(args, properties);
+      expect(properties).toEqual(propsWithKeys);
     });
 
     // Update table properties client-side
@@ -341,9 +341,9 @@ describe("methods: should set and return intended properties", () => {
       const updateArgs = getRandomArgs();
       registry.Inventory.update(updateArgs, player);
 
-      const props = registry.Inventory.get(player);
-      assert(props);
-      postTest(updateArgs, props);
+      const properties = registry.Inventory.get(player);
+      assert(properties);
+      postTest(updateArgs, properties);
     });
 
     // Remove table properties locally
@@ -358,8 +358,8 @@ describe("methods: should set and return intended properties", () => {
       // Remove the record from the table
       registry.Inventory.remove(player);
 
-      const props = registry.Inventory.get(player);
-      expect(props).toBeUndefined();
+      const properties = registry.Inventory.get(player);
+      expect(properties).toBeUndefined();
     });
   });
 
@@ -908,28 +908,28 @@ describe("queries: should emit appropriate update events with the correct data",
     // Entities inside the Position table
     expect(
       query(store(), {
-        inside: [registry.Position],
+        with: [registry.Position],
       }).sort(),
     ).toEqual([player, A, B, C].sort());
 
     // Entities inside the Position table but not inside the Inventory table
     expect(
       query(store(), {
-        inside: [registry.Position],
-        notInside: [registry.Inventory],
+        with: [registry.Position],
+        without: [registry.Inventory],
       }),
     ).toEqual([C]);
 
     // Entities with a specific property inside the Inventory table, and without a specific property inside the Position table
     expect(
       query(store(), {
-        with: [
+        withProperties: [
           {
             table: registry.Inventory,
             properties: { totalWeight: BigInt(6) },
           },
         ],
-        without: [
+        withoutProperties: [
           {
             table: registry.Position,
             properties: { x: 5, y: 5 },
@@ -941,13 +941,13 @@ describe("queries: should emit appropriate update events with the correct data",
     // Entities with a specific property inside the Inventory table, not another one
     expect(
       query(store(), {
-        with: [
+        withProperties: [
           {
             table: registry.Inventory,
             properties: { totalWeight: BigInt(6) },
           },
         ],
-        without: [
+        withoutProperties: [
           {
             table: registry.Inventory,
             properties: { weights: [1, 2, 3] },
@@ -959,7 +959,7 @@ describe("queries: should emit appropriate update events with the correct data",
 
   // TODO: fix this very weird case where assigning `synced` makes it hang forever in `waitForSyncLive`
   // When removing it, the while loop works, but whenever `synced` is assigned inside the loop, it hangs right at the `await wait(1000)`
-  it.todo("createQuery(), useQuery() (useQueryAllMatching)", async () => {
+  it.todo("$query(), useQuery() (useQueryAllMatching)", async () => {
     const { registry, store, $records, onChange, aggregator } = await preTest();
     const [player, A, B, C] = $records;
     const emptyData = {
@@ -983,8 +983,8 @@ describe("queries: should emit appropriate update events with the correct data",
     registry.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3), ...emptyData }, B);
 
     const query = {
-      inside: [registry.Position],
-      with: [
+      with: [registry.Position],
+      withProperties: [
         {
           table: registry.Inventory,
           properties: { totalWeight: BigInt(6) },
@@ -997,7 +997,7 @@ describe("queries: should emit appropriate update events with the correct data",
         onChange,
       }),
     );
-    const { unsubscribe } = createQuery(store(), query, { onChange: globalOnChange });
+    const { unsubscribe } = $query(store(), query, { onChange: globalOnChange });
 
     expect(result.current.sort()).toEqual([player, A].sort());
     expect(aggregator).toEqual([]);

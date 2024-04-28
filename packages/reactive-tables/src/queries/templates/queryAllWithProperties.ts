@@ -3,16 +3,16 @@ import { TableQueryOptions, TableQueryResult } from "@/queries";
 import { ContractTableDef, $Record } from "@/lib";
 
 // Query all records for a given table that have specific properties (or partial properties)
-export const queryAllWithProps = <tableDef extends ContractTableDef>({
+export const queryAllWithProperties = <tableDef extends ContractTableDef>({
   queries,
   tableId,
   properties,
-  formattedProps,
+  formattedProperties,
 }: TableQueryOptions<tableDef>): TableQueryResult => {
-  const queryId = "internal__queryAllWithProps";
+  const queryId = "internal__queryAllWithProperties";
 
   // Format the properties for TinyBase storage to compare it with the stored properties
-  formattedProps = formattedProps ?? TinyBaseAdapter.encode(properties as Record<string, Primitive>);
+  formattedProperties = formattedProperties ?? TinyBaseAdapter.encode(properties as Record<string, Primitive>);
 
   queries.setQueryDefinition(queryId, tableId, ({ select, where }) => {
     // Select the first cell as all records with a properties should have this cell
@@ -21,7 +21,7 @@ export const queryAllWithProps = <tableDef extends ContractTableDef>({
     // Keep records which for each given key in the properties
     Object.keys(properties).forEach((key) => {
       // has an equal property in the table (where behaves like an AND operator for each key)
-      where(key, formattedProps[key]);
+      where(key, formattedProperties[key]);
     });
   });
 

@@ -1,12 +1,12 @@
 import { SchemaAbiType } from "@latticexyz/schema-type/internal";
-import { KeySchema as UnparsedKeySchema, ValueSchema as UnparsedPropsSchema } from "@latticexyz/store/internal";
-import { KeySchema, ValueSchema as PropsSchema } from "@latticexyz/protocol-parser/internal";
+import { KeySchema as UnparsedKeySchema, ValueSchema as UnparsedPropertiesSchema } from "@latticexyz/store/internal";
+import { KeySchema, ValueSchema as PropertiesSchema } from "@latticexyz/protocol-parser/internal";
 
 import { CreateTableWatcherOptions, CreateTableWatcherResult } from "@/queries";
 import { BaseTableMetadata, OriginalTableMethods, Properties, PropertiesSansMetadata } from "@/tables";
 import { ContractTableDef, ContractTableDefs, Metadata, $Record, Schema, SchemaAbiTypeToRecsType, Type } from "@/lib";
 
-export { UnparsedKeySchema, KeySchema, UnparsedPropsSchema, PropsSchema };
+export { UnparsedKeySchema, KeySchema, UnparsedPropertiesSchema, PropertiesSchema };
 
 /**
  * Defines a {@link ContractTable} record.
@@ -32,7 +32,7 @@ export type ContractTables<tableDefs extends ContractTableDefs> = {
  * - `name` - The name of the table.
  * - `globalName` - The name of the table prefixed by its namespace.
  * - `keySchema` - The {@link KeySchema} of the properties for each row inside the table.
- * - `propsSchema` - The {@link PropsSchema} of the properties for each row inside the table.
+ * - `propertiesSchema` - The {@link PropertiesSchema} of the properties for each row inside the table.
  * @category Table
  */
 export type ContractTable<
@@ -40,7 +40,7 @@ export type ContractTable<
   S extends Schema = Schema,
   M extends Metadata = Metadata,
   T = unknown,
-  PS extends Schema = AbiToPropsSchema<tableDef["valueSchema"]>,
+  PS extends Schema = AbiToPropertiesSchema<tableDef["valueSchema"]>,
   KS extends Schema = AbiToKeySchema<tableDef["keySchema"]>,
 > = ContractTableMethods<PS, T> &
   ContractTableWithKeysMethods<PS, KS, T> & {
@@ -50,7 +50,7 @@ export type ContractTable<
       readonly name: tableDef["name"];
       readonly globalName: `${tableDef["namespace"]}__${tableDef["name"]}`;
       readonly keySchema: KS;
-      readonly propsSchema: PS;
+      readonly propertiesSchema: PS;
     };
   };
 
@@ -58,7 +58,7 @@ export type ContractTable<
  * Defines a contract table metadata, meaning the {@link BaseTableMetadata}, any additional {@link Metadata}, as well as
  * the following properties:
  * - `keySchema` - The {@link KeySchema} of the properties for each row inside the table.
- * - `propsSchema` - The {@link PropsSchema} of the properties for each row inside the table.
+ * - `propertiesSchema` - The {@link PropertiesSchema} of the properties for each row inside the table.
  *
  * @template S The {@link Schema} of the properties for each row inside the table.
  * @template M Any additional {@link Metadata}.
@@ -68,19 +68,19 @@ export type ContractTable<
 export type ContractTableMetadata<S extends Schema, M extends Metadata = Metadata> = M &
   BaseTableMetadata<S> & {
     readonly keySchema: KeySchema;
-    readonly propsSchema: PropsSchema;
+    readonly propertiesSchema: PropertiesSchema;
   };
 
-// or separate AbiToPropsSchema and AbiToKeySchema
+// or separate AbiToPropertiesSchema and AbiToKeySchema
 
 /**
- * Converts an ABI type to its corresponding Typescript-understandable type (PropsSchema).
+ * Converts an ABI type to its corresponding Typescript-understandable type (PropertiesSchema).
  *
  * @category Table
  */
-export type AbiToPropsSchema<schema extends UnparsedPropsSchema | PropsSchema> = {
+export type AbiToPropertiesSchema<schema extends UnparsedPropertiesSchema | PropertiesSchema> = {
   [fieldName in keyof schema & string]: SchemaAbiTypeToRecsType<
-    SchemaAbiType & (schema extends UnparsedPropsSchema ? schema[fieldName]["type"] : schema[fieldName])
+    SchemaAbiType & (schema extends UnparsedPropertiesSchema ? schema[fieldName]["type"] : schema[fieldName])
   >;
 } & {
   __staticData: Type.OptionalString;
@@ -113,7 +113,7 @@ export type ContractTableMethods<PS extends Schema, T = unknown> = OriginalTable
    * Get the current properties of a record, or the table as a whole if it doesn't require any keys.
    *
    * @param $record (optional) The record to get the properties for.
-   * @param defaultProps (optional) The default properties to return if the record doesn't exist.
+   * @param defaultProperties (optional) The default properties to return if the record doesn't exist.
    * @returns The current properties of the record.
    * @example
    * This example retrieves the current properties of the "Counter" table, which has only a single `value` property.
@@ -127,7 +127,7 @@ export type ContractTableMethods<PS extends Schema, T = unknown> = OriginalTable
    */
   get(): Properties<PS, T> | undefined;
   get($record: $Record | undefined): Properties<PS, T> | undefined;
-  get($record?: $Record | undefined, defaultProps?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
+  get($record?: $Record | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   /**
    * Set the properties of a record.
@@ -375,7 +375,7 @@ export type ContractTableMethods<PS extends Schema, T = unknown> = OriginalTable
    * Get the current properties of a record with a React hook.
    *
    * @param $record (optional) The record to get the properties for.
-   * @param defaultProps (optional) The default properties to return if the record doesn't exist.
+   * @param defaultProperties (optional) The default properties to return if the record doesn't exist.
    * @returns The current properties of the record, updated whenever the data changes.
    * @example
    * This example retrieves the properties of a record in the "Player" table.
@@ -394,7 +394,7 @@ export type ContractTableMethods<PS extends Schema, T = unknown> = OriginalTable
    * @category Methods
    */
   use($record?: $Record | undefined): Properties<PS, T> | undefined;
-  use($record: $Record | undefined, defaultProps?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
+  use($record: $Record | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   /**
    * Pause updates for a record or the table as a whole, meaning it won't react to changes in the store anymore.
@@ -519,7 +519,7 @@ export type ContractTableWithKeysMethods<PS extends Schema, KS extends Schema, T
    * Get the current properties of a record using its keys instead of the record itself.
    *
    * @param keys (optional) The keys to get the properties for.
-   * @param defaultProps (optional) The default properties to return if the record doesn't exist.
+   * @param defaultProperties (optional) The default properties to return if the record doesn't exist.
    * @returns The current properties of the record.
    * @example
    * This example retrieves the current properties of a record in the "Player" table, on a specific server.
@@ -536,7 +536,7 @@ export type ContractTableWithKeysMethods<PS extends Schema, KS extends Schema, T
    */
   getWithKeys(): Properties<PS, T> | undefined;
   getWithKeys(keys?: Properties<KS, T>): Properties<PS, T> | undefined;
-  getWithKeys(keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
+  getWithKeys(keys?: Properties<KS, T>, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   /**
    * Check if a record exists inside the table using its keys.
@@ -566,7 +566,7 @@ export type ContractTableWithKeysMethods<PS extends Schema, KS extends Schema, T
    * Get the real-time properties of a record by providing its keys instead of the record itself.
    *
    * @param keys (optional) The keys to use for encoding the record.
-   * @param defaultProps (optional) The default properties to return if the record doesn't exist.
+   * @param defaultProperties (optional) The default properties to return if the record doesn't exist.
    * @returns The current updated properties of the record.
    * @example
    * This example retrieves the current properties of a record in the "Player" table, on a specific server.
@@ -586,7 +586,7 @@ export type ContractTableWithKeysMethods<PS extends Schema, KS extends Schema, T
    * @category Methods
    */
   useWithKeys(keys?: Properties<KS, T>): Properties<PS, T> | undefined;
-  useWithKeys(keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<PS, T>): Properties<PS>;
+  useWithKeys(keys?: Properties<KS, T>, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS>;
 
   /**
    * Set the properties of a record using its keys instead of the record itself.

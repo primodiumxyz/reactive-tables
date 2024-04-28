@@ -1,5 +1,6 @@
 /* -------------------------------- EXTERNAL -------------------------------- */
 export * from "@/lib/external/mud/schema";
+export * from "@/lib/external/mud/utils";
 export * from "@/lib/external/uuid";
 
 /* -------------------------------- INTERNAL -------------------------------- */

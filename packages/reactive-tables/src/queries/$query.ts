@@ -1,5 +1,5 @@
 import { query, QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
-import { ContractTableDef, $Record, Schema, TinyBaseStore, getPropsAndTypeFromRowChange } from "@/lib";
+import { ContractTableDef, $Record, Schema, TinyBaseStore, getPropertiesAndTypeFromRowChange } from "@/lib";
 
 /**
  * Listen to all records matching multiple conditions across tables.
@@ -7,18 +7,18 @@ import { ContractTableDef, $Record, Schema, TinyBaseStore, getPropsAndTypeFromRo
  * This will trigger the provided callbacks whenever a record enters or exits the query conditions, or when its properties change
  * within the query conditions.
  *
- * Note: This is related to ${@link query} (direct retrieval based on conditions) and ${@link useQuery} (React hook with callbacks + real-time retrieval).
+ * Note: This is related to ${@link query} (direct retrieval based on conditions) and ${@link useQuery} (React hook inside callbacks + real-time retrieval).
  *
  * Note: See {@link QueryOptions} for more details on conditions criteria.
  *
- * @param store The TinyBase store containing the properties associated with contract tables.
+ * @param store The TinyBase store containing the properties associated inside contract tables.
  * @param queryOptions The {@link QueryOptions} object containing the conditions to match.
  * @param callbacks The {@link TableWatcherCallbacks} to trigger on changes. Including: onChange, onEnter, onExit, onUpdate.
- * These will trigger a {@link TableUpdate} object with the id of the updated table, the record, the previous and new properties of the record and the type of update.
+ * These will trigger a {@link TableUpdate} object inside the id of the updated table, the record, the previous and new properties of the record and the type of update.
  * @param options (optional) Additional options for the query. Currently only supports `runOnInit` to trigger the callbacks for all matching records on initialization.
- * @returns An object with an `unsubscribe` method to stop listening to the query.
+ * @returns An object inside an `unsubscribe` method to stop listening to the query.
  * @example
- * This example creates a query that listens to all records that represent online players without a score of 0.
+ * This example creates a query that listens to all records that represent online players notInside a score of 0.
  *
  * ```ts
  * const { registry, store } = createWrapper({ mudConfig });
@@ -28,9 +28,9 @@ import { ContractTableDef, $Record, Schema, TinyBaseStore, getPropsAndTypeFromRo
  *   recordC, // offline, score 10
  * } = getRecords(); // for the sake of the example
  *
- * const query = createQuery(store, {
- *   with: [ { table: registry.Player, properties: { online: true } } ],
- *   without: [ { table: registry.Score, properties: { score: 0 } } ],
+ * const query = $query(store, {
+ *   withProperties: [ { table: registry.Player, properties: { online: true } } ],
+ *   withoutProperties: [ { table: registry.Score, properties: { score: 0 } } ],
  * }, {
  *  onEnter: (update) => console.log(update),
  *  onExit: (update) => console.log(update),
@@ -45,7 +45,7 @@ import { ContractTableDef, $Record, Schema, TinyBaseStore, getPropsAndTypeFromRo
  * ```
  * @category Queries
  */
-export const createQuery = <tableDefs extends ContractTableDef[], S extends Schema, T = unknown>(
+export const $query = <tableDefs extends ContractTableDef[], S extends Schema, T = unknown>(
   store: TinyBaseStore,
   queryOptions: QueryOptions<tableDefs, T>,
   callbacks: TableWatcherCallbacks<S, T>,
@@ -62,12 +62,12 @@ export const createQuery = <tableDefs extends ContractTableDef[], S extends Sche
   // Gather ids and schemas of all table we need to listen to
   // tableId => schema keys
   const tables: Record<string, string[]> = {};
-  const { inside, notInside, with: withProps, without: withoutProps } = queryOptions;
+  const { with: inside, without: notInside, withProperties, withoutProperties } = queryOptions;
 
   (inside ?? []).concat(notInside ?? []).forEach((table) => {
     tables[table.id] = Object.keys(table.schema);
   });
-  (withProps ?? []).concat(withoutProps ?? []).forEach(({ table }) => {
+  (withProperties ?? []).concat(withoutProperties ?? []).forEach(({ table }) => {
     tables[table.id] = Object.keys(table.schema);
   });
 
@@ -88,7 +88,10 @@ export const createQuery = <tableDefs extends ContractTableDef[], S extends Sche
       if (!inPrev && !inCurrent) return; // not in the query, we're not interested
 
       // Gather the previous and current properties
-      const args = getPropsAndTypeFromRowChange(getCellChange, tables[tableId], tableId, $record) as TableUpdate<S, T>;
+      const args = getPropertiesAndTypeFromRowChange(getCellChange, tables[tableId], tableId, $record) as TableUpdate<
+        S,
+        T
+      >;
 
       // Run the callbacks
       if (!inPrev && inCurrent) {

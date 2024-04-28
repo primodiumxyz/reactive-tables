@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { query, QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
-import { ContractTableDef, getPropsAndTypeFromRowChange, $Record, Schema, TinyBaseStore } from "@/lib";
+import { ContractTableDef, getPropertiesAndTypeFromRowChange, $Record, Schema, TinyBaseStore } from "@/lib";
 
 // TODO: this will clearly need to be optimized; there are probably a few options:
 // - setup a table listener by default on each table, then when setting up a query listener let that table know so it adds this callback to its array
@@ -33,8 +33,8 @@ import { ContractTableDef, getPropsAndTypeFromRowChange, $Record, Schema, TinyBa
  * } = getRecords(); // for the sake of the example
  *
  * const records = useQuery(store, {
- *   with: [ { table: registry.Score, properties: { score: 10 } } ],
- *   notInside: [ registry.GameOver ],
+ *   withProperties: [ { table: registry.Score, properties: { score: 10 } } ],
+ *   without: [ registry.GameOver ],
  * }, {
  *   onChange: (update) => console.log(update),
  * });
@@ -53,6 +53,8 @@ export const useQuery = <tableDefs extends ContractTableDef[], S extends Schema,
   options: QueryOptions<tableDefs, T>,
   callbacks?: TableWatcherCallbacks<S, T>,
 ): $Record[] => {
+  // Not available in a non-browser environment
+  if (typeof window === "undefined") throw new Error("useQuery is only available in a browser environment");
   const { onChange, onEnter, onExit, onUpdate } = callbacks ?? {};
   const [$records, set$Records] = useState<$Record[]>([]);
   // Create a ref for previous records (to provide the update type in the callback)
@@ -61,13 +63,13 @@ export const useQuery = <tableDefs extends ContractTableDef[], S extends Schema,
   // Gather ids and schemas of all table we need to listen to
   // tableId => schema keys
   const tables = useMemo(() => {
-    const { inside, notInside, with: withProps, without: withoutProps } = options;
+    const { with: inside, without: notInside, withProperties, withoutProperties } = options;
     const tables: Record<string, string[]> = {};
 
     (inside ?? []).concat(notInside ?? []).forEach((table) => {
       tables[table.id] = Object.keys(table.schema);
     });
-    (withProps ?? []).concat(withoutProps ?? []).forEach(({ table }) => {
+    (withProperties ?? []).concat(withoutProperties ?? []).forEach(({ table }) => {
       tables[table.id] = Object.keys(table.schema);
     });
 
@@ -95,7 +97,7 @@ export const useQuery = <tableDefs extends ContractTableDef[], S extends Schema,
         const inCurrent = new$Records.includes($record);
 
         // Gather the previous and current properties
-        const args = getPropsAndTypeFromRowChange(getCellChange, tables[tableId], tableId, $record) as TableUpdate<
+        const args = getPropertiesAndTypeFromRowChange(getCellChange, tables[tableId], tableId, $record) as TableUpdate<
           S,
           T
         >;

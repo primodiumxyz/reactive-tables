@@ -31,10 +31,10 @@ export const createTableKeyMethods = <
   // Get the properties of a record using its keys
   function getWithKeys(): Properties<PS, T> | undefined;
   function getWithKeys(keys?: Properties<KS, T>): Properties<PS, T> | undefined;
-  function getWithKeys(keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
-  function getWithKeys(keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<PS, T>) {
+  function getWithKeys(keys?: Properties<KS, T>, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
+  function getWithKeys(keys?: Properties<KS, T>, defaultProperties?: PropertiesSansMetadata<PS, T>) {
     const $record = keys ? encode$Record(keySchema, keys) : default$Record;
-    return get($record, defaultProps);
+    return get($record, defaultProperties);
   }
 
   // Check if a record exists inside the table using its keys
@@ -44,9 +44,9 @@ export const createTableKeyMethods = <
   };
 
   // Use (hook) the properties of a record using its keys
-  const useWithKeys = (keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<PS, T>) => {
+  const useWithKeys = (keys?: Properties<KS, T>, defaultProperties?: PropertiesSansMetadata<PS, T>) => {
     const $record = keys ? encode$Record(keySchema, keys) : default$Record;
-    return use($record, defaultProps);
+    return use($record, defaultProperties);
   };
 
   // Set the properties of a record using its keys

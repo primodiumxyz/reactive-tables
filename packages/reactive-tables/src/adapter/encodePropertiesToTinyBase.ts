@@ -11,7 +11,7 @@ import { Primitive, TinyBaseFormattedType } from "@/adapter";
  * @param propAttributes The properties to encode.
  * @returns
  */
-export const encodePropsToTinyBase = (properties: Record<string, Primitive>): TinyBaseFormattedType => {
+export const encodePropertiesToTinyBase = (properties: Record<string, Primitive>): TinyBaseFormattedType => {
   const formattedProperties: TinyBaseFormattedType = {};
 
   // Go through each property (key-attribute pair)

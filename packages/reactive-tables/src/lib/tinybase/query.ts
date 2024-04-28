@@ -17,7 +17,7 @@ import { $Record, Schema, localProperties, metadataProperties } from "@/lib";
  * @returns The id of the table, the record, the properties object with the current and previous properties, and the type of update.
  * @category Queries
  */
-export const getPropsAndTypeFromRowChange = <S extends Schema, T = unknown>(
+export const getPropertiesAndTypeFromRowChange = <S extends Schema, T = unknown>(
   getCellChange: GetResultCellChange,
   keys: string[],
   tableId: string,
@@ -51,10 +51,10 @@ export const getPropsAndTypeFromRowChange = <S extends Schema, T = unknown>(
   }
 
   // Parse the properties
-  const newProps =
+  const newProperties =
     type === "exit" ? undefined : (TinyBaseAdapter.decode(newRow as TinyBaseFormattedType) as Properties<S, T>);
-  const prevProps =
+  const prevProperties =
     type === "enter" ? undefined : (TinyBaseAdapter.decode(previousRow as TinyBaseFormattedType) as Properties<S, T>);
 
-  return { tableId, $record, properties: { current: newProps, prev: prevProps }, type };
+  return { tableId, $record, properties: { current: newProperties, prev: prevProperties }, type };
 };

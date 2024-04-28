@@ -20,8 +20,8 @@ import {
 } from "@latticexyz/schema-type/internal";
 import { Hex } from "viem";
 
-import { encodePropsToTinyBase } from "@/adapter/encodePropsToTinyBase";
-import { PropsSchema } from "@/tables/contract";
+import { encodePropertiesToTinyBase } from "@/adapter/encodePropertiesToTinyBase";
+import { PropertiesSchema } from "@/tables/contract";
 
 /**
  * Decode the properties of a record from the data inside a log.
@@ -29,21 +29,21 @@ import { PropsSchema } from "@/tables/contract";
  * This is an unmodified version of the original MUD function.
  *
  * @template TSchema The schema of the properties to decode.
- * @param propsSchema The schema of the properties to decode.
+ * @param propertiesSchema The schema of the properties to decode.
  * @param args The encoded metadata to decode the properties from.
  * @returns The decoded properties.
  * @see [@]latticexyz/protocol-parser/internal/decodeValueArgs.ts
  * @category Adapter
  */
-export function decodeValueArgs<TSchema extends PropsSchema>(
-  propsSchema: TSchema,
+export function decodeValueArgs<TSchema extends PropertiesSchema>(
+  propertiesSchema: TSchema,
   args: ValueArgs,
 ): SchemaToPrimitives<TSchema> {
   const { staticData, encodedLengths, dynamicData } = args;
   return decodeValue(
-    propsSchema,
+    propertiesSchema,
     concatHex([
-      readHex(staticData, 0, staticDataLength(Object.values(propsSchema).filter(isStaticAbiType))),
+      readHex(staticData, 0, staticDataLength(Object.values(propertiesSchema).filter(isStaticAbiType))),
       encodedLengths,
       dynamicData,
     ]),
@@ -59,22 +59,25 @@ export function decodeValueArgs<TSchema extends PropsSchema>(
  * The properties will be appended with their types (e.g. `type__count` for `count`; or { count: 1 } will produce { type__count: "number" }).
  *
  * @template TSchema The schema of the properties to decode.
- * @param propsSchema The schema of the properties to decode.
+ * @param propertiesSchema The schema of the properties to decode.
  * @param data The encoded hex data to decode the properties from.
  * @returns The decoded properties in a TinyBase-friendly format.
  * @see [@]latticexyz/protocol-parser/internal/decodeValue.ts
- * @see {@link encodePropsToTinyBase}
+ * @see {@link encodePropertiesToTinyBase}
  * @category Adapter
  */
-export function decodeValue<TSchema extends PropsSchema>(propsSchema: TSchema, data: Hex): SchemaToPrimitives<TSchema> {
-  const staticFields = Object.values(propsSchema).filter(isStaticAbiType);
-  const dynamicFields = Object.values(propsSchema).filter(isDynamicAbiType);
+export function decodeValue<TSchema extends PropertiesSchema>(
+  propertiesSchema: TSchema,
+  data: Hex,
+): SchemaToPrimitives<TSchema> {
+  const staticFields = Object.values(propertiesSchema).filter(isStaticAbiType);
+  const dynamicFields = Object.values(propertiesSchema).filter(isDynamicAbiType);
 
   const valueTuple = decodeRecord({ staticFields, dynamicFields }, data);
   // Modified: encode for TinyBase
   // This will include formatted values + their types (e.g. `type__name` for `name`)
-  return encodePropsToTinyBase(
-    Object.fromEntries(Object.keys(propsSchema).map((key, i) => [key, valueTuple[i]])),
+  return encodePropertiesToTinyBase(
+    Object.fromEntries(Object.keys(propertiesSchema).map((key, i) => [key, valueTuple[i]])),
   ) as SchemaToPrimitives<TSchema>;
 }
 
@@ -83,17 +86,20 @@ export function decodeValue<TSchema extends PropsSchema>(propsSchema: TSchema, d
  *
  * This is an unmodified version of the original MUD function.
  *
- * @param propsSchema The schema of the properties to decode.
+ * @param propertiesSchema The schema of the properties to decode.
  * @param data The encoded hex data to decode the properties from.
  * @returns The decoded properties.
  * @see [@]latticexyz/protocol-parser/internal/decodeRecord.ts
  * @category Adapter
  */
-export function decodeRecord(propsSchema: Schema, data: Hex): readonly (StaticPrimitiveType | DynamicPrimitiveType)[] {
+export function decodeRecord(
+  propertiesSchema: Schema,
+  data: Hex,
+): readonly (StaticPrimitiveType | DynamicPrimitiveType)[] {
   const properties: (StaticPrimitiveType | DynamicPrimitiveType)[] = [];
 
   let bytesOffset = 0;
-  propsSchema.staticFields.forEach((fieldType) => {
+  propertiesSchema.staticFields.forEach((fieldType) => {
     const fieldByteLength = staticAbiTypeToByteLength[fieldType];
     const prop = decodeStaticField(fieldType, readHex(data, bytesOffset, bytesOffset + fieldByteLength));
     bytesOffset += fieldByteLength;
@@ -101,7 +107,7 @@ export function decodeRecord(propsSchema: Schema, data: Hex): readonly (StaticPr
   });
 
   // Warn user if static data length doesn't match the value schema, because data corruption might be possible.
-  const schemaStaticDataLength = staticDataLength(propsSchema.staticFields);
+  const schemaStaticDataLength = staticDataLength(propertiesSchema.staticFields);
   const actualStaticDataLength = bytesOffset;
   if (actualStaticDataLength !== schemaStaticDataLength) {
     console.warn(
@@ -114,11 +120,11 @@ export function decodeRecord(propsSchema: Schema, data: Hex): readonly (StaticPr
     );
   }
 
-  if (propsSchema.dynamicFields.length > 0) {
+  if (propertiesSchema.dynamicFields.length > 0) {
     const dataLayout = hexToEncodedLengths(readHex(data, bytesOffset, bytesOffset + 32));
     bytesOffset += 32;
 
-    propsSchema.dynamicFields.forEach((fieldType, i) => {
+    propertiesSchema.dynamicFields.forEach((fieldType, i) => {
       const dataLength = dataLayout.fieldByteLengths[i];
       if (dataLength > 0) {
         const prop = decodeDynamicField(fieldType, readHex(data, bytesOffset, bytesOffset + dataLength));

@@ -10,7 +10,7 @@ import {
   Schema,
   TinyBaseQueries,
   TinyBaseStore,
-  PropsType,
+  PropertiesType,
   StoreConfig,
 } from "@/lib";
 
@@ -42,7 +42,7 @@ export type BaseTableMetadata<S extends Schema = Schema> = {
 
 // Used to infer the TypeScript types from the RECS types
 export type Properties<S extends Schema, T = unknown> = {
-  [key in keyof S]: PropsType<T>[S[key]];
+  [key in keyof S]: PropertiesType<T>[S[key]];
 };
 
 // Used to infer the TypeScript types from the RECS types (excluding metadata)
@@ -50,7 +50,7 @@ export type PropertiesSansMetadata<S extends Schema, T = unknown> = {
   [key in keyof S as Exclude<
     key,
     "__staticData" | "__encodedLengths" | "__dynamicData" | "__lastSyncedAtBlock"
-  >]: PropsType<T>[S[key]];
+  >]: PropertiesType<T>[S[key]];
 };
 
 export type OriginalTableMethods = {

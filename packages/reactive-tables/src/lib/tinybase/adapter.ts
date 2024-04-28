@@ -1,6 +1,6 @@
 import { Hex } from "viem";
 
-import { PropsSchema } from "@/tables/contract";
+import { PropertiesSchema } from "@/tables/contract";
 import { TinyBaseStore } from "@/lib";
 
 /**
@@ -10,12 +10,12 @@ import { TinyBaseStore } from "@/lib";
  *
  * @param store The regular TinyBase store.
  * @param tableId The id of the table for which all rows follow the provided schema.
- * @param propsSchema The schema of the properties to store.
+ * @param propertiesSchema The schema of the properties to store.
  * @category Adapter
  */
-export const storePropertiesSchema = (store: TinyBaseStore, tableId: Hex, propsSchema: PropsSchema) => {
+export const storePropertiesSchema = (store: TinyBaseStore, tableId: Hex, propertiesSchema: PropertiesSchema) => {
   store.setTable(`table__${tableId}`, {
-    propsSchema,
+    propertiesSchema,
   });
 };
 
@@ -29,9 +29,9 @@ export const storePropertiesSchema = (store: TinyBaseStore, tableId: Hex, propsS
  * @returns The properties schema of the table.
  * @category Adapter
  */
-export const getPropertiesSchema = (store: TinyBaseStore, tableId: Hex): PropsSchema => {
-  const row = store.getRow(`table__${tableId}`, "propsSchema");
+export const getPropertiesSchema = (store: TinyBaseStore, tableId: Hex): PropertiesSchema => {
+  const row = store.getRow(`table__${tableId}`, "propertiesSchema");
   if (Object.keys(row).length === 0) throw new Error(`Table with id ${tableId} is empty`);
 
-  return row as PropsSchema;
+  return row as PropertiesSchema;
 };

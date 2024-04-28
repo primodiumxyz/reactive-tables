@@ -95,9 +95,9 @@ export const createLocalTable = <S extends Schema, M extends Metadata, T = unkno
   // If some default properties are provided
   if (defaultProperties) {
     // and the table is persistent, check if the properties were already stored last time
-    const props = options?.persist ? table.get() : undefined;
+    const properties = options?.persist ? table.get() : undefined;
     // If not, or if the table is not persistent, set the default properties
-    if (props === undefined) {
+    if (properties === undefined) {
       table.set(defaultProperties);
     }
   }

@@ -23,7 +23,7 @@ export const createCustomWriter = ({ store }: { store: TinyBaseStore }) => {
       namespace,
       name,
       // We stored the properties schema for each contract table on creation for convenient access
-      propsSchema: getPropertiesSchema(store, log.args.tableId),
+      propertiesSchema: getPropertiesSchema(store, log.args.tableId),
     };
 
     return { $record, table };
@@ -37,7 +37,7 @@ export const createCustomWriter = ({ store }: { store: TinyBaseStore }) => {
       if (!processed) return;
       const { $record, table } = processed;
 
-      const properties = TinyBaseAdapter.decodeArgs(table.propsSchema, log.args);
+      const properties = TinyBaseAdapter.decodeArgs(table.propertiesSchema, log.args);
 
       debug("setting properties", {
         namespace: table.namespace,
@@ -60,13 +60,13 @@ export const createCustomWriter = ({ store }: { store: TinyBaseStore }) => {
       if (!processed) return;
       const { $record, table } = processed;
 
-      const previousProps = store.getRow(table.id, $record);
-      const previousStaticData = (previousProps?.__staticData as Hex) ?? "0x";
+      const previousProperties = store.getRow(table.id, $record);
+      const previousStaticData = (previousProperties?.__staticData as Hex) ?? "0x";
       const newStaticData = spliceHex(previousStaticData, log.args.start, size(log.args.data), log.args.data);
-      const newProps = TinyBaseAdapter.decodeArgs(table.propsSchema, {
+      const newProperties = TinyBaseAdapter.decodeArgs(table.propertiesSchema, {
         staticData: newStaticData,
-        encodedLengths: (previousProps?.__encodedLengths as Hex) ?? "0x",
-        dynamicData: (previousProps?.__dynamicData as Hex) ?? "0x",
+        encodedLengths: (previousProperties?.__encodedLengths as Hex) ?? "0x",
+        dynamicData: (previousProperties?.__dynamicData as Hex) ?? "0x",
       });
 
       debug("setting properties via splice static", {
@@ -75,15 +75,15 @@ export const createCustomWriter = ({ store }: { store: TinyBaseStore }) => {
         $record,
         previousStaticData,
         newStaticData,
-        previousProps,
-        newProps,
+        previousProperties,
+        newProperties,
       });
 
       store.setRow(table.id, $record, {
         // We need to pass previous properties to keep the encodedLengths and dynamicData (if any)
         // and be consistent with RECS
-        ...previousProps,
-        ...newProps,
+        ...previousProperties,
+        ...newProperties,
         __staticData: newStaticData,
         __lastSyncedAtBlock: log.blockNumber?.toString() ?? "unknown",
       });
@@ -94,11 +94,11 @@ export const createCustomWriter = ({ store }: { store: TinyBaseStore }) => {
       if (!processed) return;
       const { $record, table } = processed;
 
-      const previousProps = store.getRow(table.id, $record);
-      const previousDynamicData = (previousProps?.__dynamicData as Hex) ?? "0x";
+      const previousProperties = store.getRow(table.id, $record);
+      const previousDynamicData = (previousProperties?.__dynamicData as Hex) ?? "0x";
       const newDynamicData = spliceHex(previousDynamicData, log.args.start, log.args.deleteCount, log.args.data);
-      const newProps = TinyBaseAdapter.decodeArgs(table.propsSchema, {
-        staticData: (previousProps?.__staticData as Hex) ?? "0x",
+      const newProperties = TinyBaseAdapter.decodeArgs(table.propertiesSchema, {
+        staticData: (previousProperties?.__staticData as Hex) ?? "0x",
         encodedLengths: log.args.encodedLengths,
         dynamicData: newDynamicData,
       });
@@ -109,12 +109,12 @@ export const createCustomWriter = ({ store }: { store: TinyBaseStore }) => {
         $record,
         previousDynamicData,
         newDynamicData,
-        previousProps,
-        newProps,
+        previousProperties,
+        newProperties,
       });
 
       store.setRow(table.id, $record, {
-        ...newProps,
+        ...newProperties,
         __encodedLengths: log.args.encodedLengths,
         __dynamicData: newDynamicData,
         __lastSyncedAtBlock: log.blockNumber?.toString() ?? "unknown",

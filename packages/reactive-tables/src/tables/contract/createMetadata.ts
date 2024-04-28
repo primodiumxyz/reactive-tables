@@ -3,7 +3,7 @@ import { ContractTableDef, Type, schemaAbiTypeToRecsType } from "@/lib";
 /**
  * Creates and formats the metadata for a contract table.
  *
- * Note: This will convert the "valueSchema" key, as defined in MUD, into a "propsSchema" key.
+ * Note: This will convert the "valueSchema" key, as defined in MUD, into a "propertiesSchema" key.
  *
  * @param def The contract table definition.
  * @returns The relevant metadata for the contract table.
@@ -33,7 +33,7 @@ export const createMetadata = <tableDef extends ContractTableDef>(def: tableDef)
       keySchema: Object.fromEntries(
         Object.entries(def.keySchema).map(([fieldName, schemaAbiType]) => [fieldName, schemaAbiType["type"]]),
       ),
-      propsSchema: Object.fromEntries(
+      propertiesSchema: Object.fromEntries(
         Object.entries(def.valueSchema).map(([fieldName, schemaAbiType]) => [fieldName, schemaAbiType["type"]]),
       ),
     },

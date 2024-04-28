@@ -3,10 +3,10 @@ import { useEffect, useState } from "react";
 import {
   CreateTableWatcherOptions,
   createTableWatcher,
-  queryAllWithProps,
-  queryAllWithoutProps,
-  useAllWithProps,
-  useAllWithoutProps,
+  queryAllWithProperties,
+  queryAllWithoutProperties,
+  useAllWithProperties,
+  useAllWithoutProperties,
 } from "@/queries";
 import { Primitive, TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
 import { createTableKeyMethods } from "@/tables/contract";
@@ -36,7 +36,7 @@ export const createTableMethods = <
   const $records = () => arrayToIterator(store.getRowIds(tableId) as $Record[]);
 
   /* --------------------------------- STREAMS -------------------------------- */
-  // Pause updates for a record (don't react to changes in hooks, e.g. useProps)
+  // Pause updates for a record (don't react to changes in hooks, e.g. useProperties)
   const pauseUpdates = ($record?: $Record, properties?: Properties<S, T>) => {
     $record = $record ?? default$Record;
 
@@ -44,7 +44,7 @@ export const createTableMethods = <
     if (properties) set(properties, $record);
   };
 
-  // Enable updates for a record (react again to changes in the store, e.g. useProps)
+  // Enable updates for a record (react again to changes in the store, e.g. useProperties)
   // If any update happened during the pause, the state will be updated to the latest properties
   const resumeUpdates = ($record?: $Record) => {
     $record = $record ?? default$Record;
@@ -59,8 +59,8 @@ export const createTableMethods = <
     $record = $record ?? default$Record;
 
     // Encode the properties and set them in the store
-    const formattedProps = TinyBaseAdapter.encode(properties as Record<string, Primitive>);
-    store.setRow(tableId, $record, formattedProps);
+    const formattedProperties = TinyBaseAdapter.encode(properties as Record<string, Primitive>);
+    store.setRow(tableId, $record, formattedProperties);
   };
 
   // Utility function to save on computation when we want to set the formatted data directly
@@ -73,13 +73,13 @@ export const createTableMethods = <
   // Get the properties for a record
   function get(): Properties<S, T> | undefined;
   function get($record: $Record | undefined): Properties<S, T> | undefined;
-  function get($record?: $Record | undefined, defaultProps?: PropertiesSansMetadata<S, T>): Properties<S, T>;
-  function get($record?: $Record, defaultProps?: PropertiesSansMetadata<S, T>) {
+  function get($record?: $Record | undefined, defaultProperties?: PropertiesSansMetadata<S, T>): Properties<S, T>;
+  function get($record?: $Record, defaultProperties?: PropertiesSansMetadata<S, T>) {
     $record = $record ?? default$Record;
     const row = store.getRow(tableId, $record);
 
     const decoded = Object.entries(row).length > 0 ? TinyBaseAdapter.decode(row) : undefined; // empty object should be undefined
-    return (decoded ?? defaultProps) as Properties<S, T>;
+    return (decoded ?? defaultProperties) as Properties<S, T>;
   }
 
   // Utility function to save on computation when we're only interested in the raw data (to set again directly)
@@ -96,12 +96,12 @@ export const createTableMethods = <
 
   // Get all records with specific properties
   const getAllWith = (properties: Partial<Properties<S, T>>) => {
-    return queryAllWithProps({ queries, tableId, properties }).$records;
+    return queryAllWithProperties({ queries, tableId, properties }).$records;
   };
 
   // Get all records without specific properties
   const getAllWithout = (properties: Partial<Properties<S, T>>) => {
-    return queryAllWithoutProps({ queries, tableId, properties }).$records;
+    return queryAllWithoutProperties({ queries, tableId, properties }).$records;
   };
 
   /* ---------------------------------- HOOKS --------------------------------- */
@@ -125,12 +125,12 @@ export const createTableMethods = <
 
   // Hook to get all records with specific properties
   const useAllWith = (properties: Partial<Properties<S, T>>) => {
-    return useAllWithProps(queries, tableId, properties);
+    return useAllWithProperties(queries, tableId, properties);
   };
 
   // Hook to get all records without specific properties
   const useAllWithout = (properties: Partial<Properties<S, T>>) => {
-    return useAllWithoutProps(queries, tableId, properties);
+    return useAllWithoutProperties(queries, tableId, properties);
   };
 
   /* ---------------------------------- CLEAR --------------------------------- */
@@ -150,11 +150,11 @@ export const createTableMethods = <
   // Update the properties for a record, possibly with partial properties
   const update = (properties: Partial<Properties<S, T>>, $record?: $Record) => {
     $record = $record ?? default$Record;
-    const currentProps = getRaw($record);
-    if (!currentProps) throw new Error(`$Record ${$record} does not exist in table ${tableId}`);
+    const currentProperties = getRaw($record);
+    if (!currentProperties) throw new Error(`$Record ${$record} does not exist in table ${tableId}`);
 
-    const newProps = TinyBaseAdapter.encode(properties as Record<string, Primitive>);
-    setRaw({ ...currentProps, ...newProps }, $record);
+    const newProperties = TinyBaseAdapter.encode(properties as Record<string, Primitive>);
+    setRaw({ ...currentProperties, ...newProperties }, $record);
   };
 
   /* ----------------------------------- HAS ---------------------------------- */
@@ -164,26 +164,29 @@ export const createTableMethods = <
     return store.hasRow(tableId, $record);
   };
 
-  /* -------------------------------- USE PROPS ------------------------------- */
+  /* ----------------------------- USE PROPERTIES ----------------------------- */
   // Hook to get the properties for a record in real-time
-  function useProps($record?: $Record | undefined): Properties<S, T> | undefined;
-  function useProps($record: $Record | undefined, defaultProps?: PropertiesSansMetadata<S, T>): Properties<S, T>;
-  function useProps($record?: $Record, defaultProps?: PropertiesSansMetadata<S, T>) {
+  function useProperties($record?: $Record | undefined): Properties<S, T> | undefined;
+  function useProperties(
+    $record: $Record | undefined,
+    defaultProperties?: PropertiesSansMetadata<S, T>,
+  ): Properties<S, T>;
+  function useProperties($record?: $Record, defaultProperties?: PropertiesSansMetadata<S, T>) {
     $record = $record ?? default$Record;
-    const [properties, setProps] = useState(get($record));
+    const [properties, setProperties] = useState(get($record));
 
     useEffect(() => {
       // properties just changed for this record, update state to latest properties
       // (just make sure this one is not paused)
       if (!paused.get($record)) {
-        setProps(get($record));
+        setProperties(get($record));
       }
 
       // Update state when the properties for this $record changes
-      const propsSubId = store.addRowListener(tableId, $record, () => {
+      const propertiesSubId = store.addRowListener(tableId, $record, () => {
         // only if it's not paused
         if (!paused.get($record)) {
-          setProps(get($record));
+          setProperties(get($record));
         }
       });
 
@@ -191,17 +194,17 @@ export const createTableMethods = <
       const pausedSubId = store.addValueListener(`paused__${tableId}__${$record}`, (_, __, newPaused) => {
         // Meaning updates are being resumed
         if (!newPaused) {
-          setProps(get($record));
+          setProperties(get($record));
         }
       });
 
       return () => {
-        store.delListener(propsSubId);
+        store.delListener(propertiesSubId);
         store.delListener(pausedSubId);
       };
     }, [$record, paused]);
 
-    return properties ?? defaultProps;
+    return properties ?? defaultProperties;
   }
 
   /* --------------------------------- SYSTEM --------------------------------- */
@@ -244,7 +247,7 @@ export const createTableMethods = <
   };
 
   // Add hooks only if not in a node environment
-  const hookMethods = { useAll, useAllWith, useAllWithout, use: useProps };
+  const hookMethods = { useAll, useAllWith, useAllWithout, use: useProperties };
   if (typeof window === "undefined") {
     Object.keys(hookMethods).forEach((key) => {
       hookMethods[key as keyof typeof hookMethods] = () => {

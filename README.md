@@ -14,7 +14,7 @@ There are basically 3 entry points to the package, which are all exported from t
 
 1. `createWrapper` - The main entry point, which takes the MUD configuration, and returns the registry, table definitions, the TinyBase store wrapper and a storage adapter for RPC/indexer-client sync.
 2. `createLocalTable` (and `createLocal<type>Table` templates) - A factory function for creating local tables, with the same API as contract tables.
-3. `query`, `createQuery`, `useQuery` - Global methods for querying multiple tables at once, and watching for changes.
+3. `query`, `$query`, `useQuery` - Global methods for querying multiple tables at once, and watching for changes.
 
 ... as well as a few utilities for encoding/decoding, under the `utils` namespace.
 

@@ -2,7 +2,7 @@ import { Group, Having, Join, Select, Where } from "tinybase/queries";
 
 import { TinyBaseFormattedType } from "@/adapter";
 import { Properties } from "@/tables";
-import { AbiToPropsSchema, ContractTable } from "@/tables/contract";
+import { AbiToPropertiesSchema, ContractTable } from "@/tables/contract";
 import { ContractTableDef, $Record, TinyBaseQueries, Schema } from "@/lib";
 
 /* --------------------------------- GLOBAL --------------------------------- */
@@ -70,7 +70,7 @@ export type TableWatcherCallbacks<S extends Schema, T = unknown> = Partial<{
  */
 type QueryMatchingProperties<tableDef extends ContractTableDef, T = unknown> = {
   table: ContractTable<tableDef>;
-  properties: Properties<AbiToPropsSchema<tableDef["valueSchema"]>, T>;
+  properties: Properties<AbiToPropertiesSchema<tableDef["valueSchema"]>, T>;
 };
 
 /**
@@ -82,19 +82,19 @@ type QueryMatchingProperties<tableDef extends ContractTableDef, T = unknown> = {
  *
  * @template tableDefs The definitions of all contract tables involved in the query.
  * @template T The type of the properties to match.
- * @param inside An array of tables the records need to be included in (have properties).
- * @param with An array of table-properties pairs the records need to match precisely.
- * @param notInside An array of tables the records need to be excluded from (not have properties).
- * @param without An array of table-properties pairs the records need to not match (at least one different property).
+ * @param with An array of tables the records need to be included in (have properties).
+ * @param withProperties An array of table-properties pairs the records need to match precisely.
+ * @param without An array of tables the records need to be excluded from (not have properties).
+ * @param withoutProperties An array of table-properties pairs the records need to not match (at least one different property).
  * @category Queries
  *
  * TODO(review): fix type inference on heterogeneous array (with single ContractTableDef it wants the same table as the first one for all items)
  */
 export type QueryOptions<tableDefs extends ContractTableDef[], T = unknown> = {
-  inside?: ContractTable<tableDefs[number]>[]; // inside these tables
-  with?: QueryMatchingProperties<tableDefs[number], T>[]; // with the specified propertiess for their associated tables
-  notInside?: ContractTable<tableDefs[number]>[]; // not inside these tables
-  without?: QueryMatchingProperties<tableDefs[number], T>[]; // without the specified propertiess for their associated tables
+  with?: ContractTable<tableDefs[number]>[]; // inside these tables
+  withProperties?: QueryMatchingProperties<tableDefs[number], T>[]; // with the specified propertiess for their associated tables
+  without?: ContractTable<tableDefs[number]>[]; // not inside these tables
+  withoutProperties?: QueryMatchingProperties<tableDefs[number], T>[]; // without the specified propertiess for their associated tables
 };
 
 /* ------------------------------ TABLE WATCHER ----------------------------- */
@@ -107,15 +107,15 @@ export type QueryOptions<tableDefs extends ContractTableDef[], T = unknown> = {
  * @param queries The TinyBase queries object to use for fetching records (astracted).
  * @param tableId The id of the table to query or watch for changes (abstracted).
  * @param properties The properties to match for the given table.
- * @param formattedProps The formatted properties to match for the given table (abstracted).
+ * @param formattedProperties The formatted properties to match for the given table (abstracted).
  * @category Queries
  * @internal
  */
 export type TableQueryOptions<tableDef extends ContractTableDef> = {
   queries: TinyBaseQueries;
   tableId: string;
-  properties: Partial<Properties<AbiToPropsSchema<tableDef["valueSchema"]>>>;
-  formattedProps?: TinyBaseFormattedType;
+  properties: Partial<Properties<AbiToPropertiesSchema<tableDef["valueSchema"]>>>;
+  formattedProperties?: TinyBaseFormattedType;
 };
 
 /**

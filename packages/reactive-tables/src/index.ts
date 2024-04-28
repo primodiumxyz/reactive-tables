@@ -6,7 +6,7 @@ export * from "@/createWrapper";
 export * from "@/tables/local/createLocalTable";
 
 // Queries: global (filtering keys and callbacks), query (direct query returning $Record[]), useQuery (React hook returning $Record[] with callbacks)
-export { createQuery, query, useQuery } from "@/queries";
+export { $query, query, useQuery } from "@/queries";
 
 /* -------------------------------- CONSTANTS ------------------------------- */
 export { default$Record, localProperties, metadataProperties } from "@/lib";
@@ -30,12 +30,12 @@ export type { QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } fro
 export type { StorageAdapter } from "@/adapter";
 
 export type {
-  AbiToPropsSchema,
+  AbiToPropertiesSchema,
   AbiToKeySchema,
   ContractTable,
   ContractTables,
   KeySchema,
-  PropsSchema,
+  PropertiesSchema,
 } from "@/tables/contract";
 export type { LocalTable } from "@/tables/local";
 export type { Properties, PropertiesSansMetadata } from "@/tables";

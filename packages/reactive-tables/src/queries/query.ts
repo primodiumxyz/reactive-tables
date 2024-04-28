@@ -1,6 +1,6 @@
 import { createQueries } from "tinybase/queries";
 
-import { queryAllWithProps } from "@/queries/templates/queryAllWithProps";
+import { queryAllWithProperties } from "@/queries/templates/queryAllWithProperties";
 import { QueryOptions } from "@/queries/types";
 import { ContractTableDef, $Record, TinyBaseStore } from "@/lib";
 
@@ -24,8 +24,8 @@ import { ContractTableDef, $Record, TinyBaseStore } from "@/lib";
  * } = getRecords(); // for the sake of the example
  *
  * const records = query(store, {
- *   with: [ { table: registry.Score, properties: { score: 10 } } ],
- *   notInside: [ registry.GameOver ],
+ *   withProperties: [ { table: registry.Score, properties: { score: 10 } } ],
+ *   without: [ registry.GameOver ],
  * });
  * console.log(records);
  * // -> [ recordA ]
@@ -36,8 +36,13 @@ export const query = <tableDefs extends ContractTableDef[], T = unknown>(
   store: TinyBaseStore,
   options: QueryOptions<tableDefs, T>,
 ): $Record[] => {
-  const { inside, notInside, with: withProps, without: withoutProps } = options;
-  if (!inside && !withProps) {
+  const {
+    with: inside,
+    without: notInside,
+    withProperties: withProperties,
+    withoutProperties: withoutProperties,
+  } = options;
+  if (!inside && !withProperties) {
     throw new Error("At least one inside or with condition needs to be provided");
   }
 
@@ -59,24 +64,24 @@ export const query = <tableDefs extends ContractTableDef[], T = unknown>(
 
   /* ---------------------------------- WITH ---------------------------------- */
   // Keep records with all given properties (or init if no previous condition was given)
-  withProps?.forEach(({ table, properties }, i) => {
-    const { id: queryId, $records: $recordsWithProps } = queryAllWithProps({
+  withProperties?.forEach(({ table, properties }, i) => {
+    const { id: queryId, $records: $recordsWithProperties } = queryAllWithProperties({
       queries,
       tableId: table.id,
       properties,
     });
     // If no previous condition was given, init with the first table's records
     if (inside === undefined && i === 0) {
-      $records = $recordsWithProps;
-      if (i === withProps.length - 1) queries.delQueryDefinition(queryId);
+      $records = $recordsWithProperties;
+      if (i === withProperties.length - 1) queries.delQueryDefinition(queryId);
       return;
     }
     // If inside was given (or already iterated once), find out if among records with the given properties there are
     // $records that are already matching previous conditions
-    $records = $recordsWithProps.filter(($record) => $records.includes($record));
+    $records = $recordsWithProperties.filter(($record) => $records.includes($record));
 
     // Remove query definition on the last iteration
-    if (i === withProps.length - 1) queries.delQueryDefinition(queryId);
+    if (i === withProperties.length - 1) queries.delQueryDefinition(queryId);
   });
 
   /* ------------------------------- NOT INSIDE ------------------------------- */
@@ -88,16 +93,16 @@ export const query = <tableDefs extends ContractTableDef[], T = unknown>(
 
   /* -------------------------------- WITHOUT --------------------------------- */
   // Remove records with any of the given propertiess
-  withoutProps?.forEach(({ table, properties }, i) => {
-    // we could use queryAllWithoutPropss but it seems more likely that this below will return less records to iterate over
-    const { id: queryId, $records: $recordsWithProps } = queryAllWithProps({
+  withoutProperties?.forEach(({ table, properties }, i) => {
+    // we could use queryAllWithoutPropertiess but it seems more likely that this below will return less records to iterate over
+    const { id: queryId, $records: $recordsWithProperties } = queryAllWithProperties({
       queries,
       tableId: table.id,
       properties,
     });
-    $records = $records.filter(($record) => !$recordsWithProps.includes($record));
+    $records = $records.filter(($record) => !$recordsWithProperties.includes($record));
 
-    if (i === withoutProps.length - 1) queries.delQueryDefinition(queryId);
+    if (i === withoutProperties.length - 1) queries.delQueryDefinition(queryId);
   });
 
   return $records;

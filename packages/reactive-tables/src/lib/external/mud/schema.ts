@@ -7,6 +7,7 @@ import { $Record } from "@/lib";
 import { ContractTable } from "@/tables/contract";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { LocalTable } from "@/tables/local";
+import { Hex } from "viem";
 
 /**
  * Defines the schema of a properties record inside a {@link ContractTable} or {@link LocalTable}.
@@ -51,6 +52,10 @@ export enum Type {
   OptionalBigIntArray,
   StringArray,
   OptionalStringArray,
+  Hex,
+  OptionalHex,
+  HexArray,
+  OptionalHexArray,
   $Record,
   Optional$Record,
   $RecordArray,
@@ -64,23 +69,27 @@ export enum Type {
  *
  * @category Tables
  */
-export type PropsType<T = unknown> = {
+export type PropertiesType<T = unknown> = {
   [Type.Boolean]: boolean;
   [Type.Number]: number;
   [Type.BigInt]: bigint;
   [Type.String]: string;
+  [Type.Hex]: Hex;
+  [Type.$Record]: $Record;
   [Type.NumberArray]: number[];
   [Type.BigIntArray]: bigint[];
   [Type.StringArray]: string[];
-  [Type.$Record]: $Record;
+  [Type.HexArray]: Hex[];
   [Type.$RecordArray]: $Record[];
   [Type.OptionalNumber]: number | undefined;
   [Type.OptionalBigInt]: bigint | undefined;
-  [Type.OptionalBigIntArray]: bigint[] | undefined;
   [Type.OptionalString]: string | undefined;
-  [Type.OptionalNumberArray]: number[] | undefined;
-  [Type.OptionalStringArray]: string[] | undefined;
+  [Type.OptionalHex]: Hex | undefined;
   [Type.Optional$Record]: $Record | undefined;
+  [Type.OptionalNumberArray]: number[] | undefined;
+  [Type.OptionalBigIntArray]: bigint[] | undefined;
+  [Type.OptionalStringArray]: string[] | undefined;
+  [Type.OptionalHexArray]: Hex[] | undefined;
   [Type.Optional$RecordArray]: $Record[] | undefined;
   [Type.T]: T;
   [Type.OptionalT]: T | undefined;
@@ -159,40 +168,40 @@ export const schemaAbiTypeToRecsType = {
   int240: Type.BigInt,
   int248: Type.BigInt,
   int256: Type.BigInt,
-  bytes1: Type.String,
-  bytes2: Type.String,
-  bytes3: Type.String,
-  bytes4: Type.String,
-  bytes5: Type.String,
-  bytes6: Type.String,
-  bytes7: Type.String,
-  bytes8: Type.String,
-  bytes9: Type.String,
-  bytes10: Type.String,
-  bytes11: Type.String,
-  bytes12: Type.String,
-  bytes13: Type.String,
-  bytes14: Type.String,
-  bytes15: Type.String,
-  bytes16: Type.String,
-  bytes17: Type.String,
-  bytes18: Type.String,
-  bytes19: Type.String,
-  bytes20: Type.String,
-  bytes21: Type.String,
-  bytes22: Type.String,
-  bytes23: Type.String,
-  bytes24: Type.String,
-  bytes25: Type.String,
-  bytes26: Type.String,
-  bytes27: Type.String,
-  bytes28: Type.String,
-  bytes29: Type.String,
-  bytes30: Type.String,
-  bytes31: Type.String,
-  bytes32: Type.String,
+  bytes1: Type.Hex,
+  bytes2: Type.Hex,
+  bytes3: Type.Hex,
+  bytes4: Type.Hex,
+  bytes5: Type.Hex,
+  bytes6: Type.Hex,
+  bytes7: Type.Hex,
+  bytes8: Type.Hex,
+  bytes9: Type.Hex,
+  bytes10: Type.Hex,
+  bytes11: Type.Hex,
+  bytes12: Type.Hex,
+  bytes13: Type.Hex,
+  bytes14: Type.Hex,
+  bytes15: Type.Hex,
+  bytes16: Type.Hex,
+  bytes17: Type.Hex,
+  bytes18: Type.Hex,
+  bytes19: Type.Hex,
+  bytes20: Type.Hex,
+  bytes21: Type.Hex,
+  bytes22: Type.Hex,
+  bytes23: Type.Hex,
+  bytes24: Type.Hex,
+  bytes25: Type.Hex,
+  bytes26: Type.Hex,
+  bytes27: Type.Hex,
+  bytes28: Type.Hex,
+  bytes29: Type.Hex,
+  bytes30: Type.Hex,
+  bytes31: Type.Hex,
+  bytes32: Type.Hex,
   bool: Type.Boolean,
-  address: Type.String,
+  address: Type.Hex,
   "uint8[]": Type.NumberArray,
   "uint16[]": Type.NumberArray,
   "uint24[]": Type.NumberArray,
@@ -257,41 +266,41 @@ export const schemaAbiTypeToRecsType = {
   "int240[]": Type.BigIntArray,
   "int248[]": Type.BigIntArray,
   "int256[]": Type.BigIntArray,
-  "bytes1[]": Type.StringArray,
-  "bytes2[]": Type.StringArray,
-  "bytes3[]": Type.StringArray,
-  "bytes4[]": Type.StringArray,
-  "bytes5[]": Type.StringArray,
-  "bytes6[]": Type.StringArray,
-  "bytes7[]": Type.StringArray,
-  "bytes8[]": Type.StringArray,
-  "bytes9[]": Type.StringArray,
-  "bytes10[]": Type.StringArray,
-  "bytes11[]": Type.StringArray,
-  "bytes12[]": Type.StringArray,
-  "bytes13[]": Type.StringArray,
-  "bytes14[]": Type.StringArray,
-  "bytes15[]": Type.StringArray,
-  "bytes16[]": Type.StringArray,
-  "bytes17[]": Type.StringArray,
-  "bytes18[]": Type.StringArray,
-  "bytes19[]": Type.StringArray,
-  "bytes20[]": Type.StringArray,
-  "bytes21[]": Type.StringArray,
-  "bytes22[]": Type.StringArray,
-  "bytes23[]": Type.StringArray,
-  "bytes24[]": Type.StringArray,
-  "bytes25[]": Type.StringArray,
-  "bytes26[]": Type.StringArray,
-  "bytes27[]": Type.StringArray,
-  "bytes28[]": Type.StringArray,
-  "bytes29[]": Type.StringArray,
-  "bytes30[]": Type.StringArray,
-  "bytes31[]": Type.StringArray,
-  "bytes32[]": Type.StringArray,
+  "bytes1[]": Type.HexArray,
+  "bytes2[]": Type.HexArray,
+  "bytes3[]": Type.HexArray,
+  "bytes4[]": Type.HexArray,
+  "bytes5[]": Type.HexArray,
+  "bytes6[]": Type.HexArray,
+  "bytes7[]": Type.HexArray,
+  "bytes8[]": Type.HexArray,
+  "bytes9[]": Type.HexArray,
+  "bytes10[]": Type.HexArray,
+  "bytes11[]": Type.HexArray,
+  "bytes12[]": Type.HexArray,
+  "bytes13[]": Type.HexArray,
+  "bytes14[]": Type.HexArray,
+  "bytes15[]": Type.HexArray,
+  "bytes16[]": Type.HexArray,
+  "bytes17[]": Type.HexArray,
+  "bytes18[]": Type.HexArray,
+  "bytes19[]": Type.HexArray,
+  "bytes20[]": Type.HexArray,
+  "bytes21[]": Type.HexArray,
+  "bytes22[]": Type.HexArray,
+  "bytes23[]": Type.HexArray,
+  "bytes24[]": Type.HexArray,
+  "bytes25[]": Type.HexArray,
+  "bytes26[]": Type.HexArray,
+  "bytes27[]": Type.HexArray,
+  "bytes28[]": Type.HexArray,
+  "bytes29[]": Type.HexArray,
+  "bytes30[]": Type.HexArray,
+  "bytes31[]": Type.HexArray,
+  "bytes32[]": Type.HexArray,
   "bool[]": Type.T, // no boolean arr,
-  "address[]": Type.StringArray,
-  bytes: Type.String,
+  "address[]": Type.HexArray,
+  bytes: Type.Hex,
   string: Type.String,
 } as const satisfies Record<SchemaAbiType, Type>;
 

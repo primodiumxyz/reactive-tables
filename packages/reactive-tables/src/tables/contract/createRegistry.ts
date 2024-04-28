@@ -1,6 +1,6 @@
 import { createTableMethods } from "@/tables/createTableMethods";
 import { createMetadata } from "@/tables/contract/createMetadata";
-import { ContractTableDefs, StoreConfig, mapObject, storePropertiesSchema } from "@/lib";
+import { ContractTableDefs, mapObject, StoreConfig, storePropertiesSchema } from "@/lib";
 import { CreateContractTablesOptions } from "@/tables/types";
 import { ContractTables } from "@/tables/contract/types";
 
@@ -31,12 +31,12 @@ export const createRegistry = <config extends StoreConfig, extraTableDefs extend
         ...def,
         schema: metadata.schema,
         keySchema: metadata.metadata.keySchema,
-        propsSchema: metadata.metadata.propsSchema,
+        propertiesSchema: metadata.metadata.propertiesSchema,
       },
     });
 
     // Store properties schema in TinyBase for easier access in the storage adapter
-    storePropertiesSchema(store, def.tableId, metadata.metadata.propsSchema);
+    storePropertiesSchema(store, def.tableId, metadata.metadata.propertiesSchema);
 
     return {
       ...metadata,

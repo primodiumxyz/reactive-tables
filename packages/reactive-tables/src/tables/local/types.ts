@@ -59,7 +59,7 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
    * Get the current properties of a record, or the table as a whole if it doesn't require any keys.
    *
    * @param $record (optional) The record to get the properties for.
-   * @param defaultProps (optional) The default properties to return if the record doesn't exist.
+   * @param defaultProperties (optional) The default properties to return if the record doesn't exist.
    * @returns The current properties of the record.
    * @example
    * This example retrieves the current properties of the "Counter" table, which has only a single `value` property.
@@ -73,7 +73,7 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
    */
   get(): Properties<S, T> | undefined;
   get($record: $Record | undefined): Properties<S, T> | undefined;
-  get($record?: $Record | undefined, defaultProps?: Properties<S, T>): Properties<S, T>;
+  get($record?: $Record | undefined, defaultProperties?: Properties<S, T>): Properties<S, T>;
 
   /**
    * Set the properties of a record.
@@ -321,7 +321,7 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
    * Get the current properties of a record with a React hook.
    *
    * @param $record (optional) The record to get the properties for.
-   * @param defaultProps (optional) The default properties to return if the record doesn't exist.
+   * @param defaultProperties (optional) The default properties to return if the record doesn't exist.
    * @returns The current properties of the record, updated whenever the data changes.
    * @example
    * This example retrieves the properties of a record in the "Player" table.
@@ -340,7 +340,7 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
    * @category Methods
    */
   use($record?: $Record | undefined): Properties<S, T> | undefined;
-  use($record: $Record | undefined, defaultProps?: Properties<S, T>): Properties<S, T>;
+  use($record: $Record | undefined, defaultProperties?: Properties<S, T>): Properties<S, T>;
 
   /**
    * Pause updates for a record or the table as a whole, meaning it won't react to changes in the store anymore.
