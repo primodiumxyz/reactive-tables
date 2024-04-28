@@ -40,15 +40,17 @@ export type ContractTable<
   S extends Schema = Schema,
   M extends Metadata = Metadata,
   T = unknown,
-> = ContractTableMethods<AbiToPropsSchema<tableDef["valueSchema"]>, T> &
-  ContractTableWithKeysMethods<AbiToPropsSchema<tableDef["valueSchema"]>, AbiToKeySchema<tableDef["keySchema"]>, T> & {
+  PS extends Schema = AbiToPropsSchema<tableDef["valueSchema"]>,
+  KS extends Schema = AbiToKeySchema<tableDef["keySchema"]>,
+> = ContractTableMethods<PS, T> &
+  ContractTableWithKeysMethods<PS, KS, T> & {
     readonly id: tableDef["tableId"];
     readonly schema: S;
     readonly metadata: M & {
       readonly name: tableDef["name"];
       readonly globalName: `${tableDef["namespace"]}__${tableDef["name"]}`;
-      readonly keySchema: { [name in keyof tableDef["keySchema"] & string]: tableDef["keySchema"][name]["type"] };
-      readonly propsSchema: { [name in keyof tableDef["valueSchema"] & string]: tableDef["valueSchema"][name]["type"] };
+      readonly keySchema: KS;
+      readonly propsSchema: PS;
     };
   };
 
@@ -106,7 +108,7 @@ export type AbiToKeySchema<schema extends UnparsedKeySchema | KeySchema> = {
  * @category Table
  * @internal
  */
-export type ContractTableMethods<VS extends Schema, T = unknown> = OriginalTableMethods & {
+export type ContractTableMethods<PS extends Schema, T = unknown> = OriginalTableMethods & {
   /**
    * Get the current properties of a record, or the table as a whole if it doesn't require any keys.
    *
@@ -123,9 +125,9 @@ export type ContractTableMethods<VS extends Schema, T = unknown> = OriginalTable
    * ```
    * @category Methods
    */
-  get(): Properties<VS, T> | undefined;
-  get($record: $Record | undefined): Properties<VS, T> | undefined;
-  get($record?: $Record | undefined, defaultProps?: PropertiesSansMetadata<VS, T>): Properties<VS, T>;
+  get(): Properties<PS, T> | undefined;
+  get($record: $Record | undefined): Properties<PS, T> | undefined;
+  get($record?: $Record | undefined, defaultProps?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   /**
    * Set the properties of a record.
@@ -143,7 +145,7 @@ export type ContractTableMethods<VS extends Schema, T = unknown> = OriginalTable
    * ```
    * @category Methods
    */
-  set: (properties: Properties<VS, T>, $record?: $Record) => void;
+  set: (properties: Properties<PS, T>, $record?: $Record) => void;
 
   /**
    * Get all records in the table.
@@ -184,7 +186,7 @@ export type ContractTableMethods<VS extends Schema, T = unknown> = OriginalTable
    * ```
    * @category Methods
    */
-  getAllWith: (properties: Partial<Properties<VS, T>>) => $Record[];
+  getAllWith: (properties: Partial<Properties<PS, T>>) => $Record[];
 
   /**
    * Get all records in the table without specific properties.
@@ -205,7 +207,7 @@ export type ContractTableMethods<VS extends Schema, T = unknown> = OriginalTable
    * ```
    * @category Methods
    */
-  getAllWithout: (properties: Partial<Properties<VS, T>>) => $Record[];
+  getAllWithout: (properties: Partial<Properties<PS, T>>) => $Record[];
 
   /**
    * Get all records in the table with a React hook.
@@ -254,7 +256,7 @@ export type ContractTableMethods<VS extends Schema, T = unknown> = OriginalTable
    * ```
    * @category Methods
    */
-  useAllWith: (properties: Partial<Properties<VS, T>>) => $Record[];
+  useAllWith: (properties: Partial<Properties<PS, T>>) => $Record[];
 
   /**
    * Get all records in the table without specific properties with a React hook.
@@ -281,7 +283,7 @@ export type ContractTableMethods<VS extends Schema, T = unknown> = OriginalTable
    * ```
    * @category Methods
    */
-  useAllWithout: (properties: Partial<Properties<VS, T>>) => $Record[];
+  useAllWithout: (properties: Partial<Properties<PS, T>>) => $Record[];
 
   /**
    * Remove a record from the table.
@@ -344,7 +346,7 @@ export type ContractTableMethods<VS extends Schema, T = unknown> = OriginalTable
    * ```
    * @category Methods
    */
-  update: (properties: Partial<Properties<VS, T>>, $record?: $Record) => void;
+  update: (properties: Partial<Properties<PS, T>>, $record?: $Record) => void;
 
   /**
    * Check if a record exists in the table.
@@ -391,8 +393,8 @@ export type ContractTableMethods<VS extends Schema, T = unknown> = OriginalTable
    * ```
    * @category Methods
    */
-  use($record?: $Record | undefined): Properties<VS, T> | undefined;
-  use($record: $Record | undefined, defaultProps?: PropertiesSansMetadata<VS, T>): Properties<VS, T>;
+  use($record?: $Record | undefined): Properties<PS, T> | undefined;
+  use($record: $Record | undefined, defaultProps?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   /**
    * Pause updates for a record or the table as a whole, meaning it won't react to changes in the store anymore.
@@ -416,7 +418,7 @@ export type ContractTableMethods<VS extends Schema, T = unknown> = OriginalTable
    * ```
    * @category Methods
    */
-  pauseUpdates: ($record?: $Record, properties?: Properties<VS, T>) => void;
+  pauseUpdates: ($record?: $Record, properties?: Properties<PS, T>) => void;
 
   /**
    * Enable updates for a record or the table as a whole, meaning it will react to changes in the store again.
@@ -502,7 +504,7 @@ export type ContractTableMethods<VS extends Schema, T = unknown> = OriginalTable
    * @category Methods
    */
   watch: (
-    options: Omit<CreateTableWatcherOptions<VS, T>, "queries" | "tableId" | "schema">,
+    options: Omit<CreateTableWatcherOptions<PS, T>, "queries" | "tableId" | "schema">,
   ) => CreateTableWatcherResult;
 };
 
@@ -512,7 +514,7 @@ export type ContractTableMethods<VS extends Schema, T = unknown> = OriginalTable
  * @category Table
  * @internal
  */
-export type ContractTableWithKeysMethods<VS extends Schema, KS extends Schema, T = unknown> = {
+export type ContractTableWithKeysMethods<PS extends Schema, KS extends Schema, T = unknown> = {
   /**
    * Get the current properties of a record using its keys instead of the record itself.
    *
@@ -532,9 +534,9 @@ export type ContractTableWithKeysMethods<VS extends Schema, KS extends Schema, T
    * ```
    * @category Methods
    */
-  getWithKeys(): Properties<VS, T> | undefined;
-  getWithKeys(keys?: Properties<KS, T>): Properties<VS, T> | undefined;
-  getWithKeys(keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<VS, T>): Properties<VS, T>;
+  getWithKeys(): Properties<PS, T> | undefined;
+  getWithKeys(keys?: Properties<KS, T>): Properties<PS, T> | undefined;
+  getWithKeys(keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   /**
    * Check if a record exists inside the table using its keys.
@@ -583,8 +585,8 @@ export type ContractTableWithKeysMethods<VS extends Schema, KS extends Schema, T
    * ```
    * @category Methods
    */
-  useWithKeys(keys?: Properties<KS, T>): Properties<VS, T> | undefined;
-  useWithKeys(keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<VS, T>): Properties<VS>;
+  useWithKeys(keys?: Properties<KS, T>): Properties<PS, T> | undefined;
+  useWithKeys(keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<PS, T>): Properties<PS>;
 
   /**
    * Set the properties of a record using its keys instead of the record itself.
@@ -603,7 +605,7 @@ export type ContractTableWithKeysMethods<VS extends Schema, KS extends Schema, T
    * ```
    * @category Methods
    */
-  setWithKeys(properties: Properties<VS, T>, keys?: Properties<KS, T>): void;
+  setWithKeys(properties: Properties<PS, T>, keys?: Properties<KS, T>): void;
 
   /**
    * Get the keys properties of a record using its hex string representation.

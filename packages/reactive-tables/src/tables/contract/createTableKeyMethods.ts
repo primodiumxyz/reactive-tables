@@ -14,25 +14,25 @@ import { decode$Record, encode$Record, default$Record, $Record, Schema } from "@
  * @category Table
  */
 export const createTableKeyMethods = <
-  VS extends Schema,
+  PS extends Schema,
   TKeySchema extends KeySchema,
   KS extends AbiToKeySchema<TKeySchema>,
   T = unknown,
 >({
   keySchema,
   ...methods
-}: { keySchema: TKeySchema } & ContractTableMethods<VS, T> & OriginalTableMethods): ContractTableWithKeysMethods<
-  VS,
+}: { keySchema: TKeySchema } & ContractTableMethods<PS, T> & OriginalTableMethods): ContractTableWithKeysMethods<
+  PS,
   KS,
   T
 > => {
   const { get, has, use, set } = methods;
 
   // Get the properties of a record using its keys
-  function getWithKeys(): Properties<VS, T> | undefined;
-  function getWithKeys(keys?: Properties<KS, T>): Properties<VS, T> | undefined;
-  function getWithKeys(keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<VS, T>): Properties<VS, T>;
-  function getWithKeys(keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<VS, T>) {
+  function getWithKeys(): Properties<PS, T> | undefined;
+  function getWithKeys(keys?: Properties<KS, T>): Properties<PS, T> | undefined;
+  function getWithKeys(keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
+  function getWithKeys(keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<PS, T>) {
     const $record = keys ? encode$Record(keySchema, keys) : default$Record;
     return get($record, defaultProps);
   }
@@ -44,13 +44,13 @@ export const createTableKeyMethods = <
   };
 
   // Use (hook) the properties of a record using its keys
-  const useWithKeys = (keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<VS, T>) => {
+  const useWithKeys = (keys?: Properties<KS, T>, defaultProps?: PropertiesSansMetadata<PS, T>) => {
     const $record = keys ? encode$Record(keySchema, keys) : default$Record;
     return use($record, defaultProps);
   };
 
   // Set the properties of a record using its keys
-  const setWithKeys = (properties: Properties<VS, T>, keys: Properties<KS, T>) => {
+  const setWithKeys = (properties: Properties<PS, T>, keys: Properties<KS, T>) => {
     const $record = keys ? encode$Record(keySchema, keys) : default$Record;
     return set(properties, $record);
   };
