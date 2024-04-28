@@ -12,4 +12,6 @@ export {
   $recordToHexKeyTuple,
   // Convert ABI types to TypeScript understandable types
   schemaAbiTypeToRecsType,
+  // uuid
+  uuid,
 } from "@/lib";
