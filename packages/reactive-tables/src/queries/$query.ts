@@ -1,5 +1,5 @@
 import { query, QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
-import { ContractTableDef, $Record, Schema, TinyBaseStore, getPropertiesAndTypeFromRowChange } from "@/lib";
+import { ContractTableDef, $Record, Schema, Store, getPropertiesAndTypeFromRowChange } from "@/lib";
 
 /**
  * Listen to all records matching multiple conditions across tables.
@@ -46,7 +46,7 @@ import { ContractTableDef, $Record, Schema, TinyBaseStore, getPropertiesAndTypeF
  * @category Queries
  */
 export const $query = <tableDefs extends ContractTableDef[], S extends Schema, T = unknown>(
-  store: TinyBaseStore,
+  _store: Store,
   queryOptions: QueryOptions<tableDefs, T>,
   callbacks: TableWatcherCallbacks<S, T>,
   options: { runOnInit?: boolean } = { runOnInit: true },
@@ -56,6 +56,7 @@ export const $query = <tableDefs extends ContractTableDef[], S extends Schema, T
     throw new Error("At least one callback has to be provided");
   }
 
+  const store = _store();
   // Remember previous records (to provide the update type in the callback)
   let prev$Records: $Record[] = [];
 
@@ -78,7 +79,7 @@ export const $query = <tableDefs extends ContractTableDef[], S extends Schema, T
 
     // Refetch matching records if one of the tables included in the query changes
     if (Object.keys(tables).includes(tableId)) {
-      const matching$Records = query(store, queryOptions);
+      const matching$Records = query(_store, queryOptions);
 
       // Figure out if it's an enter or an exit
       let type = "change" as UpdateType;
@@ -113,7 +114,7 @@ export const $query = <tableDefs extends ContractTableDef[], S extends Schema, T
   });
 
   if (options.runOnInit) {
-    const matching$Records = query(store, queryOptions);
+    const matching$Records = query(_store, queryOptions);
 
     // Run callbacks for all records in the query
     matching$Records.forEach(($record) => {

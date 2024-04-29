@@ -2,7 +2,7 @@ import { createQueries } from "tinybase/queries";
 
 import { queryAllWithProperties } from "@/queries/templates/queryAllWithProperties";
 import { QueryOptions } from "@/queries/types";
-import { ContractTableDef, $Record, TinyBaseStore } from "@/lib";
+import { ContractTableDef, $Record, Store } from "@/lib";
 
 /**
  * Queries all records matching multiple provided conditions across tables.
@@ -33,7 +33,7 @@ import { ContractTableDef, $Record, TinyBaseStore } from "@/lib";
  * @category Queries
  */
 export const query = <tableDefs extends ContractTableDef[], T = unknown>(
-  store: TinyBaseStore,
+  _store: Store,
   options: QueryOptions<tableDefs, T>,
 ): $Record[] => {
   const {
@@ -45,7 +45,7 @@ export const query = <tableDefs extends ContractTableDef[], T = unknown>(
   if (!inside && !withProperties) {
     throw new Error("At least one inside or with condition needs to be provided");
   }
-
+  const store = _store();
   const queries = createQueries(store);
 
   /* --------------------------------- INSIDE --------------------------------- */

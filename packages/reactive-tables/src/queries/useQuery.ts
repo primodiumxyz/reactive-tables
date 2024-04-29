@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { query, QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
-import { ContractTableDef, getPropertiesAndTypeFromRowChange, $Record, Schema, TinyBaseStore } from "@/lib";
+import { ContractTableDef, getPropertiesAndTypeFromRowChange, $Record, Schema, Store } from "@/lib";
 
 // TODO: this will clearly need to be optimized; there are probably a few options:
 // - setup a table listener by default on each table, then when setting up a query listener let that table know so it adds this callback to its array
@@ -49,13 +49,14 @@ import { ContractTableDef, getPropertiesAndTypeFromRowChange, $Record, Schema, T
  * @category Queries
  */
 export const useQuery = <tableDefs extends ContractTableDef[], S extends Schema, T = unknown>(
-  store: TinyBaseStore,
+  _store: Store,
   options: QueryOptions<tableDefs, T>,
   callbacks?: TableWatcherCallbacks<S, T>,
 ): $Record[] => {
   // Not available in a non-browser environment
   if (typeof window === "undefined") throw new Error("useQuery is only available in a browser environment");
   const { onChange, onEnter, onExit, onUpdate } = callbacks ?? {};
+  const store = _store();
   const [$records, set$Records] = useState<$Record[]>([]);
   // Create a ref for previous records (to provide the update type in the callback)
   const prev$Records = useRef<$Record[]>([]);
@@ -78,7 +79,7 @@ export const useQuery = <tableDefs extends ContractTableDef[], S extends Schema,
 
   useEffect(() => {
     // Initial query
-    const curr$Records = query(store, options);
+    const curr$Records = query(_store, options);
     set$Records(curr$Records);
     prev$Records.current = curr$Records;
 
@@ -89,7 +90,7 @@ export const useQuery = <tableDefs extends ContractTableDef[], S extends Schema,
 
       // Refetch matching $records if one of the tables included in the query changes
       if (Object.keys(tables).includes(tableId)) {
-        const new$Records = query(store, options);
+        const new$Records = query(_store, options);
 
         // Figure out if it's an enter or an exit
         let type = "change" as UpdateType;
