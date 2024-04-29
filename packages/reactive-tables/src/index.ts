@@ -20,11 +20,11 @@ export type {
   $Record,
   Schema,
   StoreConfig,
+  Store,
   TinyBaseQueries,
   TinyBaseStore,
 } from "@/lib";
 export { Type as PropType } from "@/lib/external/mud/schema";
-export type { Store } from "@/lib/tinybase/store";
 
 export type { QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
 export type { StorageAdapter } from "@/adapter";

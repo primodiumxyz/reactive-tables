@@ -1,5 +1,5 @@
 import { describe, it, expect, assert } from "vitest";
-import { renderHook } from "@testing-library/react-hooks";
+import { renderHook } from "@testing-library/react";
 
 // libs
 import { createWorld, getComponentValue } from "@latticexyz/recs";
@@ -69,7 +69,7 @@ const setup = async (options: TestOptions = { useIndexer: false }) => {
   // Sync tables with the chain
   const sync = createSync({
     registry: localRegistry,
-    store: store(),
+    store: store,
     tableDefs,
     networkConfig: {
       ...networkConfig,
@@ -907,14 +907,14 @@ describe("queries: should emit appropriate update events with the correct data",
 
     // Entities inside the Position table
     expect(
-      query(store(), {
+      query(store, {
         with: [registry.Position],
       }).sort(),
     ).toEqual([player, A, B, C].sort());
 
     // Entities inside the Position table but not inside the Inventory table
     expect(
-      query(store(), {
+      query(store, {
         with: [registry.Position],
         without: [registry.Inventory],
       }),
@@ -922,7 +922,7 @@ describe("queries: should emit appropriate update events with the correct data",
 
     // Entities with a specific property inside the Inventory table, and without a specific property inside the Position table
     expect(
-      query(store(), {
+      query(store, {
         withProperties: [
           {
             table: registry.Inventory,
@@ -940,7 +940,7 @@ describe("queries: should emit appropriate update events with the correct data",
 
     // Entities with a specific property inside the Inventory table, not another one
     expect(
-      query(store(), {
+      query(store, {
         withProperties: [
           {
             table: registry.Inventory,
@@ -993,11 +993,11 @@ describe("queries: should emit appropriate update events with the correct data",
     };
 
     const { result } = renderHook(() =>
-      useQuery(store(), query, {
+      useQuery(store, query, {
         onChange,
       }),
     );
-    const { unsubscribe } = $query(store(), query, { onChange: globalOnChange });
+    const { unsubscribe } = $query(store, query, { onChange: globalOnChange });
 
     expect(result.current.sort()).toEqual([player, A].sort());
     expect(aggregator).toEqual([]);
