@@ -70,7 +70,7 @@ export type TableWatcherCallbacks<S extends Schema, T = unknown> = Partial<{
  */
 type QueryMatchingProperties<tableDef extends ContractTableDef, T = unknown> = {
   table: ContractTable<tableDef>;
-  properties: Properties<AbiToPropertiesSchema<tableDef["valueSchema"]>, T>;
+  properties: Partial<Properties<AbiToPropertiesSchema<tableDef["valueSchema"]>, T>>;
 };
 
 /**

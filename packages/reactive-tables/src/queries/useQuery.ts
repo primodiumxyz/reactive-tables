@@ -127,7 +127,7 @@ export const useQuery = <tableDefs extends ContractTableDef[], S extends Schema,
     return () => {
       store.delListener(listenerId);
     };
-  }, [store /* tableIds */]); // TODO: tests get stuck with this, not sure why; but apart from Typescript possibly getting angry we shouldn't give any mutable options anyway?
+  }, []);
 
   return $records;
 };
