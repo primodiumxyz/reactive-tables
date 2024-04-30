@@ -67,7 +67,7 @@ export const decodePropertiesFromTinyBase = (formattedProperties: TinyBaseFormat
         // Fallbacks just in case
         decodedProperties[key] = JSON.parse(prop as string).map(() => undefined);
       } else if (type === "undefined") {
-        decodedProperties[key] = prop.toString();
+        decodedProperties[key] = undefined;
       }
     }
 

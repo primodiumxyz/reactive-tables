@@ -51,13 +51,13 @@ export const query = <tableDefs extends ContractTableDef[], T = unknown>(
   /* --------------------------------- INSIDE --------------------------------- */
   // Start with records inside all inside tables
   let $records = inside
-    ? inside.reduce<$Record[]>((acc, table) => {
+    ? inside.reduce<$Record[]>((acc, table, index) => {
         return (
           table
             // get all records inside this table
             .getAll()
             // keep them if they were inside previous tables as well
-            .filter(($record) => (acc.length > 0 ? acc.includes($record) : true))
+            .filter(($record) => (index !== 0 ? acc.includes($record) : true))
         );
       }, [])
     : [];
