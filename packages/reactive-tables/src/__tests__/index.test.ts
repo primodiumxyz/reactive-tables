@@ -1,5 +1,5 @@
 import { describe, it, expect, assert } from "vitest";
-import { renderHook } from "@testing-library/react";
+import { renderHook } from "@testing-library/react-hooks";
 
 // libs
 import { createWorld, getComponentValue } from "@latticexyz/recs";
@@ -22,7 +22,7 @@ import {
   TableUpdate,
   useQuery,
   ContractTableDef,
-} from "@primodiumxyz/reactive-tables";
+} from "@primodiumxyz/reactive-tables"; // use `from "@/index"` to debug
 
 // tests
 import {
@@ -959,8 +959,8 @@ describe("queries: should emit appropriate update events with the correct data",
 
   // TODO: fix this very weird case where assigning `synced` makes it hang forever in `waitForSyncLive`
   // When removing it, the while loop works, but whenever `synced` is assigned inside the loop, it hangs right at the `await wait(1000)`
-  it.todo("$query(), useQuery() (useQueryAllMatching)", async () => {
-    const { registry, store, $records, onChange, aggregator } = await preTest();
+  it("$query(), useQuery() (useQueryAllMatching)", async () => {
+    const { registry, store, $records, onChange: onChangeHook, aggregator: aggregatorHook } = await preTest();
     const [player, A, B, C] = $records;
     const emptyData = {
       __staticData: "0x",
@@ -970,8 +970,8 @@ describe("queries: should emit appropriate update events with the correct data",
     };
 
     // We need another aggregator for the global query
-    const globalAggregator: TableUpdate<typeof registry.Position.schema | typeof registry.Inventory.schema>[] = [];
-    const globalOnChange = (update: (typeof globalAggregator)[number]) => globalAggregator.push(update);
+    const aggregatorListener: TableUpdate<typeof registry.Position.schema | typeof registry.Inventory.schema>[] = [];
+    const onChangeListener = (update: (typeof aggregatorListener)[number]) => aggregatorListener.push(update);
 
     // Prepare $records
     registry.Position.set({ x: 10, y: 10, ...emptyData }, player);
@@ -982,7 +982,7 @@ describe("queries: should emit appropriate update events with the correct data",
     registry.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6), ...emptyData }, A);
     registry.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3), ...emptyData }, B);
 
-    const query = {
+    const queryOptions = {
       with: [registry.Position],
       withProperties: [
         {
@@ -993,16 +993,16 @@ describe("queries: should emit appropriate update events with the correct data",
     };
 
     const { result } = renderHook(() =>
-      useQuery(store, query, {
-        onChange,
+      useQuery(store, queryOptions, {
+        onChange: onChangeHook,
       }),
     );
-    const { unsubscribe } = $query(store, query, { onChange: globalOnChange });
+    const { unsubscribe } = $query(store, queryOptions, { onChange: onChangeListener });
 
     expect(result.current.sort()).toEqual([player, A].sort());
-    expect(aggregator).toEqual([]);
-    // The global aggregator has run on init true by default
-    expect(globalAggregator.sort()).toEqual([
+    expect(aggregatorHook).toEqual([]);
+    // The listener aggregator has run on init true by default
+    expect(aggregatorListener.sort()).toEqual([
       {
         tableId: undefined, // on init we don't know about specific tables
         $record: player,
@@ -1029,9 +1029,9 @@ describe("queries: should emit appropriate update events with the correct data",
       properties: { current: propsB, prev: propsA },
       type: "exit", // out of the query
     };
-    expect(aggregator).toEqual([expectedAggregatorItem]);
-    expect(globalAggregator).toHaveLength(3);
-    expect(globalAggregator[2]).toEqual(expectedAggregatorItem);
+    expect(aggregatorHook).toEqual([expectedAggregatorItem]);
+    expect(aggregatorListener).toHaveLength(3);
+    expect(aggregatorListener[2]).toEqual(expectedAggregatorItem);
 
     // Update the totalWeight of A
     const propsC = registry.Inventory.get(A);
@@ -1045,10 +1045,10 @@ describe("queries: should emit appropriate update events with the correct data",
       properties: { current: propsD, prev: propsC },
       type: "exit",
     };
-    expect(aggregator).toHaveLength(2);
-    expect(globalAggregator).toHaveLength(4);
-    expect(aggregator[1]).toEqual(expectedAggregatorItemB);
-    expect(globalAggregator[3]).toEqual(expectedAggregatorItemB);
+    expect(aggregatorHook).toHaveLength(2);
+    expect(aggregatorListener).toHaveLength(4);
+    expect(aggregatorHook[1]).toEqual(expectedAggregatorItemB);
+    expect(aggregatorListener[3]).toEqual(expectedAggregatorItemB);
 
     // Update the totalWeight of B
     const propsE = registry.Inventory.get(B);
@@ -1062,10 +1062,10 @@ describe("queries: should emit appropriate update events with the correct data",
       properties: { current: propsF, prev: propsE },
       type: "enter",
     };
-    expect(aggregator).toHaveLength(3);
-    expect(globalAggregator).toHaveLength(5);
-    expect(aggregator[2]).toEqual(expectedAggregatorItemC);
-    expect(globalAggregator[4]).toEqual(expectedAggregatorItemC);
+    expect(aggregatorHook).toHaveLength(3);
+    expect(aggregatorListener).toHaveLength(5);
+    expect(aggregatorHook[2]).toEqual(expectedAggregatorItemC);
+    expect(aggregatorListener[4]).toEqual(expectedAggregatorItemC);
 
     // Update, then remove B
     const propsG = registry.Position.get(B);
@@ -1086,12 +1086,12 @@ describe("queries: should emit appropriate update events with the correct data",
       properties: { current: undefined, prev: propsH },
       type: "exit",
     };
-    expect(aggregator).toHaveLength(5);
-    expect(globalAggregator).toHaveLength(7);
-    expect(aggregator[3]).toEqual(expectedAggregatorItemD);
-    expect(aggregator[4]).toEqual(expectedAggregatorItemE);
-    expect(globalAggregator[5]).toEqual(expectedAggregatorItemD);
-    expect(globalAggregator[6]).toEqual(expectedAggregatorItemE);
+    expect(aggregatorHook).toHaveLength(5);
+    expect(aggregatorListener).toHaveLength(7);
+    expect(aggregatorHook[3]).toEqual(expectedAggregatorItemD);
+    expect(aggregatorHook[4]).toEqual(expectedAggregatorItemE);
+    expect(aggregatorListener[5]).toEqual(expectedAggregatorItemD);
+    expect(aggregatorListener[6]).toEqual(expectedAggregatorItemE);
 
     unsubscribe();
   });

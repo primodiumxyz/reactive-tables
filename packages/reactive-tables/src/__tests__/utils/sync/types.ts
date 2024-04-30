@@ -1,11 +1,11 @@
-import { ContractTableDefs, TinyBaseStore } from "@/lib";
+import { ContractTableDefs, Store } from "@/lib";
 
 import { createLocalSyncTables } from "@/__tests__/utils/sync/tables";
 import { NetworkConfig } from "@/__tests__/utils/getNetworkConfig";
 
 export type CreateSyncOptions = {
   registry: ReturnType<typeof createLocalSyncTables>;
-  store: TinyBaseStore;
+  store: Store;
   tableDefs: ContractTableDefs;
   networkConfig: NetworkConfig;
   onSync: OnSyncCallbacks;

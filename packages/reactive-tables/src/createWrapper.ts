@@ -111,7 +111,7 @@ export const createWrapper = <config extends StoreConfig, extraTableDefs extends
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create storage adapter (custom writer, see @primodiumxyz/sync-stack)
-  const storageAdapter = createStorageAdapter({ store: store() });
+  const storageAdapter = createStorageAdapter({ store });
 
   return { registry, tableDefs, store, storageAdapter };
 };

@@ -2,10 +2,11 @@ import { hexToResource, spliceHex } from "@latticexyz/common";
 import { type Hex, size } from "viem";
 import { Write } from "@primodiumxyz/sync-stack";
 
-import { StorageAdapterLog, TinyBaseAdapter } from "@/adapter";
-import { debug, hexKeyTupleTo$Record, getPropertiesSchema, TinyBaseStore } from "@/lib";
+import { type StorageAdapterLog, TinyBaseAdapter } from "@/adapter";
+import { debug, hexKeyTupleTo$Record, getPropertiesSchema, type Store } from "@/lib";
 
-export const createCustomWriter = ({ store }: { store: TinyBaseStore }) => {
+export const createCustomWriter = ({ store: _store }: { store: Store }) => {
+  const store = _store();
   const processLog = (log: StorageAdapterLog) => {
     const { namespace, name } = hexToResource(log.args.tableId);
     const $record = hexKeyTupleTo$Record(log.args.keyTuple);

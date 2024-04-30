@@ -59,6 +59,7 @@ export const useQuery = <tableDefs extends ContractTableDef[], S extends Schema,
   if (typeof window === "undefined") throw new Error("useQuery is only available in a browser environment");
   const { onChange, onEnter, onExit, onUpdate } = callbacks ?? {};
   const store = _store();
+
   const [$records, set$Records] = useState<$Record[]>([]);
   // Create a ref for previous records (to provide the update type in the callback)
   const prev$Records = useRef<$Record[]>([]);
