@@ -1,5 +1,5 @@
-import type { Properties, PropertiesSansMetadata, OriginalTableMethods } from "@/tables";
 import type { AbiToKeySchema, ContractTableMethods, ContractTableWithKeysMethods, KeySchema } from "@/tables/contract";
+import type { Properties, PropertiesSansMetadata, OriginalTableMethods } from "@/tables";
 import { decode$Record, encode$Record, default$Record, type $Record, type Schema } from "@/lib";
 
 /**

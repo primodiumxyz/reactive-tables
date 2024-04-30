@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { type Primitive, TinyBaseAdapter } from "@/adapter";
 import { queryAllWithoutProperties } from "@/queries/templates/queryAllWithoutProperties";
-import type { TableQueryOptions } from "@/queries/types";
+import type { TableQueryOptions } from "@/queries";
 import type { ContractTableDef, $Record, TinyBaseQueries } from "@/lib";
 
 // Listen to all records inside a given table that DON'T have specific properties (or a single property)

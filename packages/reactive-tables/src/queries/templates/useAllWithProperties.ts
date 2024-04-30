@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { type Primitive, TinyBaseAdapter } from "@/adapter";
 import { queryAllWithProperties } from "@/queries/templates/queryAllWithProperties";
-import type { TableQueryOptions } from "@/queries/types";
+import type { TableQueryOptions } from "@/queries";
 import type { ContractTableDef, $Record, TinyBaseQueries } from "@/lib";
 
 // Listen to all records inside a given table that have specific properties (or partial properties)

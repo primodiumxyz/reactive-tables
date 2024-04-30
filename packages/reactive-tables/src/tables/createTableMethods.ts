@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 
+import { type Primitive, TinyBaseAdapter, type TinyBaseFormattedType } from "@/adapter";
+import { createTableKeyMethods, type ContractTableMetadata } from "@/tables/contract";
+import type { LocalTableMetadata } from "@/tables/local";
+import type { Properties, PropertiesSansMetadata, CreateTableMethodsOptions } from "@/tables";
 import {
   type CreateTableWatcherOptions,
   createTableWatcher,
@@ -8,11 +12,6 @@ import {
   useAllWithProperties,
   useAllWithoutProperties,
 } from "@/queries";
-import { type Primitive, TinyBaseAdapter, type TinyBaseFormattedType } from "@/adapter";
-import { createTableKeyMethods } from "@/tables/contract";
-import type { ContractTableMetadata } from "@/tables/contract/types";
-import type { LocalTableMetadata } from "@/tables/local/types";
-import type { Properties, PropertiesSansMetadata, CreateTableMethodsOptions } from "@/tables/types";
 import {
   arrayToIterator,
   createTableMethodsUtils,

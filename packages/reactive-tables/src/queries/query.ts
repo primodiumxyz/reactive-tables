@@ -1,7 +1,7 @@
 import { createQueries } from "tinybase/queries";
 
 import { queryAllWithProperties } from "@/queries/templates/queryAllWithProperties";
-import type { QueryOptions } from "@/queries/types";
+import type { QueryOptions } from "@/queries";
 import type { ContractTableDef, $Record, Store } from "@/lib";
 
 /**

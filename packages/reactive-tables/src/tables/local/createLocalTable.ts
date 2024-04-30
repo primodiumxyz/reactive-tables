@@ -1,7 +1,7 @@
 import { keccak256, toHex } from "viem";
 
-import { createTableMethods, type Properties } from "@/tables";
 import type { LocalTable, LocalTableMetadata } from "@/tables/local";
+import { createTableMethods, type Properties } from "@/tables";
 import { type Metadata, type Schema, type Store, Type, uuid } from "@/lib";
 
 /**

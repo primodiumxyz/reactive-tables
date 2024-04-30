@@ -1,5 +1,5 @@
 import { type Primitive, TinyBaseAdapter } from "@/adapter";
-import type { TableQueryOptions, TableQueryResult } from "@/queries/types";
+import type { TableQueryOptions, TableQueryResult } from "@/queries";
 import type { ContractTableDef, $Record } from "@/lib";
 
 // Query all records for a given table that DON'T have specific properties (or partial properties)

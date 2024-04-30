@@ -1,7 +1,7 @@
 import type { Properties } from "@/tables";
 import { TinyBaseAdapter } from "@/adapter";
+import type { CreateQueryWatcherOptions, TableUpdate, UpdateType } from "@/queries";
 import { getPropertiesAndTypeFromRowChange, type $Record, type Schema } from "@/lib";
-import type { CreateQueryWatcherOptions, TableUpdate, UpdateType } from "@/queries/types";
 
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
