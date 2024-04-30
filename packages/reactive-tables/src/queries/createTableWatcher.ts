@@ -1,13 +1,8 @@
 import { TinyBaseAdapter } from "@/adapter";
-import {
-  CreateTableWatcherOptions,
-  CreateTableWatcherResult,
-  TableUpdate,
-  UpdateType,
-  createTableTinyQLWatcher,
-} from "@/queries";
-import { Properties } from "@/tables";
-import { Schema, $Record, uuid, getPropertiesAndTypeFromRowChange } from "@/lib";
+import { createTableTinyQLWatcher } from "@/queries";
+import type { CreateTableWatcherOptions, CreateTableWatcherResult, TableUpdate, UpdateType } from "@/queries";
+import type { Properties } from "@/tables";
+import { type Schema, type $Record, uuid, getPropertiesAndTypeFromRowChange } from "@/lib";
 
 /**
  * Create a watcher/listener for a table, either globally (on all changes) or within a TinyQL query.

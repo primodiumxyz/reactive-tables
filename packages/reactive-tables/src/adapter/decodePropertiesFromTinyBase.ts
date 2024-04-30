@@ -1,6 +1,6 @@
-import { Hex } from "viem";
+import { type Hex } from "viem";
 
-import { DecodedTinyBaseType, TinyBaseFormattedType } from "@/adapter";
+import type { DecodedTinyBaseType, TinyBaseFormattedType } from "@/adapter";
 import { localProperties, metadataProperties } from "@/lib";
 
 // (jsdocs)

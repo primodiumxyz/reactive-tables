@@ -1,6 +1,6 @@
-import { Properties, PropertiesSansMetadata, OriginalTableMethods } from "@/tables";
-import { AbiToKeySchema, ContractTableMethods, ContractTableWithKeysMethods, KeySchema } from "@/tables/contract";
-import { decode$Record, encode$Record, default$Record, $Record, Schema } from "@/lib";
+import type { Properties, PropertiesSansMetadata, OriginalTableMethods } from "@/tables";
+import type { AbiToKeySchema, ContractTableMethods, ContractTableWithKeysMethods, KeySchema } from "@/tables/contract";
+import { decode$Record, encode$Record, default$Record, type $Record, type Schema } from "@/lib";
 
 /**
  * Create a set of methods to interact with a contract table using values for its keys properties,

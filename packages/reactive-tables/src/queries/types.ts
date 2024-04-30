@@ -1,9 +1,9 @@
-import { Group, Having, Join, Select, Where } from "tinybase/queries";
+import type { Group, Having, Join, Select, Where } from "tinybase/queries";
 
-import { TinyBaseFormattedType } from "@/adapter";
-import { Properties } from "@/tables";
-import { AbiToPropertiesSchema, ContractTable } from "@/tables/contract";
-import { ContractTableDef, $Record, TinyBaseQueries, Schema } from "@/lib";
+import type { TinyBaseFormattedType } from "@/adapter";
+import type { Properties } from "@/tables";
+import type { AbiToPropertiesSchema, ContractTable } from "@/tables/contract";
+import type { ContractTableDef, $Record, TinyBaseQueries, Schema } from "@/lib";
 
 /* --------------------------------- GLOBAL --------------------------------- */
 /**

@@ -1,5 +1,5 @@
 import { hexToResource, spliceHex } from "@latticexyz/common";
-import { Hex, size } from "viem";
+import { type Hex, size } from "viem";
 import { Write } from "@primodiumxyz/sync-stack";
 
 import { StorageAdapterLog, TinyBaseAdapter } from "@/adapter";

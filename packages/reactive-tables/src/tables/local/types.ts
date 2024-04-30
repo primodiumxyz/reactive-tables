@@ -1,6 +1,6 @@
-import { BaseTableMetadata, OriginalTableMethods, Properties } from "@/tables";
-import { CreateTableWatcherOptions, CreateTableWatcherResult } from "@/queries";
-import { Metadata, $Record, Schema } from "@/lib";
+import type { BaseTableMetadata, OriginalTableMethods, Properties } from "@/tables";
+import type { CreateTableWatcherOptions, CreateTableWatcherResult } from "@/queries";
+import type { Metadata, $Record, Schema } from "@/lib";
 
 /**
  * Defines a local table, including its metadata and methods.

@@ -1,6 +1,6 @@
-import { Store as MUDStoreConfig } from "@latticexyz/store";
-import { Table as MUDTableDef, Tables as MUDTableDefs } from "@latticexyz/store/internal";
-import { ResolvedStoreConfig, resolveConfig } from "@latticexyz/store/config";
+import type { Store as MUDStoreConfig } from "@latticexyz/store";
+import type { Table as MUDTableDef, Tables as MUDTableDefs } from "@latticexyz/store/internal";
+import { type ResolvedStoreConfig, resolveConfig } from "@latticexyz/store/config";
 import { storeToV1 } from "@latticexyz/store/config/v2";
 
 /**

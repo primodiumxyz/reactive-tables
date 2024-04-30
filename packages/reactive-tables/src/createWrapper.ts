@@ -1,14 +1,14 @@
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { resolveConfig } from "@latticexyz/store/internal";
 
-import { ContractTables, createRegistry } from "@/tables/contract";
-import { StorageAdapter, createStorageAdapter } from "@/adapter";
+import { type ContractTables, createRegistry } from "@/tables/contract";
+import { type StorageAdapter, createStorageAdapter } from "@/adapter";
 import {
-  AllTableDefs,
+  type AllTableDefs,
   createStore,
-  ContractTableDefs,
-  Store,
-  StoreConfig,
+  type ContractTableDefs,
+  type Store,
+  type StoreConfig,
   storeTableDefs,
   worldTableDefs,
 } from "@/lib";

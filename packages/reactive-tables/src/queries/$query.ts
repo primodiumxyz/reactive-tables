@@ -1,5 +1,7 @@
-import { query, QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
-import { ContractTableDef, $Record, Schema, Store, getPropertiesAndTypeFromRowChange } from "@/lib";
+import { query } from "@/queries";
+import type { QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
+import { getPropertiesAndTypeFromRowChange } from "@/lib";
+import type { ContractTableDef, $Record, Schema, Store } from "@/lib";
 
 /**
  * Listen to all records matching multiple conditions across tables.

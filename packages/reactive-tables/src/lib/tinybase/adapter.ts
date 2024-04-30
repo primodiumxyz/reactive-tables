@@ -1,7 +1,7 @@
-import { Hex } from "viem";
+import type { Hex } from "viem";
 
-import { PropertiesSchema } from "@/tables/contract";
-import { TinyBaseStore } from "@/lib";
+import type { PropertiesSchema } from "@/tables/contract";
+import type { TinyBaseStore } from "@/lib";
 
 /**
  * Store the properties schema of a table inside the TinyBase store.

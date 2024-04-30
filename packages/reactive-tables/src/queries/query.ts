@@ -1,8 +1,8 @@
 import { createQueries } from "tinybase/queries";
 
 import { queryAllWithProperties } from "@/queries/templates/queryAllWithProperties";
-import { QueryOptions } from "@/queries/types";
-import { ContractTableDef, $Record, Store } from "@/lib";
+import type { QueryOptions } from "@/queries/types";
+import type { ContractTableDef, $Record, Store } from "@/lib";
 
 /**
  * Queries all records matching multiple provided conditions across tables.

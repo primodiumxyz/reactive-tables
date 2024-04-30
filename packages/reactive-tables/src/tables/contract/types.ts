@@ -1,10 +1,14 @@
-import { SchemaAbiType } from "@latticexyz/schema-type/internal";
-import { KeySchema as UnparsedKeySchema, ValueSchema as UnparsedPropertiesSchema } from "@latticexyz/store/internal";
-import { KeySchema, ValueSchema as PropertiesSchema } from "@latticexyz/protocol-parser/internal";
+import type { SchemaAbiType } from "@latticexyz/schema-type/internal";
+import type {
+  KeySchema as UnparsedKeySchema,
+  ValueSchema as UnparsedPropertiesSchema,
+} from "@latticexyz/store/internal";
+import type { KeySchema, ValueSchema as PropertiesSchema } from "@latticexyz/protocol-parser/internal";
 
-import { CreateTableWatcherOptions, CreateTableWatcherResult } from "@/queries";
-import { BaseTableMetadata, OriginalTableMethods, Properties, PropertiesSansMetadata } from "@/tables";
-import { ContractTableDef, ContractTableDefs, Metadata, $Record, Schema, SchemaAbiTypeToRecsType, Type } from "@/lib";
+import type { CreateTableWatcherOptions, CreateTableWatcherResult } from "@/queries";
+import type { BaseTableMetadata, OriginalTableMethods, Properties, PropertiesSansMetadata } from "@/tables";
+import type { ContractTableDef, ContractTableDefs, Metadata, $Record, Schema, SchemaAbiTypeToRecsType } from "@/lib";
+import { Type } from "@/lib";
 
 export { UnparsedKeySchema, KeySchema, UnparsedPropertiesSchema, PropertiesSchema };
 

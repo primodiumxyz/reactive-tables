@@ -1,8 +1,8 @@
-import { createTableMethods } from "@/tables/createTableMethods";
 import { createMetadata } from "@/tables/contract/createMetadata";
-import { ContractTableDefs, mapObject, StoreConfig, storePropertiesSchema } from "@/lib";
-import { CreateContractTablesOptions } from "@/tables/types";
-import { ContractTables } from "@/tables/contract/types";
+import { createTableMethods } from "@/tables/createTableMethods";
+import { type ContractTableDefs, mapObject, type StoreConfig, storePropertiesSchema } from "@/lib";
+import type { CreateContractTablesOptions } from "@/tables/types";
+import type { ContractTables } from "@/tables/contract/types";
 
 /**
  * Creates a registry of contract tables with both their metadata (see {@link createMetadata}) and methods to retrieve/update

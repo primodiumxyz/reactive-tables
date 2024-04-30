@@ -1,8 +1,8 @@
-import { SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
-import { concatHex, decodeAbiParameters, encodeAbiParameters, Hex, isHex, size, sliceHex } from "viem";
+import type { SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
+import { concatHex, decodeAbiParameters, encodeAbiParameters, type Hex, isHex, size, sliceHex } from "viem";
 
-import { AbiToKeySchema, KeySchema } from "@/tables/contract";
-import { Properties } from "@/tables";
+import type { AbiToKeySchema, KeySchema } from "@/tables/contract";
+import type { Properties } from "@/tables";
 
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

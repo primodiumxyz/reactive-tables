@@ -1,7 +1,7 @@
-import { createQueries, Queries as TinyBaseQueries } from "tinybase/queries";
-import { createStore as createTinyBaseStore, Store as TinyBaseStore } from "tinybase/store";
+import { createStore as createTinyBaseStore, type Store as TinyBaseStore } from "tinybase/store";
+import { createQueries, type Queries as TinyBaseQueries } from "tinybase/queries";
 import { createLocalPersister } from "tinybase/persisters/persister-browser";
-export { TinyBaseStore, TinyBaseQueries }; // for more explicit types
+export type { TinyBaseStore, TinyBaseQueries }; // for more explicit types
 
 /**
  * Defines a native non-persistent TinyBase store, appended with its associated queries object.

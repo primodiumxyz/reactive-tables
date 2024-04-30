@@ -1,9 +1,9 @@
-import { GetResultCellChange, ResultRow } from "tinybase/queries";
+import type { GetResultCellChange, ResultRow } from "tinybase/queries";
 
-import { Properties } from "@/tables";
-import { UpdateType } from "@/queries";
-import { TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
-import { $Record, Schema, localProperties, metadataProperties } from "@/lib";
+import type { Properties } from "@/tables";
+import type { UpdateType } from "@/queries";
+import { TinyBaseAdapter, type TinyBaseFormattedType } from "@/adapter";
+import { type $Record, type Schema, localProperties, metadataProperties } from "@/lib";
 
 /**
  * Get the current and previous properties, and infer the type of update from a row change.

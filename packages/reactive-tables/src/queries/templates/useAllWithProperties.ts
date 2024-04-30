@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { Primitive, TinyBaseAdapter } from "@/adapter";
+import { type Primitive, TinyBaseAdapter } from "@/adapter";
 import { queryAllWithProperties } from "@/queries/templates/queryAllWithProperties";
-import { TableQueryOptions } from "@/queries/types";
-import { ContractTableDef, $Record, TinyBaseQueries } from "@/lib";
+import type { TableQueryOptions } from "@/queries/types";
+import type { ContractTableDef, $Record, TinyBaseQueries } from "@/lib";
 
 // Listen to all records inside a given table that have specific properties (or partial properties)
 export const useAllWithProperties = <tableDef extends ContractTableDef>(

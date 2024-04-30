@@ -1,6 +1,6 @@
-import { Primitive, TinyBaseAdapter } from "@/adapter";
-import { TableQueryOptions, TableQueryResult } from "@/queries/types";
-import { ContractTableDef, $Record } from "@/lib";
+import { type Primitive, TinyBaseAdapter } from "@/adapter";
+import type { TableQueryOptions, TableQueryResult } from "@/queries/types";
+import type { ContractTableDef, $Record } from "@/lib";
 
 // Query all records for a given table that DON'T have specific properties (or partial properties)
 export const queryAllWithoutProperties = <tableDef extends ContractTableDef>({

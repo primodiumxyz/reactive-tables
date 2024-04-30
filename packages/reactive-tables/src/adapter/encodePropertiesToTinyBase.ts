@@ -1,4 +1,4 @@
-import { Primitive, TinyBaseFormattedType } from "@/adapter";
+import type { Primitive, TinyBaseFormattedType } from "@/adapter";
 
 // We want to encode the original type as well when dealing with local tables, because we
 // don't have a schema to rely on. And we don't care that much about the schema, because that's TypeScript types we want.

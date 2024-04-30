@@ -1,7 +1,7 @@
-import { StoreEventsAbiItem, StoreEventsAbi } from "@latticexyz/store";
-import { DynamicPrimitiveType, StaticPrimitiveType } from "@latticexyz/schema-type/internal";
-import { UnionPick } from "@latticexyz/common/type-utils";
-import { Hex, Log } from "viem";
+import type { StoreEventsAbiItem, StoreEventsAbi } from "@latticexyz/store";
+import type { DynamicPrimitiveType, StaticPrimitiveType } from "@latticexyz/schema-type/internal";
+import type { UnionPick } from "@latticexyz/common/type-utils";
+import type { Hex, Log } from "viem";
 
 import { createCustomWriter } from "@/adapter/createCustomWriter";
 

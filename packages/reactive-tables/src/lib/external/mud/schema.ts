@@ -1,6 +1,6 @@
-import { SchemaAbiType } from "@latticexyz/schema-type/internal";
+import type { SchemaAbiType } from "@latticexyz/schema-type/internal";
 
-import { $Record } from "@/lib";
+import type { $Record } from "@/lib";
 
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

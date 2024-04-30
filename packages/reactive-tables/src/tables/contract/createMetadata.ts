@@ -1,4 +1,4 @@
-import { ContractTableDef, Type, schemaAbiTypeToRecsType } from "@/lib";
+import { type ContractTableDef, Type, schemaAbiTypeToRecsType } from "@/lib";
 
 /**
  * Creates and formats the metadata for a contract table.

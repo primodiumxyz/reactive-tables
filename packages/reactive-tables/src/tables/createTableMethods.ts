@@ -1,19 +1,26 @@
 import { useEffect, useState } from "react";
 
 import {
-  CreateTableWatcherOptions,
+  type CreateTableWatcherOptions,
   createTableWatcher,
   queryAllWithProperties,
   queryAllWithoutProperties,
   useAllWithProperties,
   useAllWithoutProperties,
 } from "@/queries";
-import { Primitive, TinyBaseAdapter, TinyBaseFormattedType } from "@/adapter";
+import { type Primitive, TinyBaseAdapter, type TinyBaseFormattedType } from "@/adapter";
 import { createTableKeyMethods } from "@/tables/contract";
-import { ContractTableMetadata } from "@/tables/contract/types";
-import { LocalTableMetadata } from "@/tables/local/types";
-import { Properties, PropertiesSansMetadata, CreateTableMethodsOptions } from "@/tables/types";
-import { arrayToIterator, createTableMethodsUtils, Metadata, $Record, Schema, default$Record } from "@/lib";
+import type { ContractTableMetadata } from "@/tables/contract/types";
+import type { LocalTableMetadata } from "@/tables/local/types";
+import type { Properties, PropertiesSansMetadata, CreateTableMethodsOptions } from "@/tables/types";
+import {
+  arrayToIterator,
+  createTableMethodsUtils,
+  type Metadata,
+  type $Record,
+  type Schema,
+  default$Record,
+} from "@/lib";
 
 const inContractTableMetadata = <S extends Schema, M extends Metadata>(
   metadata: LocalTableMetadata<S, M> | ContractTableMetadata<S, M>,

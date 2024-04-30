@@ -6,22 +6,22 @@ import {
   decodeDynamicField,
   decodeStaticField,
   hexToEncodedLengths,
-  Schema,
-  SchemaToPrimitives,
+  type Schema,
+  type SchemaToPrimitives,
   staticDataLength,
-  ValueArgs,
+  type ValueArgs,
 } from "@latticexyz/protocol-parser/internal";
 import { readHex } from "@latticexyz/common";
 import {
-  StaticPrimitiveType,
-  DynamicPrimitiveType,
+  type StaticPrimitiveType,
+  type DynamicPrimitiveType,
   staticAbiTypeToByteLength,
   dynamicAbiTypeToDefaultValue,
 } from "@latticexyz/schema-type/internal";
-import { Hex } from "viem";
+import { type Hex } from "viem";
 
 import { encodePropertiesToTinyBase } from "@/adapter/encodePropertiesToTinyBase";
-import { PropertiesSchema } from "@/tables/contract";
+import { type PropertiesSchema } from "@/tables/contract";
 
 /**
  * Decode the properties of a record from the data inside a log.

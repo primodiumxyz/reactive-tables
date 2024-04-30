@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { query, QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
-import { ContractTableDef, getPropertiesAndTypeFromRowChange, $Record, Schema, Store } from "@/lib";
+import { query } from "@/queries";
+import type { QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
+import { getPropertiesAndTypeFromRowChange } from "@/lib";
+import type { ContractTableDef, $Record, Schema, Store } from "@/lib";
 
 // TODO: this will clearly need to be optimized; there are probably a few options:
 // - setup a table listener by default on each table, then when setting up a query listener let that table know so it adds this callback to its array

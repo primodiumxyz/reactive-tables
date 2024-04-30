@@ -1,4 +1,4 @@
-import { $Record, TinyBaseStore } from "@/lib";
+import type { $Record, TinyBaseStore } from "@/lib";
 
 /**
  * Create methods to handle the paused state of a table.

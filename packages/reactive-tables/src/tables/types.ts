@@ -1,8 +1,8 @@
-import { Hex } from "viem";
+import type { Hex } from "viem";
 
-import { ContractTableMetadata } from "@/tables/contract";
-import { LocalTableMetadata } from "@/tables/local";
-import {
+import type { ContractTableMetadata } from "@/tables/contract";
+import type { LocalTableMetadata } from "@/tables/local";
+import type {
   AllTableDefs,
   Metadata,
   ContractTableDefs,
