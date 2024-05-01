@@ -14,8 +14,8 @@ import {
   webSocket,
 } from "viem";
 
-import worldsJson from "@/__tests__/contracts/worlds.json";
-import IWorldAbi from "@/__tests__/contracts/out/IWorld.sol/IWorld.abi.json";
+import worldsJson from "@test/contracts/worlds.json";
+import IWorldAbi from "@test/contracts/out/IWorld.sol/IWorld.abi.json";
 
 export type NetworkConfig = {
   chainId: number;

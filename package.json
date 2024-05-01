@@ -7,34 +7,71 @@
     "url": "https://github.com/primodiumxyz/reactive-tables"
   },
   "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js",
+    "./utils": "./dist/utils.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "lerna run build",
+    "build": "",
+    "build:contracts": "cd __tests__/contracts && pnpm run build",
     "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && find . -name 'pnpm-lock.yaml' -type f -prune -exec rm -rf '{}' +",
-    "dev": "cd packages/reactive-tables && pnpm dev",
-    "lerna-publish": "lerna publish",
+    "dev": "concurrently -n node,contracts,indexer -c yellow,cyan,red \"cd src/__tests__/contracts && pnpm run devnode\" \"cd src/__tests__/contracts && pnpm run deploy:local\" \"pnpm dev:indexer\"",
+    "dev:indexer": "pnpm clean-local-docker-indexer && pnpm local-docker-indexer",
     "lint": "eslint --cache",
     "lint:fix": "eslint --cache --fix",
     "prepare": "husky install",
-    "sort-package-json": "npx sort-package-json package.json 'packages/*/package.json'",
-    "test": "cd packages/reactive-tables && pnpm test",
-    "test:verbose": "cd packages/reactive-tables && pnpm test:verbose"
+    "sort-package-json": "npx sort-package-json package.json",
+    "test": "vitest",
+    "test:verbose": "DEBUG=primodium:* vitest > testLogs.txt"
   },
   "lint-staged": {
     "*.{ts,tsx}": "eslint --cache --fix",
     "*.{ts,tsx,css,md,mdx}": "prettier --write",
     "package.json": "pnpm sort-package-json"
   },
+  "dependencies": {
+    "@latticexyz/common": "2.0.6",
+    "@latticexyz/protocol-parser": "2.0.6",
+    "@latticexyz/schema-type": "2.0.6",
+    "@latticexyz/store": "2.0.6",
+    "@primodiumxyz/sync-stack": "^0.6.5",
+    "react": "^18.2.0",
+    "tinybase": "^4.8.0",
+    "viem": "2.9.20"
+  },
   "devDependencies": {
+    "@latticexyz/recs": "^2.0.6",
+    "@latticexyz/store-sync": "2.0.6",
+    "@latticexyz/world": "2.0.6",
+    "@primodiumxyz/pg-indexer-reader": "^0.6.0",
+    "@testing-library/react": "^15.0.5",
+    "@testing-library/react-hooks": "^8.0.1",
+    "@types/debug": "^4.1.12",
+    "@types/node": "^18.19.30",
+    "@types/react": "^18.2.78",
     "@typescript-eslint/eslint-plugin": "^7.5.0",
     "@typescript-eslint/parser": "^7.5.0",
     "concurrently": "^8.2.2",
+    "debug": "^4.3.4",
     "eslint": "^8.29.0",
+    "happy-dom": "^14.7.1",
     "husky": ">=6",
-    "lerna": "^8.1.2",
+    "jest-environment-jsdom": "^29.7.0",
+    "jsdom": "^24.0.0",
     "lint-staged": ">=10",
     "prettier": "^3.2.5",
     "sort-package-json": "^2.10.0",
-    "typescript": "^5.4.4"
+    "ts-node": "^10.9.2",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.4",
+    "vite": "^5.2.9",
+    "vitest": "^1.5.2"
   },
   "engines": {
     "node": "18.x",

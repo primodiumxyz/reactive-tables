@@ -1,6 +1,6 @@
-import { NetworkConfig } from "@/__tests__/utils/networkConfig";
-import { OnSyncCallbacks, Sync as SyncType } from "@/__tests__/utils/sync/types";
-import { SyncSourceType, SyncStep, createLocalSyncTables } from "@/__tests__/utils/sync/tables";
+import { NetworkConfig } from "@test/utils/networkConfig";
+import { OnSyncCallbacks, Sync as SyncType } from "@test/utils/sync/types";
+import { SyncSourceType, SyncStep, createLocalSyncTables } from "@test/utils/sync/tables";
 
 export const hydrateFromIndexer = (
   components: ReturnType<typeof createLocalSyncTables>,
@@ -9,14 +9,14 @@ export const hydrateFromIndexer = (
   onSync: OnSyncCallbacks,
 ) => {
   const { SyncSource, SyncStatus } = components;
-  const { progress: onProgress, complete: onComplete, error: onError } = onSync;
+  const { progress: onProgress, complete: onComplete, error: onError } = onSync ?? {};
 
   let startBlock = networkConfig.initialBlockNumber;
 
   sync.start(async (index, blockNumber, progress) => {
     startBlock = blockNumber;
 
-    onProgress(index, blockNumber, progress);
+    onProgress?.(index, blockNumber, progress);
     SyncSource.set({ value: SyncSourceType.Indexer });
     SyncStatus.set({
       step: SyncStep.Syncing,
@@ -27,7 +27,7 @@ export const hydrateFromIndexer = (
 
     if (progress === 1) {
       // This will hydrate remaining blocks from RPC
-      onComplete(startBlock);
+      onComplete?.(startBlock);
     }
   }, onError);
 };
@@ -38,7 +38,7 @@ export const hydrateFromRpc = (
   onSync: OnSyncCallbacks,
 ) => {
   const { SyncStatus, SyncSource } = components;
-  const { progress: onProgress, complete: onComplete, error: onError } = onSync;
+  const { progress: onProgress, complete: onComplete, error: onError } = onSync ?? {};
 
   sync.start(
     (index, blockNumber, progress) => {
@@ -49,7 +49,7 @@ export const hydrateFromRpc = (
         progress,
         lastBlockNumberProcessed: blockNumber,
       });
-      onProgress(index, blockNumber, progress);
+      onProgress?.(index, blockNumber, progress);
 
       if (progress === 1) {
         SyncStatus.set({
@@ -58,11 +58,11 @@ export const hydrateFromRpc = (
           progress: 1,
           lastBlockNumberProcessed: blockNumber,
         });
-        onComplete(blockNumber);
+        onComplete?.(blockNumber);
       }
     },
     (err: unknown) => {
-      onError(err);
+      onError?.(err);
       SyncStatus.set({
         step: SyncStep.Error,
         message: "Failed to hydrate from RPC",

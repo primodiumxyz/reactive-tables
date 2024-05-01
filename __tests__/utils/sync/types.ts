@@ -1,7 +1,7 @@
 import { ContractTableDefs, Store } from "@/lib";
 
-import { createLocalSyncTables } from "@/__tests__/utils/sync/tables";
-import { NetworkConfig } from "@/__tests__/utils/networkConfig";
+import { createLocalSyncTables } from "@test/utils/sync/tables";
+import { NetworkConfig } from "@test/utils/networkConfig";
 
 export type CreateSyncOptions = {
   registry: ReturnType<typeof createLocalSyncTables>;

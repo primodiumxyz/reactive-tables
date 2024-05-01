@@ -35,7 +35,7 @@ It is meant to be used inside a MUD application, as a replacement for the native
 - **Powerful queries** - Using multiple query languages, both over a single or multiple tables, including TinyQL (a typed and programmatic API) (TODO: link example), straightforward human-readable queries (TODO: link example), and built-in direct/hook queries.
 - **Dynamic and reactive** - The tables are reactive, meaning that each table (or group of tables) can be watched for changes, either globally or inside a precise query; including callbacks to trigger side effects, with details on the record and properties that were modified.
 - **Local tables** - Local tables are tailored for client-side state management, can be aggregated with contract tables, and include all the same methods, as well as optional local storage persistence over sessions.
-- **Storage adapter** - A built-in bridge between onchain logs and direct properties consumption on the client-side, which is a perfect fit for indexer/RPC sync using [the sync-stack](https://www.npmjs.com/package/@primodiumxyz/sync-stack), [as demonstrated in the tests](./packages//reactive-tables/src/__tests__/utils/sync/createSync.ts#83).
+- **Storage adapter** - A built-in bridge between onchain logs and direct properties consumption on the client-side, which is a perfect fit for indexer/RPC sync using [the sync-stack](https://www.npmjs.com/package/@primodiumxyz/sync-stack), [as demonstrated in the tests](./__tests__/utils/sync/createSync.ts#83).
 
 ### Installation
 
@@ -312,26 +312,25 @@ There are basically 3 entry points to the package, which are all exported from t
 ### Structure
 
 ```ml
-packages/reactive-tables - "Entry point for the package"
-├── dist - "Compiled files for distribution"
-│   ├── index - "Main module"
-│   └── utils - "Utilities for encoding/decoding"
-└── src - "Source files"
-    ├── __tests__ - "Tests related to the library"
-    │   ├── contracts - "MUD contracts for testing various tables and systems"
-    │   └── utils - "Utilities for testing (sync, function calls, network config)"
-    ├── adapter - "Storage adapter (decode properties from logs), TinyBase adapter (encode/decode to/from TinyBase storable format)"
-    ├── lib - "Internal and external types, constants, and functions"
-    │   ├── external - "Any external utilities, e.g. non-modified MUD types"
-    │   └── tinybase - "Functionalities strictly specific to TinyBase, e.g. storage/retrieval utilities, store creation, cell change parsing"
-    ├── queries - "Table queries and listeners"
-    │   └── templates - "Templates for common queries (direct and hooks)"
-    ├── tables - "Generic table creation; definition -> table object with metadata and methods"
-    │   ├── contract - "Registry creation, contract-specific metadata and methods"
-    │   └── local - "Local table creation, including templates"
-    ├── createWrapper.ts - "Main entry point for the package, creates a tables registry from a MUD config object"
-    ├── index.ts - "Main module, exports all relevant functions and constants"
-    └── utils.ts - "Utilities for encoding/decoding"
+dist - "Compiled files for distribution"
+├── index - "Main module"
+└── utils - "Utilities for encoding/decoding"
+src - "Source files"
+├── adapter - "Storage adapter (decode properties from logs), TinyBase adapter (encode/decode to/from TinyBase storable format)"
+├── lib - "Internal and external types, constants, and functions"
+│   ├── external - "Any external utilities, e.g. non-modified MUD types"
+│   └── tinybase - "Functionalities strictly specific to TinyBase, e.g. storage/retrieval utilities, store creation, cell change parsing"
+├── queries - "Table queries and listeners"
+│   └── templates - "Templates for common queries (direct and hooks)"
+├── tables - "Generic table creation; definition -> table object with metadata and methods"
+│   ├── contract - "Registry creation, contract-specific metadata and methods"
+│   └── local - "Local table creation, including templates"
+├── createWrapper.ts - "Main entry point for the package, creates a tables registry from a MUD config object"
+├── index.ts - "Main module, exports all relevant functions and constants"
+└── utils.ts - "Utilities for encoding/decoding"
+__tests__ - "Tests related to the library"
+├── contracts - "MUD contracts for testing various tables and systems"
+└── utils - "Utilities for testing (sync, function calls, network config)"
 ```
 
 ### Conventions

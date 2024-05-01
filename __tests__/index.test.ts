@@ -35,8 +35,8 @@ import {
   getRandomNumbers,
   setItems,
   setPositionFor$Record,
-} from "@/__tests__/utils";
-import mudConfig from "@/__tests__/contracts/mud.config";
+} from "@test/utils";
+import mudConfig from "@test/contracts/mud.config";
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONFIG                                   */

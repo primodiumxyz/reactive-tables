@@ -14,10 +14,11 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@test/*": ["__tests__/*"],
       "@primodiumxyz/reactive-tables": ["dist/index"],
       "@primodiumxyz/reactive-tables/*": ["dist/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "__tests__"],
   "exclude": ["node_modules", "dist"]
 }

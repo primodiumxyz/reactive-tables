@@ -3,7 +3,7 @@ import { ContractFunctionArgs, ContractFunctionName, Hex, encodeFunctionData } f
 
 import { $Record, ContractTable } from "@/index";
 
-import { networkConfig } from "@/__tests__/utils/networkConfig";
+import { networkConfig } from "@test/utils/networkConfig";
 import { resourceToHex } from "@latticexyz/common";
 const IWorldAbi = networkConfig.worldContract.abi;
 

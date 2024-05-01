@@ -8,8 +8,8 @@ import {
   CreateRpcSyncOptions,
   CreateSyncResult,
   Sync as SyncType,
-} from "@/__tests__/utils/sync/types";
-import { hydrateFromIndexer, hydrateFromRpc, subToRpc } from "@/__tests__/utils/sync/handleSync";
+} from "@test/utils/sync/types";
+import { hydrateFromIndexer, hydrateFromRpc, subToRpc } from "@test/utils/sync/handleSync";
 
 /* -------------------------------------------------------------------------- */
 /*                                   GLOBAL                                   */
