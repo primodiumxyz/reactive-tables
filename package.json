@@ -1,6 +1,6 @@
 {
   "name": "@primodiumxyz/reactive-tables",
-  "description": "",
+  "description": "A fully fledged, strictly typed library for generating and managing reactive tables in a MUD application, available for node and browser environments.",
   "repository": {
     "type": "git",
     "url": "https://github.com/primodiumxyz/reactive-tables"
