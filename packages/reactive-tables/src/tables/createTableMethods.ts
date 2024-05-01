@@ -9,16 +9,19 @@ import {
   createTableWatcher,
   queryAllWithProperties,
   queryAllWithoutProperties,
+  type TableWatcherParams,
+  type TinyQLQueryKeywords,
   useAllWithProperties,
   useAllWithoutProperties,
 } from "@/queries";
 import {
   arrayToIterator,
   createTableMethodsUtils,
+  default$Record,
   type Metadata,
   type $Record,
   type Schema,
-  default$Record,
+  uuid,
 } from "@/lib";
 
 const inContractTableMetadata = <S extends Schema, M extends Metadata>(
@@ -213,12 +216,33 @@ export const createTableMethods = <
     return properties ?? defaultProperties;
   }
 
-  /* --------------------------------- SYSTEM --------------------------------- */
-  // Create a query tied to this table, with callbacks on change, enter & exit from the query conditions
-  // or if no query, on any change in the table
-  const watch = (options: Omit<CreateTableWatcherOptions<S, T>, "queries" | "tableId" | "schema">) => {
+  /* ---------------------------------- QUERY --------------------------------- */
+  // Query the table using TinyQL syntax
+  const query = (definition: (keywords: TinyQLQueryKeywords) => void) => {
     // Add a `select` on top of the query to abstract selecting at least a cell from the properties => selecting all $records
     // This is required with TinyQL to at least select a cell so it considers all rows
+    const abstractedQuery = (keywords: TinyQLQueryKeywords) => {
+      keywords.select(Object.keys(schema)[0]);
+      definition(keywords);
+    };
+
+    // Define and run the query
+    const queryId = uuid();
+    queries.setQueryDefinition(queryId, tableId, abstractedQuery);
+    const result = queries.getResultRowIds(queryId);
+
+    queries.delQueryDefinition(queryId);
+    return result as $Record[];
+  };
+
+  /* ---------------------------------- WATCH --------------------------------- */
+  // Create a query tied to this table, with callbacks on change, enter & exit from the query conditions
+  // or if no query, on any change in the table
+  const watch = (
+    options: Omit<CreateTableWatcherOptions<S, T>, "queries" | "tableId" | "schema">,
+    params?: TableWatcherParams,
+  ) => {
+    // Same abstraction as in `query` to select all $records
     const query: CreateTableWatcherOptions<S, T>["query"] = options.query
       ? (keywords) => {
           keywords.select(Object.keys(schema)[0]);
@@ -226,13 +250,16 @@ export const createTableMethods = <
         }
       : undefined;
 
-    return createTableWatcher({
-      queries,
-      tableId,
-      schema,
-      ...options,
-      query,
-    });
+    return createTableWatcher(
+      {
+        queries,
+        tableId,
+        schema,
+        ...options,
+        query,
+      },
+      params,
+    );
   };
 
   // Base methods available to all tables
@@ -249,6 +276,7 @@ export const createTableMethods = <
     has,
     pauseUpdates,
     resumeUpdates,
+    query,
     watch,
   };
 

@@ -1,5 +1,10 @@
 import type { BaseTableMetadata, OriginalTableMethods, Properties } from "@/tables";
-import type { CreateTableWatcherOptions, CreateTableWatcherResult } from "@/queries";
+import type {
+  CreateTableWatcherOptions,
+  CreateTableWatcherResult,
+  TableWatcherParams,
+  TinyQLQueryKeywords,
+} from "@/queries";
 import type { Metadata, $Record, Schema } from "@/lib";
 
 /**
@@ -387,17 +392,40 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
   resumeUpdates: ($record?: $Record) => void;
 
   /**
+   * Query the table for records using a TinyQL query.
+   *
+   * @param definition The TinyQL query definition, using the provided keywords.
+   * @returns All records currently inside the table that match the query.
+   * @example
+   * This example queries all records in the "Player" table with a score above 50.
+   *
+   * ```ts
+   * registry.Player.set({ name: "Alice", score: 30 }, recordA);
+   * registry.Player.set({ name: "Bob", score: 100 }, recordB);
+   *
+   * const players = registry.Player.query(({ where }) => {
+   *   where((getCell) => (getCell("score") as number) > 50);
+   * });
+   * console.log(players);
+   * // -> [recordB]
+   * ```
+   * @category Methods
+   */
+  query: (definition: (keywords: TinyQLQueryKeywords) => void) => $Record[];
+
+  /**
    * Create a watcher for the table, either globally (on all changes) or within a TinyQL query.
    *
    * See {@link createTableWatcher} for detailed information on the configuration and behavior of the watcher.
    *
-   * @param options The options for the watcher. Including:
+   * @param options The options for the watcher.
    * - `query` - (optional) A TinyQL query to filter the records. If not provided, it will watch all records in the table without discrimination.
    * - `onChange` - Callback triggered on any change in the table/query (encompassing enter, exit, and update).
    * - `onEnter` - Callback triggered when a record enters the table/query (`properties.prev` will be undefined).
    * - `onExit` - Callback triggered when a record exits the table/query (`properties.current` will be undefined).
    * - `onUpdate` - Callback triggered when the properties of a record are updated (within the query if provided).
-   * - `runOnInit` - Whether to trigger the callbacks for all matching records on initialization.
+   * @param params Optional parameters for the watcher.
+   * - `runOnInit` - Whether to trigger the callbacks for all records on initialization (default: `true`).
    * @returns An object with an `unsubscribe` method to stop listening to the table.
    * This example creates a watcher for all records within the "Player" table.
    *
@@ -416,29 +444,32 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
    * // -> { table: registry.Player, $record: recordA, current: undefined, prev: { health: 90 }, type: "exit" }
    * ```
    *
-   * This example creates a watcher for all records with more than 10 points in the "Player" table.
+   * This example creates a watcher for all records with more than 10 points in the "Score" table.
    *
    * ```ts
-   * registry.Player.set({ score: 0 }, recordA);
-   * registry.Player.set({ score: 20 }, recordB);
+   * registry.Score.set({ points: 0 }, recordA);
+   * registry.Score.set({ points: 20 }, recordB);
    *
-   * registry.Player.watch({
+   * registry.Score.watch({
    *   onChange: (update) => console.log(update),
    *   query: ({ where }) => {
-   *     where((getCell) => (getCell("score") as number) > 10);
+   *     where((getCell) => (getCell("points") as number) > 10);
    *   },
    * }, {
    *   runOnInit: false,
    * });
    * // -> no output
    *
-   * registry.Player.update({ score: 15 }, recordA);
-   * // -> { table: registry.Player, $record: recordA, current: { score: 15 }, prev: { score: 0 }, type: "enter" }
+   * registry.Score.update({ points: 15 }, recordA);
+   * // -> { table: registry.Score, $record: recordA, current: { points: 15 }, prev: { points: 0 }, type: "enter" }
    *
-   * registry.Player.update({ points: 0 }, recordB);
-   * // -> { table: registry.Player, $record: recordB, current: undefined, prev: { score: 20 }, type: "exit" }
+   * registry.Score.update({ points: 0 }, recordB);
+   * // -> { table: registry.Score, $record: recordB, current: undefined, prev: { points: 20 }, type: "exit" }
    * ```
    * @category Methods
    */
-  watch: (options: Omit<CreateTableWatcherOptions<S, T>, "queries" | "tableId" | "schema">) => CreateTableWatcherResult;
+  watch: (
+    options: Omit<CreateTableWatcherOptions<S, T>, "queries" | "tableId" | "schema">,
+    params?: TableWatcherParams,
+  ) => CreateTableWatcherResult;
 };

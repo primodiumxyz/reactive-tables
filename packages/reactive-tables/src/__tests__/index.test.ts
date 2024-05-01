@@ -295,7 +295,7 @@ describe("methods: should set and return intended properties", () => {
     };
 
     // Get table properties after a transaction was made
-    it("get(), getWithKeys()", async () => {
+    it("table.get(), table.getWithKeys()", async () => {
       const { registry, player, getRandomArgs } = await preTest();
 
       // Set the items and wait for sync
@@ -310,7 +310,7 @@ describe("methods: should set and return intended properties", () => {
     });
 
     // Set table properties locally
-    it("set(), setWithKeys", async () => {
+    it("table.set(), table.setWithKeys", async () => {
       const { registry, player, getRandomArgs } = await preTest();
 
       // Set the properties manually
@@ -331,7 +331,7 @@ describe("methods: should set and return intended properties", () => {
     });
 
     // Update table properties client-side
-    it("update()", async () => {
+    it("table.update()", async () => {
       const { registry, player, getRandomArgs } = await preTest();
 
       // Set the items and wait for sync
@@ -349,7 +349,7 @@ describe("methods: should set and return intended properties", () => {
     });
 
     // Remove table properties locally
-    it("remove()", async () => {
+    it("table.remove()", async () => {
       const { registry, player, getRandomArgs } = await preTest();
 
       // Set the items and wait for sync
@@ -368,7 +368,7 @@ describe("methods: should set and return intended properties", () => {
   /* --------------------------------- NATIVE --------------------------------- */
   describe("native methods", () => {
     // Records iterator
-    it("$records()", async () => {
+    it("table.$records()", async () => {
       const { registry, $records, waitForSyncLive } = await setup();
       assert(registry);
 
@@ -410,14 +410,14 @@ describe("methods: should set and return intended properties", () => {
       return { registry, networkConfig, $records, args };
     };
 
-    it("getAll()", async () => {
+    it("table.getAll()", async () => {
       const { registry, $records } = await preTest();
 
       const allEntities = registry.Position.getAll();
       expect(allEntities.sort()).toEqual($records.sort());
     });
 
-    it("getAllWith()", async () => {
+    it("table.getAllWith()", async () => {
       const { registry, $records, args } = await preTest();
 
       expect(registry.Position.getAllWith({ x: args[0].x, y: args[0].y })).toEqual([$records[0]]);
@@ -441,7 +441,7 @@ describe("methods: should set and return intended properties", () => {
       expect(registry.Position.getAllWith({ x: argsWithPartialEquality.x, y: args[0].y })).toEqual([]);
     });
 
-    it("getAllWithout()", async () => {
+    it("table.getAllWithout()", async () => {
       const { registry, $records, args } = await preTest();
 
       expect(registry.Position.getAllWithout({ x: args[0].x, y: args[0].y }).sort()).toEqual(
@@ -462,7 +462,7 @@ describe("methods: should set and return intended properties", () => {
       expect(registry.Position.getAllWithout({ x: randomArgs.x, y: randomArgs.y }).sort()).toEqual($records.sort());
     });
 
-    it("clear()", async () => {
+    it("table.clear()", async () => {
       const { registry, $records } = await preTest();
       expect(registry.Position.getAll().sort()).toEqual($records.sort());
 
@@ -470,7 +470,7 @@ describe("methods: should set and return intended properties", () => {
       expect(registry.Position.getAll()).toEqual([]);
     });
 
-    it("has(), hasWithKeys()", async () => {
+    it("table.has(), table.hasWithKeys()", async () => {
       const { registry, $records } = await preTest();
 
       $records.forEach(($record) => {
@@ -512,7 +512,7 @@ describe("methods: should set and return intended properties", () => {
       };
     };
 
-    it("use(), useWithKeys()", async () => {
+    it("table.use(), table.useWithKeys()", async () => {
       const { registry, $records } = await setup();
       assert(registry);
       const player = $records[0];
@@ -532,13 +532,13 @@ describe("methods: should set and return intended properties", () => {
       expect(result.current).toHaveProperty("y", argsB.y);
       expect(result.current).toEqual(resultWithKeys.current);
 
-      // Remove an $record
+      // Remove a $record
       registry.Position.remove(player);
       expect(result.current).toBeUndefined();
       expect(resultWithKeys.current).toBeUndefined();
     });
 
-    it("pauseUpdates()", async () => {
+    it("table.pauseUpdates()", async () => {
       const { registry, $records } = await setup();
       assert(registry);
       const player = $records[0];
@@ -561,7 +561,7 @@ describe("methods: should set and return intended properties", () => {
       expect(result.current).toHaveProperty("y", args.y);
     });
 
-    it("resumeUpdates()", async () => {
+    it("table.resumeUpdates()", async () => {
       const { registry, $records } = await setup();
       assert(registry);
       const player = $records[0];
@@ -589,7 +589,7 @@ describe("methods: should set and return intended properties", () => {
       expect(result.current).toHaveProperty("y", argsB.y);
     });
 
-    it("useAll()", async () => {
+    it("table.useAll()", async () => {
       const { registry, $records } = await setup();
       assert(registry);
 
@@ -607,12 +607,12 @@ describe("methods: should set and return intended properties", () => {
       await Promise.all($records.slice(0, 2).map(async ($record) => await updatePosition(registry.Position, $record)));
       expect(result.current.sort()).toEqual($records.slice(0, 2).sort());
 
-      // Remove an $record
+      // Remove a $record
       registry.Position.remove($records[0]);
       expect(result.current).toEqual([$records[1]]);
     });
 
-    it("useAllWith()", async () => {
+    it("table.useAllWith()", async () => {
       const { registry, $records } = await setup();
       assert(registry);
 
@@ -652,12 +652,12 @@ describe("methods: should set and return intended properties", () => {
       await waitForBlockSynced(blockNumberD, registry.Position, $records[2]);
       expect(result.current.sort()).toEqual([$records[0], $records[1]].sort());
 
-      // Remove an $record
+      // Remove a $record
       registry.Position.remove($records[0]);
       expect(result.current).toEqual([$records[1]]);
     });
 
-    it("useAllWithout()", async () => {
+    it("table.useAllWithout()", async () => {
       const { registry, $records } = await setup();
       assert(registry);
 
@@ -696,7 +696,7 @@ describe("methods: should set and return intended properties", () => {
       await waitForBlockSynced(blockNumberD, registry.Position, $records[2]);
       expect(result.current.sort()).toEqual($records.slice(2).sort());
 
-      // Remove an $record
+      // Remove a $record
       registry.Position.remove($records[2]);
       expect(result.current).toEqual($records.slice(3));
     });
@@ -704,7 +704,7 @@ describe("methods: should set and return intended properties", () => {
 
   /* ---------------------------------- KEYS ---------------------------------- */
   describe("keys (contract-specific) methods", () => {
-    it("get$RecordKeys()", async () => {
+    it("table.get$RecordKeys()", async () => {
       const { registry, $records } = await setup();
       assert(registry);
 
@@ -752,17 +752,19 @@ describe("queries: should emit appropriate update events with the correct data",
     return { registry, store, $records, onChange, aggregator };
   };
 
-  it("createTableWatcher(): without query", async () => {
+  it("table.watch(): without query", async () => {
     const { registry, $records, onChange, aggregator } = await preTest();
     const tableId = registry.Position.id;
 
-    const { unsubscribe } = registry.Position.watch({
-      onChange,
-      options: { runOnInit: false },
-    });
+    const { unsubscribe } = registry.Position.watch(
+      {
+        onChange,
+      },
+      { runOnInit: false },
+    );
     expect(aggregator).toEqual([]);
 
-    // Update the position for an $record (and enter the table)
+    // Update the position for a $record (and enter the table)
     const propsA = registry.Position.get($records[0]);
     await updatePosition(registry.Position, $records[0]);
     const propsB = registry.Position.get($records[0]);
@@ -806,38 +808,45 @@ describe("queries: should emit appropriate update events with the correct data",
     unsubscribe();
   });
 
-  it("createTableWatcher(): run on init", async () => {
+  it("table.watch(): run on init", async () => {
     const { registry, $records, onChange, aggregator } = await preTest();
 
     // Enter $records
     await Promise.all($records.map(async ($record) => await updatePosition(registry.Position, $record)));
 
-    const { unsubscribe } = registry.Position.watch({
-      onChange,
-      options: { runOnInit: true },
-    });
+    const { unsubscribe } = registry.Position.watch(
+      {
+        onChange,
+      },
+      { runOnInit: true },
+    );
     expect(aggregator).toHaveLength($records.length);
 
     unsubscribe();
   });
 
-  it("createTableWatcher(): with query", async () => {
+  it("table.query(), table.watch(): with query", async () => {
     const { registry, $records, onChange, aggregator } = await preTest();
     const tableId = registry.Position.id;
     const matchQuery = (x: number) => x > 5 && x < 15;
 
-    const { unsubscribe } = registry.Position.watch({
-      onChange,
-      options: { runOnInit: false },
-      query: ({ where }) => {
-        // Where x is between 5 and 15
-        where((getCell) => matchQuery(getCell("x") as number));
+    const runQuery = () =>
+      registry.Position.query(({ where }) => where((getCell) => matchQuery(getCell("x") as number)));
+    const { unsubscribe } = registry.Position.watch(
+      {
+        onChange,
+        query: ({ where }) => {
+          // Where x is between 5 and 15
+          where((getCell) => matchQuery(getCell("x") as number));
+        },
       },
-    });
+      { runOnInit: false },
+    );
     // Query didn't run on init so it should be empty
     expect(aggregator).toEqual([]);
+    expect(runQuery()).toEqual([]);
 
-    // Move an $record inside the query condition
+    // Move a $record inside the query condition
     const propsA = registry.Position.get($records[0]);
     await updatePosition(registry.Position, $records[0], { x: 9, y: 9 });
     const propsB = registry.Position.get($records[0]);
@@ -850,6 +859,7 @@ describe("queries: should emit appropriate update events with the correct data",
         type: "enter", // because we didn't run on init so it's necessarily an enter
       },
     ]);
+    expect(runQuery()).toEqual([$records[0]]);
 
     // Update $record[1] inside the query condition
     const propsC = registry.Position.get($records[1]);
@@ -862,6 +872,7 @@ describe("queries: should emit appropriate update events with the correct data",
       properties: { current: propsD, prev: propsC },
       type: "enter",
     });
+    expect(runQuery().sort()).toEqual([$records[0], $records[1]].sort());
 
     // Exit $record[0]
     registry.Position.remove($records[0]);
@@ -872,6 +883,7 @@ describe("queries: should emit appropriate update events with the correct data",
       properties: { current: undefined, prev: propsB },
       type: "exit",
     });
+    expect(runQuery()).toEqual([$records[1]]);
 
     // Move out $record[1] from the query condition
     await updatePosition(registry.Position, $records[1], { x: 20, y: 20 });
@@ -884,8 +896,12 @@ describe("queries: should emit appropriate update events with the correct data",
       properties: { current: propsE, prev: propsD },
       type: "exit",
     });
+    expect(runQuery()).toEqual([]);
 
     unsubscribe();
+
+    // Get records out of the query for subsequent tests
+    await updatePosition(registry.Position, $records[0], { x: 20, y: 20 });
   });
 
   it("query() (query)", async () => {
