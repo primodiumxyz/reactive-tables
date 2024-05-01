@@ -22,7 +22,7 @@ export const createSync = ({
   networkConfig,
   onSync,
 }: CreateSyncOptions): CreateSyncResult => {
-  const { complete: onComplete } = onSync;
+  const { complete: onComplete, error: onError } = onSync ?? {};
   const { publicClient, indexerUrl, initialBlockNumber } = networkConfig;
 
   const logFilters = Object.values(tableDefs).map((table) => ({ tableId: table.tableId as string }));
@@ -37,8 +37,10 @@ export const createSync = ({
       hydrateFromIndexer(registry, networkConfig, sync, {
         ...onSync,
         // When it's complete, sync remaining blocks from RPC
+        // we don't pass the provided onComplete callback here because it will be called at the end of the RPC sync
         complete: async (lastBlock) => startRpcSync(lastBlock),
         error: (error) => {
+          onError?.(error);
           console.warn("Error hydrating from indexer");
           console.error(error);
           startRpcSync(initialBlockNumber);
@@ -67,7 +69,7 @@ export const createSync = ({
       ...onSync,
       // Once historical sync is complete, subscribe to new blocks
       complete: (blockNumber) => {
-        onComplete(blockNumber);
+        onComplete?.(blockNumber);
         subToRpc(registry, rpcSync.live);
       },
     });

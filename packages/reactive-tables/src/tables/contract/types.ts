@@ -40,7 +40,7 @@ export type ContractTables<tableDefs extends ContractTableDefs> = {
  * @category Table
  */
 export type ContractTable<
-  tableDef extends ContractTableDef,
+  tableDef extends ContractTableDef = ContractTableDef,
   S extends Schema = Schema,
   M extends Metadata = Metadata,
   T = unknown,

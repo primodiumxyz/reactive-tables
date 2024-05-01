@@ -18,9 +18,9 @@ export const createMetadata = <tableDef extends ContractTableDef>(def: tableDef)
         schemaAbiTypeToRecsType[schemaAbiType],
       ]),
     ),
-    __staticData: Type.OptionalString,
-    __encodedLengths: Type.OptionalString,
-    __dynamicData: Type.OptionalString,
+    __staticData: Type.OptionalHex,
+    __encodedLengths: Type.OptionalHex,
+    __dynamicData: Type.OptionalHex,
     __lastSyncedAtBlock: Type.OptionalBigInt,
   } as const;
 

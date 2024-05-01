@@ -17,14 +17,17 @@ import {
 import worldsJson from "@/__tests__/contracts/worlds.json";
 import IWorldAbi from "@/__tests__/contracts/out/IWorld.sol/IWorld.abi.json";
 
-export interface BaseNetworkConfig {
+export type NetworkConfig = {
   chainId: number;
   chain: MUDChain;
   worldAddress: Address;
   initialBlockNumber: bigint;
   faucetServiceUrl?: string;
   indexerUrl?: string;
-}
+  publicClient: PublicClient;
+  burnerAccount: Account;
+  worldContract: GetContractReturnType<typeof IWorldAbi, typeof publicClient>;
+};
 
 const worlds = worldsJson as Partial<Record<string, { address: Address; blockNumber?: number }>>;
 
@@ -59,12 +62,7 @@ const worldContract: GetContractReturnType<typeof IWorldAbi, typeof publicClient
   client: { public: publicClient, wallet: createWalletClient({ ...clientOptions, account: burnerAccount }) },
 });
 
-export type NetworkConfig = ReturnType<typeof getNetworkConfig>;
-export const getNetworkConfig = (): BaseNetworkConfig & {
-  publicClient: PublicClient;
-  burnerAccount: Account;
-  worldContract: GetContractReturnType<typeof IWorldAbi, typeof publicClient>;
-} => ({
+export const networkConfig: NetworkConfig = {
   chainId: chain.id,
   chain,
   worldAddress,
@@ -73,4 +71,4 @@ export const getNetworkConfig = (): BaseNetworkConfig & {
   publicClient,
   burnerAccount,
   worldContract,
-});
+};

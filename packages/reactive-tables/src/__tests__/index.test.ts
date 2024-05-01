@@ -22,16 +22,15 @@ import {
   TableUpdate,
   useQuery,
   ContractTableDef,
-} from "@primodiumxyz/reactive-tables"; // use `from "@/index"` to debug
+} from "@/index"; // use `from "@primodiumxyz/reactive-tables"` to test the build
 
 // tests
 import {
   SyncStep,
-  TableNames,
   createLocalSyncTables,
   createSync,
   fuzz,
-  getNetworkConfig,
+  networkConfig,
   getRandomBigInts,
   getRandomNumbers,
   setItems,
@@ -39,7 +38,11 @@ import {
 } from "@/__tests__/utils";
 import mudConfig from "@/__tests__/contracts/mud.config";
 
-const FUZZ_ITERATIONS = 20;
+/* -------------------------------------------------------------------------- */
+/*                                   CONFIG                                   */
+/* -------------------------------------------------------------------------- */
+
+const FUZZ_ITERATIONS = 50;
 
 /* -------------------------------------------------------------------------- */
 /*                                    SETUP                                   */
@@ -52,7 +55,6 @@ type TestOptions = {
 const setup = async (options: TestOptions = { useIndexer: false }) => {
   const { useIndexer } = options;
   const world = createWorld();
-  const networkConfig = getNetworkConfig();
 
   // Initialize wrapper
   const {
@@ -192,22 +194,24 @@ describe("local: create local table", () => {
 /* -------------------------------------------------------------------------- */
 
 describe("sync: should properly sync similar properties to RECS registry", () => {
-  const runTest = async (options: TestOptions, txs: Record<TableNames, bigint>) => {
+  const runTest = async (options: TestOptions) => {
     const { registry, recsComponents, $records, waitForSyncLive } = await setup(options);
     const player = $records[0];
     assert(registry);
-    await waitForSyncLive();
 
+    // Run a few transactions; if it fails, try again
+    const targetTables = [registry.Counter, registry.Inventory, registry.Position] as unknown as ContractTable[];
+    let { blockNumber, status } = await fuzz(FUZZ_ITERATIONS, targetTables);
+    while (status !== "success") {
+      console.error("Fuzzing failed, retrying...");
+      ({ blockNumber, status } = await fuzz(FUZZ_ITERATIONS, targetTables));
+    }
+
+    await waitForSyncLive();
     // Wait for sync to be live at the block of the latest transaction for each table
     await Promise.all(
-      Object.entries(txs).map(([key, block]) =>
-        waitForBlockSynced(
-          block,
-          // @ts-expect-error we're passing contract registry
-          registry[key as ComponentNames],
-          // @ts-expect-error we're passing registry with an id as key or none at all
-          registry[key as keyof typeof registry].metadata.keySchema.id ? player : undefined,
-        ),
+      targetTables.map((table) =>
+        waitForBlockSynced(blockNumber, table, table.metadata.keySchema.id ? player : undefined),
       ),
     );
 
@@ -251,13 +255,11 @@ describe("sync: should properly sync similar properties to RECS registry", () =>
   };
 
   it("using indexer", async () => {
-    const txs = await fuzz(FUZZ_ITERATIONS);
-    await runTest({ useIndexer: true }, txs);
+    await runTest({ useIndexer: true });
   });
 
   it("using RPC", async () => {
-    const txs = await fuzz(FUZZ_ITERATIONS);
-    await runTest({ useIndexer: false }, txs);
+    await runTest({ useIndexer: false });
   });
 });
 
@@ -908,6 +910,7 @@ describe("queries: should emit appropriate update events with the correct data",
     // Entities inside the Position table
     expect(
       query(store, {
+        // @ts-expect-error [HTArray] can't infer type of an heterogeneous array of tables
         with: [registry.Position],
       }).sort(),
     ).toEqual([player, A, B, C].sort());
@@ -915,7 +918,9 @@ describe("queries: should emit appropriate update events with the correct data",
     // Entities inside the Position table but not inside the Inventory table
     expect(
       query(store, {
+        // @ts-expect-error [HTArray] can't infer type of an heterogeneous array of tables
         with: [registry.Position],
+        // @ts-expect-error [HTArray] can't infer type of an heterogeneous array of tables
         without: [registry.Inventory],
       }),
     ).toEqual([C]);
@@ -925,12 +930,14 @@ describe("queries: should emit appropriate update events with the correct data",
       query(store, {
         withProperties: [
           {
+            // @ts-expect-error [HTArray] can't infer type of an heterogeneous array of tables
             table: registry.Inventory,
             properties: { totalWeight: BigInt(6) },
           },
         ],
         withoutProperties: [
           {
+            // @ts-expect-error [HTArray] can't infer type of an heterogeneous array of tables
             table: registry.Position,
             properties: { x: 5, y: 5 },
           },
@@ -943,12 +950,14 @@ describe("queries: should emit appropriate update events with the correct data",
       query(store, {
         withProperties: [
           {
+            // @ts-expect-error [HTArray] can't infer type of an heterogeneous array of tables
             table: registry.Inventory,
             properties: { totalWeight: BigInt(6) },
           },
         ],
         withoutProperties: [
           {
+            // @ts-expect-error [HTArray] can't infer type of an heterogeneous array of tables
             table: registry.Inventory,
             properties: { weights: [1, 2, 3] },
           },
@@ -957,8 +966,6 @@ describe("queries: should emit appropriate update events with the correct data",
     ).toEqual([A]);
   });
 
-  // TODO: fix this very weird case where assigning `synced` makes it hang forever in `waitForSyncLive`
-  // When removing it, the while loop works, but whenever `synced` is assigned inside the loop, it hangs right at the `await wait(1000)`
   it("$query(), useQuery() (useQueryAllMatching)", async () => {
     const { registry, store, $records, onChange: onChangeHook, aggregator: aggregatorHook } = await preTest();
     const [player, A, B, C] = $records;
@@ -993,10 +1000,12 @@ describe("queries: should emit appropriate update events with the correct data",
     };
 
     const { result } = renderHook(() =>
+      // @ts-expect-error [HTArray] can't infer type of an heterogeneous array of tables
       useQuery(store, queryOptions, {
         onChange: onChangeHook,
       }),
     );
+    // @ts-expect-error [HTArray] can't infer type of an heterogeneous array of tables
     const { unsubscribe } = $query(store, queryOptions, { onChange: onChangeListener });
 
     expect(result.current.sort()).toEqual([player, A].sort());

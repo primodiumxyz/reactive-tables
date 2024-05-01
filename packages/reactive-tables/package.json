@@ -26,8 +26,8 @@
     "contracts:build": "cd src/__tests__/contracts && pnpm run build",
     "dev": "concurrently -n node,contracts,indexer -c yellow,cyan,red \"cd src/__tests__/contracts && pnpm run devnode\" \"cd src/__tests__/contracts && pnpm run deploy:local\" \"pnpm dev:indexer\"",
     "dev:indexer": "pnpm clean-local-docker-indexer && pnpm local-docker-indexer",
-    "test": "pnpm build && vitest",
-    "test:verbose": "pnpm build && DEBUG=primodium:* vitest > testLogs.txt"
+    "test": "vitest",
+    "test:verbose": "DEBUG=primodium:* vitest > testLogs.txt"
   },
   "dependencies": {
     "@latticexyz/common": "2.0.6",
@@ -44,6 +44,7 @@
     "@latticexyz/store-sync": "2.0.6",
     "@latticexyz/world": "2.0.6",
     "@primodiumxyz/pg-indexer-reader": "^0.6.0",
+    "@testing-library/react": "^15.0.5",
     "@testing-library/react-hooks": "^8.0.1",
     "@types/debug": "^4.1.12",
     "@types/node": "^18.19.30",

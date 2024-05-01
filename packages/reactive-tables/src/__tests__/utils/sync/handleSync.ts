@@ -1,4 +1,4 @@
-import { NetworkConfig } from "@/__tests__/utils/getNetworkConfig";
+import { NetworkConfig } from "@/__tests__/utils/networkConfig";
 import { OnSyncCallbacks, Sync as SyncType } from "@/__tests__/utils/sync/types";
 import { SyncSourceType, SyncStep, createLocalSyncTables } from "@/__tests__/utils/sync/tables";
 

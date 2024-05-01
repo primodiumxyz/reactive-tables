@@ -1,89 +1,64 @@
 import { waitForTransactionReceipt } from "viem/actions";
-import { Hex, TransactionReceipt } from "viem";
+import { ContractFunctionArgs, ContractFunctionName, Hex, encodeFunctionData } from "viem";
 
-import { $Record } from "@/lib";
+import { $Record, ContractTable } from "@/index";
 
-import { getNetworkConfig } from "@/__tests__/utils/getNetworkConfig";
+import { networkConfig } from "@/__tests__/utils/networkConfig";
+import { resourceToHex } from "@latticexyz/common";
+const IWorldAbi = networkConfig.worldContract.abi;
 
-const networkConfig = getNetworkConfig();
-
-export type TableNames = (typeof mockFunctionToTable)[keyof typeof mockFunctionToTable];
-const mockFunctionToTable = {
-  move: "Position",
-  increment: "Counter",
-  storeItems: "Inventory",
-} as const;
-
-// We don't want to run everything with Promise.all because it will quickly cause an issue with Viem (transaction underpriced)
-// This way it should at least reduce a bit the waiting time
-export const fuzz = async (iterations: number) => {
-  const allFunctionNames = Object.keys(mockFunctionToTable) as Array<keyof typeof mockFunctionToTable>;
-  const tasks: Array<{ name: TableNames; task: () => Promise<TransactionReceipt> }> = [];
-  // Remember function called - tx block number
-  const txInfo = Object.entries(mockFunctionToTable).reduce(
-    (acc, [, comp]) => {
-      acc[comp] = BigInt(0);
-      return acc;
-    },
-    {} as Record<TableNames, bigint>,
+// Call a bunch of random functions with semirandom args related to provided tables
+export const fuzz = async (iterations: number, tables: ContractTable[]) => {
+  // Select functions related to provided tables
+  const functions = Object.entries(mockFunctions).filter(([name]) =>
+    tables.map((table) => table.metadata.name).includes(name),
   );
 
-  for (let i = 0; i < iterations; i++) {
-    const rand = Math.floor(Math.random() * allFunctionNames.length);
-    const functionName = allFunctionNames[rand];
-    const randomFunction = mockFunctions[functionName];
-    tasks.push({
-      name: mockFunctionToTable[functionName],
-      task: randomFunction,
+  // Select random functions to call `iterations` times
+  const encodedCalls = Array.from({ length: iterations }, () => {
+    // Select random function and find the related table
+    const [name, { functionName, args }] = functions[Math.floor(Math.random() * functions.length)];
+    const table = tables.find((table) => table.metadata.name === name);
+    const namespace = table?.metadata.globalName.split("__")[0] ?? "";
+
+    // Encode function call
+    const callData = encodeFunctionData<typeof IWorldAbi>({
+      abi: IWorldAbi,
+      functionName: functionName as ContractFunctionName<typeof IWorldAbi>,
+      args: args as ContractFunctionArgs<typeof IWorldAbi>,
     });
 
-    if (tasks.length === 20 || i === iterations - 1) {
-      const txReceipts = await Promise.all(tasks.map((task) => task.task()));
-      const blockNumbers = txReceipts.map((tx) => tx.blockNumber);
-      txReceipts.forEach((tx, index) => {
-        if (blockNumbers[index] > txInfo[tasks[index].name as keyof typeof txInfo]) {
-          txInfo[tasks[index].name as keyof typeof txInfo] = blockNumbers[index];
-        }
-      });
+    return {
+      systemId: resourceToHex({ type: "system", name: "TestSystem", namespace }),
+      callData,
+    };
+  });
 
-      tasks.length = 0;
-    }
-  }
+  // Batch call all txs
+  const hash = await networkConfig.worldContract.write.batchCall([encodedCalls], {
+    account: networkConfig.burnerAccount.address,
+    chain: networkConfig.chain,
+  });
 
-  return txInfo;
+  return await waitForTransactionReceipt(networkConfig.publicClient, { hash });
 };
 
-// Test functions
+const random = (min?: number, max?: number) =>
+  Math.floor(Math.random() * ((max ?? 1000000000) - (min ?? 1) + 1)) + (min ?? 1);
+
+export const getRandomNumbers = (length?: number, min?: number, max?: number) =>
+  Array.from({ length: length ?? 1 }, () => random(min, max));
+export const getRandomBigInts = (length?: number, min?: number, max?: number) =>
+  getRandomNumbers(length, min, max).map((n) => BigInt(n));
+
+// Test functions (name & args)
 export const mockFunctions = {
   // Update a record's position
-  move: async () => {
-    const hash = await networkConfig.worldContract.write.move([random(-100, 100), random(-100, 100)], {
-      chain: networkConfig.chain,
-      account: networkConfig.burnerAccount.address,
-    });
-    return await waitForTransactionReceipt(networkConfig.publicClient, { hash });
-  },
-
+  Position: { functionName: "move", args: [random(-1000000000), random(-1000000000)] },
   // Increment counter
-  increment: async () => {
-    const hash = await networkConfig.worldContract.write.increment({
-      chain: networkConfig.chain,
-      account: networkConfig.burnerAccount.address,
-    });
-    return await waitForTransactionReceipt(networkConfig.publicClient, { hash });
-  },
-
+  Counter: { functionName: "increment", args: [] },
   // Add elements to the inventory array
-  storeItems: async () => {
-    const hash = await networkConfig.worldContract.write.storeItems(
-      [Array.from({ length: 5 }, () => random(1, 100)), Array.from({ length: 5 }, () => random(1, 100))],
-      {
-        chain: networkConfig.chain,
-        account: networkConfig.burnerAccount.address,
-      },
-    );
-    return await waitForTransactionReceipt(networkConfig.publicClient, { hash });
-  },
+  Inventory: { functionName: "storeItems", args: [getRandomNumbers(5), getRandomNumbers(5)] },
 };
 
 // Set elements in the inventory array
@@ -105,12 +80,3 @@ export const setPositionFor$Record = async (args: { $record: $Record; x: number;
   });
   return await waitForTransactionReceipt(networkConfig.publicClient, { hash });
 };
-
-const random = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-
-export const getRandomNumbers = (length?: number, min?: number, max?: number) =>
-  Array.from({ length: length ?? 1 }, () => random(min ?? 1, max ?? 1000000000));
-export const getRandomBigInts = (length?: number, min?: number, max?: number) =>
-  getRandomNumbers(length, min, max).map((n) => BigInt(n));
-
-// max uint32 being: 4294967295

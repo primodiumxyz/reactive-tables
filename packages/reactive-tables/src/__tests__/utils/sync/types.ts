@@ -1,14 +1,14 @@
 import { ContractTableDefs, Store } from "@/lib";
 
 import { createLocalSyncTables } from "@/__tests__/utils/sync/tables";
-import { NetworkConfig } from "@/__tests__/utils/getNetworkConfig";
+import { NetworkConfig } from "@/__tests__/utils/networkConfig";
 
 export type CreateSyncOptions = {
   registry: ReturnType<typeof createLocalSyncTables>;
   store: Store;
   tableDefs: ContractTableDefs;
   networkConfig: NetworkConfig;
-  onSync: OnSyncCallbacks;
+  onSync?: OnSyncCallbacks;
 };
 
 export type CreateSyncResult = {
@@ -35,7 +35,7 @@ export type Sync = {
 };
 
 export type OnSyncCallbacks = {
-  progress: (index: number, blockNumber: bigint, progress: number) => void;
-  complete: (blockNumber?: bigint) => void;
-  error: (err: unknown) => void;
+  progress?: (index: number, blockNumber: bigint, progress: number) => void;
+  complete?: (blockNumber?: bigint) => void;
+  error?: (err: unknown) => void;
 };
