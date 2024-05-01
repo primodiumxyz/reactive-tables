@@ -24,26 +24,24 @@ import type { ContractTableDef, $Record, Schema, Store } from "@/lib";
  *
  * ```ts
  * const { registry, store } = createWrapper({ mudConfig });
- * const {
- *   recordA, // online, score 10
- *   recordB, // online, score 0
- *   recordC, // offline, score 10
- * } = getRecords(); // for the sake of the example
+ * registry.Player.set({ score: 10, online: true }, recordA);
+ * registry.Player.set({ score: 0, online: true }, recordB);
+ * registry.Player.set({ score: 10, online: false }, recordC);
  *
  * const query = $query(store, {
  *   withProperties: [ { table: registry.Player, properties: { online: true } } ],
- *   withoutProperties: [ { table: registry.Score, properties: { score: 0 } } ],
+ *   withoutProperties: [ { table: registry.Player, properties: { score: 0 } } ],
  * }, {
  *  onEnter: (update) => console.log(update),
  *  onExit: (update) => console.log(update),
  * }, { runOnInit: true }); // this is the default behavior
  * // -> { table: undefined, $record: recordA, current: undefined, prev: undefined, type: "enter" }
  *
- * registry.Score.update({ score: 15 }, recordA);
- * // -> { table: registry.Score, $record: recordA, current: { score: 15 }, prev: { score: 10 }, type: "change" }
+ * registry.Player.update({ score: 15 }, recordA);
+ * // -> { table: registry.Player, $record: recordA, current: { online: true, score: 15 }, prev: { online: true, score: 10 }, type: "change" }
  *
  * registry.Player.update({ online: false }, recordA);
- * // -> { table: registry.Player, $record: recordA, current: { online: false }, prev: { online: true }, type: "exit" }
+ * // -> { table: registry.Player, $record: recordA, current: { online: false, score: 15 }, prev: { online: true, score: 15 }, type: "change" }
  * ```
  * @category Queries
  */

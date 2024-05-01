@@ -159,7 +159,6 @@ export type ContractTableMethods<PS extends Schema, T = unknown> = OriginalTable
    * This example retrieves all records in the "Player" table.
    *
    * ```ts
-   * const { recordA, recordB } = getRecords(); // for the sake of the example
    * registry.Player.set({ name: "Alice" }, recordA);
    * registry.Player.set({ name: "Bob" }, recordB);
    *
@@ -180,7 +179,6 @@ export type ContractTableMethods<PS extends Schema, T = unknown> = OriginalTable
    * This example retrieves all records in the "Player" table with a score of 100.
    *
    * ```ts
-   * const { recordA, recordB } = getRecords(); // for the sake of the example
    * registry.Player.set({ name: "Alice", score: 30 }, recordA);
    * registry.Player.set({ name: "Bob", score: 100 }, recordB);
    *
@@ -201,7 +199,6 @@ export type ContractTableMethods<PS extends Schema, T = unknown> = OriginalTable
    * This example retrieves all records in the "Player" table without a score of 0.
    *
    * ```ts
-   * const { recordA, recordB } = getRecords(); // for the sake of the example
    * registry.Player.set({ name: "Alice", score: 30 }, recordA);
    * registry.Player.set({ name: "Bob", score: 0 }, recordB);
    *
@@ -222,7 +219,6 @@ export type ContractTableMethods<PS extends Schema, T = unknown> = OriginalTable
    * This example retrieves all records in the "Player" table.
    *
    * ```ts
-   * const { recordA } = getRecords(); // for the sake of the example
    * const players = registry.Player.useAll();
    * console.log(players);
    * // -> []
@@ -245,7 +241,6 @@ export type ContractTableMethods<PS extends Schema, T = unknown> = OriginalTable
    * This example retrieves all records in the "Player" table with a score of 100.
    *
    * ```ts
-   * const { recordA } = getRecords(); // for the sake of the example
    * const players = registry.Player.useAllWith({ score: 100 });
    * console.log(players);
    * // -> []
@@ -272,7 +267,6 @@ export type ContractTableMethods<PS extends Schema, T = unknown> = OriginalTable
    * This example retrieves all records in the "Player" table without a score of 0.
    *
    * ```ts
-   * const { recordA } = getRecords(); // for the sake of the example
    * const players = registry.Player.useAllWithout({ score: 0 });
    * console.log(players);
    * // -> []
@@ -297,7 +291,6 @@ export type ContractTableMethods<PS extends Schema, T = unknown> = OriginalTable
    * This example removes a record from the "Player" table.
    *
    * ```ts
-   * const { recordA, recordB } = getRecords(); // for the sake of the example
    * registry.Player.set({ name: "Alice" }, recordA);
    * registry.Player.set({ name: "Bob" }, recordB);
    * const originalPlayers = registry.Player.getAll();
@@ -467,7 +460,6 @@ export type ContractTableMethods<PS extends Schema, T = unknown> = OriginalTable
    * This example creates a watcher for all records within the "Player" table.
    *
    * ```ts
-   * const { recordA } = getRecords(); // for the sake of the example
    * registry.Player.set({ health: 100 }, recordA);
    *
    * registry.Player.watch({
@@ -482,28 +474,27 @@ export type ContractTableMethods<PS extends Schema, T = unknown> = OriginalTable
    * // -> { table: registry.Player, $record: recordA, current: undefined, prev: { health: 90 }, type: "exit" }
    * ```
    *
-   * This example creates a watcher for all records with more than 10 points in the "Player" table.
+   * This example creates a watcher for all records with more than 10 points in the "Score" table.
    *
    * ```ts
-   * const { recordA, recordB } = getRecords(); // for the sake of the example
-   * registry.Player.set({ score: 0 }, recordA);
-   * registry.Player.set({ score: 20 }, recordB);
+   * registry.Score.set({ points: 0 }, recordA);
+   * registry.Score.set({ points: 20 }, recordB);
    *
-   * registry.Player.watch({
+   * registry.Score.watch({
    *   onChange: (update) => console.log(update),
    *   query: ({ where }) => {
-   *     where((getCell) => (getCell("score") as number) > 10);
+   *     where((getCell) => (getCell("points") as number) > 10);
    *   },
    * }, {
    *   runOnInit: false,
    * });
    * // -> no output
    *
-   * registry.Player.update({ score: 15 }, recordA);
-   * // -> { table: registry.Player, $record: recordA, current: { score: 15 }, prev: { score: 0 }, type: "enter" }
+   * registry.Score.update({ points: 15 }, recordA);
+   * // -> { table: registry.Score, $record: recordA, current: { points: 15 }, prev: { points: 0 }, type: "enter" }
    *
-   * registry.Player.update({ points: 0 }, recordB);
-   * // -> { table: registry.Player, $record: recordB, current: undefined, prev: { score: 20 }, type: "exit" }
+   * registry.Score.update({ points: 0 }, recordB);
+   * // -> { table: registry.Score, $record: recordB, current: undefined, prev: { points: 20 }, type: "exit" }
    * ```
    * @category Methods
    */

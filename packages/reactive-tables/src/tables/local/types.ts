@@ -101,7 +101,6 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
    * This example retrieves all records in the "Player" table.
    *
    * ```ts
-   * const { recordA, recordB } = getRecords(); // for the sake of the example
    * registry.Player.set({ name: "Alice" }, recordA);
    * registry.Player.set({ name: "Bob" }, recordB);
    *
@@ -122,7 +121,6 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
    * This example retrieves all records in the "Player" table with a score of 100.
    *
    * ```ts
-   * const { recordA, recordB } = getRecords(); // for the sake of the example
    * registry.Player.set({ name: "Alice", score: 30 }, recordA);
    * registry.Player.set({ name: "Bob", score: 100 }, recordB);
    *
@@ -143,7 +141,6 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
    * This example retrieves all records in the "Player" table without a score of 0.
    *
    * ```ts
-   * const { recordA, recordB } = getRecords(); // for the sake of the example
    * registry.Player.set({ name: "Alice", score: 30 }, recordA);
    * registry.Player.set({ name: "Bob", score: 0 }, recordB);
    *
@@ -164,7 +161,6 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
    * This example retrieves all records in the "Player" table.
    *
    * ```ts
-   * const { recordA } = getRecords(); // for the sake of the example
    * const players = registry.Player.useAll();
    * console.log(players);
    * // -> []
@@ -187,7 +183,6 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
    * This example retrieves all records in the "Player" table with a score of 100.
    *
    * ```ts
-   * const { recordA } = getRecords(); // for the sake of the example
    * const players = registry.Player.useAllWith({ score: 100 });
    * console.log(players);
    * // -> []
@@ -214,7 +209,6 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
    * This example retrieves all records in the "Player" table without a score of 0.
    *
    * ```ts
-   * const { recordA } = getRecords(); // for the sake of the example
    * const players = registry.Player.useAllWithout({ score: 0 });
    * console.log(players);
    * // -> []
@@ -239,7 +233,6 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
    * This example removes a record from the "Player" table.
    *
    * ```ts
-   * const { recordA, recordB } = getRecords(); // for the sake of the example
    * registry.Player.set({ name: "Alice" }, recordA);
    * registry.Player.set({ name: "Bob" }, recordB);
    * const originalPlayers = registry.Player.getAll();
@@ -409,7 +402,6 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
    * This example creates a watcher for all records within the "Player" table.
    *
    * ```ts
-   * const { recordA } = getRecords(); // for the sake of the example
    * registry.Player.set({ health: 100 }, recordA);
    *
    * registry.Player.watch({
@@ -427,7 +419,6 @@ export type LocalTableMethods<S extends Schema, T = unknown> = OriginalTableMeth
    * This example creates a watcher for all records with more than 10 points in the "Player" table.
    *
    * ```ts
-   * const { recordA, recordB } = getRecords(); // for the sake of the example
    * registry.Player.set({ score: 0 }, recordA);
    * registry.Player.set({ score: 20 }, recordB);
    *

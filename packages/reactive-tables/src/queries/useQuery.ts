@@ -28,14 +28,13 @@ import type { ContractTableDef, $Record, Schema, Store } from "@/lib";
  *
  * ```ts
  * const { registry, store } = createWrapper({ mudConfig });
- * const {
- *   recordA, // inside Score with score 10
- *   recordB, // inside Score with score 10 and inside GameOver
- *   recordC, // inside Score with score 3
- * } = getRecords(); // for the sake of the example
+ * registry.Score.set({ points: 10 }, recordA);
+ * registry.Score.set({ points: 10 }, recordB);
+ * registry.Score.set({ points: 3 }, recordC);
+ * registry.GameOver.set({ value: true }, recordB);
  *
  * const records = useQuery(store, {
- *   withProperties: [ { table: registry.Score, properties: { score: 10 } } ],
+ *   withProperties: [ { table: registry.Score, properties: { points: 10 } } ],
  *   without: [ registry.GameOver ],
  * }, {
  *   onChange: (update) => console.log(update),
@@ -43,8 +42,8 @@ import type { ContractTableDef, $Record, Schema, Store } from "@/lib";
  * console.log(records);
  * // -> [ recordA ]
  *
- * registry.Score.update({ score: 10 }, recordC);
- * // -> { table: registry.Score, $record: recordC, current: { score: 10 }, prev: { score: 3 }, type: "change" }
+ * registry.Score.update({ points: 10 }, recordC);
+ * // -> { table: registry.Score, $record: recordC, current: { points: 10 }, prev: { points: 3 }, type: "change" }
  * console.log(records);
  * // -> [ recordA, recordC ]
  * ```

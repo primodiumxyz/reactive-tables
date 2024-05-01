@@ -31,9 +31,7 @@ import { createTableWatcher } from "./createTableWatcher";
  *
  * ```ts
  * const { registry, store } = createWrapper({ mudConfig });
- * const {
- *   recordA, // score 10
- * } = getRecords(); // for the sake of the example
+ * registry.Score.set({ points: 10 }, recordA);
  *
  * // The function should be accessed from the table's methods
  * registry.Score.watch({
