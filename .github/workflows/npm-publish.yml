@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-  workflow_call:
 
 jobs:
   build:
@@ -25,8 +24,10 @@ jobs:
 
       - name: Build
         uses: ./.github/actions/build
-
-      - name: Publish
-        run: pnpm lerna-publish
+      
+      - name: Release
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release
+
