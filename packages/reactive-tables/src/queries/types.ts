@@ -58,6 +58,16 @@ export type TableWatcherCallbacks<S extends Schema, T = unknown> = Partial<{
   onUpdate: (update: TableUpdate<S, T>) => void;
 }>;
 
+/**
+ * Defines additional options for watching records inside a specific table.
+ * @param runOnInit Whether to trigger the callbacks for all matching records on initialization (default: `true`).
+ * @category Queries
+ * @internal
+ */
+export type TableWatcherParams = {
+  runOnInit?: boolean;
+};
+
 /* ---------------------------------- QUERY --------------------------------- */
 /**
  * Defines a query for records matching properties for a specific table.
@@ -131,11 +141,25 @@ export type TableQueryResult = {
 };
 
 /**
+ * Defines keywords available for writing a TinyQL query.
+ *
+ * @category Queries
+ * @internal
+ */
+export type TinyQLQueryKeywords = {
+  select: Select;
+  join: Join;
+  where: Where;
+  group: Group;
+  having: Having;
+};
+
+/**
  * Defines the options for creating a watcher for a table, either globally (on all changes) or within a TinyQL query.
  *
  * @template S The schema of the properties inside the table to watch.
  * @template T The type of the properties.
- * @param query A TinyQL query to filter the records. If not provided, it will watch all records in the table without discrimination.
+ * @param query A TinyQL query to filter the records, using {@link TinyQLQueryKeywords}. If not provided, it will watch all records in the table without discrimination.
  * @see {@link CreateTableWatcherOptions} for the base options.
  * @see TinyQL for writing a query: https://tinybase.org/guides/making-queries/tinyql/
  * @category Queries
@@ -145,7 +169,7 @@ export type CreateTableWatcherOptions<S extends Schema, T = unknown> = Omit<
   CreateQueryWatcherOptions<S, T>,
   "queryId"
 > & {
-  query?: (keywords: { select: Select; join: Join; where: Where; group: Group; having: Having }) => void;
+  query?: (keywords: TinyQLQueryKeywords) => void;
 };
 
 /**
@@ -159,8 +183,6 @@ export type CreateTableWatcherOptions<S extends Schema, T = unknown> = Omit<
  * @param queryId The id of the query definition (abstracted).
  * @param tableId The id of the table to watch for changes (abstracted).
  * @param schema The schema of the properties for all records inside the table being watched (abstracted).
- * @param options The options for the watcher.
- * `runOnInit` - Whether to run the callbacks for all initial records matching the query (default: `true`).
  * @see {@link TableWatcherCallbacks}
  * @category Queries
  * @internal
@@ -170,7 +192,6 @@ export type CreateQueryWatcherOptions<S extends Schema, T = unknown> = {
   queryId: string;
   tableId: string;
   schema: S;
-  options?: { runOnInit?: boolean };
   // Opt in to any callback
 } & TableWatcherCallbacks<S, T>;
 

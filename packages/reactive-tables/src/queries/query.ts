@@ -23,8 +23,8 @@ import type { ContractTableDef, $Record, Store } from "@/lib";
  * registry.GameOver.set({ value: true }, recordB);
  *
  * const records = query(store, {
- *   withProperties: [ { table: registry.Score, properties: { points: 10 } } ],
- *   without: [ registry.GameOver ],
+ *   withProperties: [{ table: registry.Score, properties: { points: 10 } }],
+ *   without: [registry.GameOver],
  * });
  * console.log(records);
  * // -> [ recordA ]

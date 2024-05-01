@@ -1,6 +1,12 @@
 import { TinyBaseAdapter } from "@/adapter";
 import { createTableTinyQLWatcher } from "@/queries";
-import type { CreateTableWatcherOptions, CreateTableWatcherResult, TableUpdate, UpdateType } from "@/queries";
+import type {
+  CreateTableWatcherOptions,
+  CreateTableWatcherResult,
+  TableUpdate,
+  TableWatcherParams,
+  UpdateType,
+} from "@/queries";
 import type { Properties } from "@/tables";
 import { type Schema, type $Record, uuid, getPropertiesAndTypeFromRowChange } from "@/lib";
 
@@ -13,14 +19,16 @@ import { type Schema, type $Record, uuid, getPropertiesAndTypeFromRowChange } fr
  *
  * Note: Refer to {@link createTableTinyQLWatcher} for the behavior when a TinyQL query is provided.
  *
- * @param queries The TinyBase queries object tied to the store containing properties for all records inside this table (abstracted).
- * @param tableId The id of the table to watch for changes (abstracted).
- * @param schema The schema of the properties for all records inside this table (abstracted).
- * @param onChange Callback triggered on any change in the table/query (encompassing enter, exit, and update).
- * @param onEnter Callback triggered when a record enters the table/query (`properties.prev` will be undefined).
- * @param onExit Callback triggered when a record exits the table/query (`properties.current` will be undefined).
- * @param onUpdate Callback triggered when the properties of a record are updated (within the query if provided).
- * @param options (optional) Additional options for the watcher. Currently only supports `runOnInit` to trigger the callbacks for all matching records on initialization.
+ * @param options The options for creating the table watcher.
+ * - `queries` The TinyBase queries object tied to the store containing properties for all records inside this table (abstracted).
+ * - `tableId` The id of the table to watch for changes (abstracted).
+ * - `schema` The schema of the properties for all records inside this table (abstracted).
+ * - `onChange` Callback triggered on any change in the table/query (encompassing enter, exit, and update).
+ * - `onEnter` Callback triggered when a record enters the table/query (`properties.prev` will be undefined).
+ * - `onExit` Callback triggered when a record exits the table/query (`properties.current` will be undefined).
+ * - `onUpdate` Callback triggered when the properties of a record are updated (within the query if provided).
+ * @param params Additional parameters for the watcher.
+ * - `runOnInit` Whether to trigger the callbacks for all records on initialization (default: `true`).
  * @returns An object with an `unsubscribe` method to stop listening to the table.
  * @example
  * This example creates a watcher for all records within (with properties inside) the "Player" table.
@@ -31,7 +39,7 @@ import { type Schema, type $Record, uuid, getPropertiesAndTypeFromRowChange } fr
  * registry.Player.set({ health: 100 }, playerRecord);
  *
  * // The function should be accessed from the table's methods
- * registry.Player.watch({
+ * const { unsubscribe } = registry.Player.watch({
  *   onChange: (update) => console.log(update),
  * }, {
  *   runOnInit: false,
@@ -43,28 +51,34 @@ import { type Schema, type $Record, uuid, getPropertiesAndTypeFromRowChange } fr
  *
  * registry.Player.remove(playerRecord);
  * // -> { table: registry.Player, $record: playerRecord, current: undefined, prev: { health: 90 }, type: "exit" }
+ *
+ * // Unsubscribe from the watcher once you're done or when disposing of the component
+ * unsubscribe();
  * ```
  * @see {@link createTableTinyQLWatcher} for an example with a TinyQL query.
  * @see TinyQL for writing a query: https://tinybase.org/guides/making-queries/tinyql/
  * @category Queries
  * @internal
  */
-export const createTableWatcher = <S extends Schema, T = unknown>({
-  queries,
-  query, // leave empty to listen to the whole table
-  tableId,
-  schema,
-  onChange,
-  onEnter,
-  onExit,
-  onUpdate,
-  options = { runOnInit: true },
-}: CreateTableWatcherOptions<S, T>): CreateTableWatcherResult => {
+export const createTableWatcher = <S extends Schema, T = unknown>(
+  options: CreateTableWatcherOptions<S, T>,
+  params: TableWatcherParams = { runOnInit: true },
+): CreateTableWatcherResult => {
+  const {
+    queries,
+    query, // leave empty to listen to the whole table
+    tableId,
+    schema,
+    onChange,
+    onEnter,
+    onExit,
+    onUpdate,
+  } = options;
   // If a query is provided, define it and create the listener
   if (query) {
     const queryId = uuid();
     queries.setQueryDefinition(queryId, tableId, query);
-    return createTableTinyQLWatcher({ queries, queryId, tableId, schema, onChange, onEnter, onExit, options });
+    return createTableTinyQLWatcher({ queries, queryId, tableId, schema, onChange, onEnter, onExit }, params);
   }
 
   if (!onChange && !onEnter && !onExit && !onUpdate) {
@@ -97,7 +111,7 @@ export const createTableWatcher = <S extends Schema, T = unknown>({
     onChange?.(args);
   });
 
-  if (options.runOnInit) {
+  if (params.runOnInit) {
     const rows = store.getTable(tableId);
 
     // Run callbacks for all records in the query

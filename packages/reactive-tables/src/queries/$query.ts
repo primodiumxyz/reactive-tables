@@ -1,5 +1,5 @@
 import { query } from "@/queries";
-import type { QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
+import type { QueryOptions, TableWatcherCallbacks, TableUpdate, TableWatcherParams, UpdateType } from "@/queries";
 import { getPropertiesAndTypeFromRowChange } from "@/lib";
 import type { ContractTableDef, $Record, Schema, Store } from "@/lib";
 
@@ -28,9 +28,9 @@ import type { ContractTableDef, $Record, Schema, Store } from "@/lib";
  * registry.Player.set({ score: 0, online: true }, recordB);
  * registry.Player.set({ score: 10, online: false }, recordC);
  *
- * const query = $query(store, {
- *   withProperties: [ { table: registry.Player, properties: { online: true } } ],
- *   withoutProperties: [ { table: registry.Player, properties: { score: 0 } } ],
+ * const { unsubscribe } = $query(store, {
+ *   withProperties: [{ table: registry.Player, properties: { online: true } }],
+ *   withoutProperties: [{ table: registry.Player, properties: { score: 0 } }],
  * }, {
  *  onEnter: (update) => console.log(update),
  *  onExit: (update) => console.log(update),
@@ -42,6 +42,9 @@ import type { ContractTableDef, $Record, Schema, Store } from "@/lib";
  *
  * registry.Player.update({ online: false }, recordA);
  * // -> { table: registry.Player, $record: recordA, current: { online: false, score: 15 }, prev: { online: true, score: 15 }, type: "change" }
+ *
+ * // Unsubscribe from the query once you're done or when disposing of the component
+ * unsubscribe();
  * ```
  * @category Queries
  */
@@ -49,7 +52,7 @@ export const $query = <tableDefs extends ContractTableDef[], S extends Schema, T
   _store: Store,
   queryOptions: QueryOptions<tableDefs, T>,
   callbacks: TableWatcherCallbacks<S, T>,
-  options: { runOnInit?: boolean } = { runOnInit: true },
+  params: TableWatcherParams = { runOnInit: true },
 ) => {
   const { onChange, onEnter, onExit, onUpdate } = callbacks;
   if (!onChange && !onEnter && !onExit && !onUpdate) {
@@ -113,7 +116,7 @@ export const $query = <tableDefs extends ContractTableDef[], S extends Schema, T
     }
   });
 
-  if (options.runOnInit) {
+  if (params.runOnInit) {
     const matching$Records = query(_store, queryOptions);
 
     // Run callbacks for all records in the query
