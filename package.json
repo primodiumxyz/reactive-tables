@@ -17,6 +17,7 @@
     "dist"
   ],
   "scripts": {
+    "benchmark": "pnpm vitest bench",
     "build": "tsup",
     "build:contracts": "cd __tests__/contracts && pnpm run build",
     "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && find . -name 'pnpm-lock.yaml' -type f -prune -exec rm -rf '{}' +",
@@ -75,7 +76,7 @@
     "vitest": "^1.5.2"
   },
   "engines": {
-    "node": "20.x",
+    "node": "18.x",
     "pnpm": "8.x"
   },
   "publishConfig": {
