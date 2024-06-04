@@ -1,0 +1,20 @@
+{
+  "name": "benchmarks",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "author": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@ngneat/elf": "^2.5.1",
+    "@ngneat/elf-entities": "^5.0.2",
+    "blinkdb": "^0.14.0"
+  },
+  "devDependencies": {
+    "tinybench": "^2.8.0"
+  }
+}

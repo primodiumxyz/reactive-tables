@@ -1,3 +1,4 @@
 packages:
   - .
   - __tests__/contracts
+  - __tests__/benchmarks
