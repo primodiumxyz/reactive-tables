@@ -17,11 +17,21 @@ import { recsStorage } from "@latticexyz/store-sync/recs";
 import { Hex, padHex, toHex } from "viem";
 
 // src
-import { createWrapper, default$Record, query, $Record, Properties, Schema } from "./dist_reactive-tables-tinybase";
+import {
+  createWrapper,
+  default$Record,
+  query,
+  $Record,
+  Properties,
+  Schema,
+  PropType,
+} from "./dist_reactive-tables-tinybase";
 
-// tests
+// utils
 import { getRandomBigInts, getRandomNumbers } from "@test/utils";
 import mudConfig from "@test/contracts/mud.config";
+
+// libs
 import { createDB, createTable, first, insert, many, update as updateDB } from "blinkdb";
 import { createStore as createElfStore } from "@ngneat/elf";
 import {
@@ -33,7 +43,8 @@ import {
   getAllEntitiesApply,
   selectAllEntities,
 } from "@ngneat/elf-entities";
-import { Type } from "@/lib";
+import { createRxDatabase } from "rxdb";
+import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONFIG                                   */
@@ -46,14 +57,14 @@ const BENCH_TIME = 10_000;
 // The amount of records to set/get/update
 const RECORDS = 1_000;
 // Tested libraries
-const LIBRARIES = ["RETA", "RECS", "BlinkDB", "Elf"] as const;
+const LIBRARIES = ["RETA", "RECS", "BlinkDB", "Elf", "RxDB"] as const;
 // Mock tables
 const TABLES = ["Counter", "Position", "Inventory"] as const;
 
 type EmptyMetadata = {
-  __staticData: Type.Hex;
-  __dynamicData: Type.Hex;
-  __encodedLengths: Type.Hex;
+  __staticData: PropType.Hex;
+  __dynamicData: PropType.Hex;
+  __encodedLengths: PropType.Hex;
 };
 const emptyMetadata = {
   __staticData: "0x" as Hex,
@@ -61,9 +72,13 @@ const emptyMetadata = {
   __encodedLengths: "0x" as Hex,
 };
 
-type Counter = { value: Type.Number } & EmptyMetadata;
-type Position = { x: Type.Number; y: Type.Number } & EmptyMetadata;
-type Inventory = { totalWeight: Type.BigInt; items: Type.NumberArray; weights: Type.NumberArray } & EmptyMetadata;
+type Counter = { value: PropType.Number } & EmptyMetadata;
+type Position = { x: PropType.Number; y: PropType.Number } & EmptyMetadata;
+type Inventory = {
+  totalWeight: PropType.BigInt;
+  items: PropType.NumberArray;
+  weights: PropType.NumberArray;
+} & EmptyMetadata;
 
 interface BlinkDBTable {
   table: string;
@@ -76,7 +91,7 @@ interface BlinkDBTable {
 /*                                    SETUP                                   */
 /* -------------------------------------------------------------------------- */
 
-const setup = () => {
+const setup = async (scope = "tables") => {
   const world = createWorld();
 
   /* -------------------------------- TINYBASE -------------------------------- */
@@ -94,7 +109,7 @@ const setup = () => {
   const blinkDb = createDB({ clone: false });
   const blinkTable = createTable<BlinkDBTable>(
     blinkDb,
-    "tables",
+    scope,
   )({
     primary: "id",
     //  add indexes: ["record"] https://blinkdb.io/docs/reference/createtable#indexes
@@ -134,9 +149,9 @@ const setup = () => {
     {} as Record<
       string,
       {
-        set: (properties: Properties<Schema, unknown>, record: $Record) => Promise<void>;
         get: (record: $Record) => Promise<Properties<Schema, unknown> | undefined>;
         update: (properties: Properties<Schema, unknown>, record: $Record) => Promise<void>;
+        set: (properties: Properties<Schema, unknown>, record: $Record) => Promise<void>;
       }
     >,
   );
@@ -146,7 +161,7 @@ const setup = () => {
   const { PositionEntitiesRef, withPositionEntities } = entitiesPropsFactory("Position");
   const { InventoryEntitiesRef, withInventoryEntities } = entitiesPropsFactory("Inventory");
   const elfStore = createElfStore(
-    { name: "tables" },
+    { name: scope },
     withCounterEntities<Properties<typeof registry.Counter.schema> & { id: $Record }>(),
     withPositionEntities<Properties<typeof registry.Position.schema> & { id: $Record }>(),
     withInventoryEntities<Properties<typeof registry.Inventory.schema> & { id: $Record }>(),
@@ -184,12 +199,117 @@ const setup = () => {
     {} as Record<
       string,
       {
+        get: (record: $Record) => Promise<Properties<(typeof registry)[keyof typeof registry]["schema"]> | undefined>;
+        update: (
+          properties: Properties<(typeof registry)[keyof typeof registry]["schema"]>,
+          record: $Record,
+        ) => Promise<void>;
         set: (
           properties: Properties<(typeof registry)[keyof typeof registry]["schema"]>,
           record: $Record,
         ) => Promise<void>;
+      }
+    >,
+  );
+
+  /* ---------------------------------- RXDB ---------------------------------- */
+  const rxDb = await createRxDatabase({
+    name: scope,
+    storage: getRxStorageMemory(),
+    eventReduce: true,
+  });
+
+  await rxDb.addCollections({
+    Counter: {
+      schema: {
+        version: 0,
+        primaryKey: "record",
+        type: "object",
+        properties: {
+          record: { type: "string", maxLength: 66 },
+          value: { type: "number" },
+          __staticData: { type: "string" },
+          __dynamicData: { type: "string" },
+          __encodedLengths: { type: "string" },
+        },
+        required: ["value"],
+      },
+    },
+    Position: {
+      schema: {
+        version: 0,
+        primaryKey: "record",
+        type: "object",
+        properties: {
+          record: { type: "string", maxLength: 66 },
+          x: { type: "number" },
+          y: { type: "number" },
+          __staticData: { type: "string" },
+          __dynamicData: { type: "string" },
+          __encodedLengths: { type: "string" },
+        },
+        required: ["x", "y"],
+      },
+    },
+    Inventory: {
+      schema: {
+        version: 0,
+        primaryKey: "record",
+        type: "object",
+        properties: {
+          record: { type: "string", maxLength: 66 },
+          totalWeight: { type: "string" }, // doesn't support bigint...
+          items: { type: "array", items: { type: "number" } },
+          weights: { type: "array", items: { type: "number" } },
+          __staticData: { type: "string" },
+          __dynamicData: { type: "string" },
+          __encodedLengths: { type: "string" },
+        },
+        required: ["totalWeight", "items", "weights"],
+      },
+    },
+  });
+
+  const rxDbRegistry = TABLES.reduce(
+    (acc, key) => {
+      const collection = rxDb[key];
+
+      const get = async (record: $Record) => {
+        const item = await collection.findOne(record).exec();
+        // this would be handled generically
+        if (key === "Inventory") {
+          return item ? { ...item, totalWeight: BigInt(item.totalWeight) } : undefined;
+        } else {
+          return item;
+        }
+      };
+      const update = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: $Record) => {
+        set(properties, record);
+      };
+      const set = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: $Record) => {
+        if (key === "Inventory" && properties.totalWeight) {
+          collection.upsert({
+            ...properties,
+            record,
+            totalWeight: (properties as Properties<Inventory>).totalWeight.toString(),
+          });
+        } else {
+          collection.upsert({ ...properties, record });
+        }
+      };
+
+      acc[key] = { set, get, update } as const;
+      return acc;
+    },
+    {} as Record<
+      string,
+      {
         get: (record: $Record) => Promise<Properties<(typeof registry)[keyof typeof registry]["schema"]> | undefined>;
         update: (
+          properties: Properties<(typeof registry)[keyof typeof registry]["schema"]>,
+          record: $Record,
+        ) => Promise<void>;
+        set: (
           properties: Properties<(typeof registry)[keyof typeof registry]["schema"]>,
           record: $Record,
         ) => Promise<void>;
@@ -273,6 +393,8 @@ const setup = () => {
     elfStore,
     elfRegistry,
     elfRefs,
+    rxDb,
+    rxDbRegistry,
     jsMap,
     actions,
   };
@@ -285,8 +407,9 @@ const setup = () => {
 describe("Benchmarks", () => {
   /* ---------------------------- TABLE OPERATIONS ---------------------------- */
   // Basic set/get/update operations on tables
-  it("Table Operations", () => {
-    const { registry, components, blinkRegistry, elfRegistry, jsMap, actions } = setup();
+  it("Table Operations", async () => {
+    const { registry, components, blinkRegistry, elfRegistry, rxDbRegistry, jsMap, actions } =
+      await setup("TableOperations");
     const bench = new Bench({ time: BENCH_TIME });
 
     bench
@@ -332,6 +455,16 @@ describe("Benchmarks", () => {
           }
         }
       })
+      .add("RxDB", async () => {
+        for (const { key, record, properties, updates } of actions) {
+          for (let i = 0; i < ITERATIONS; i++) {
+            await rxDbRegistry[key].set(properties[i], record[i]);
+            await rxDbRegistry[key].get(record[i]);
+            await rxDbRegistry[key].update(updates[i], record[i]);
+            await rxDbRegistry[key].get(record[i]);
+          }
+        }
+      })
       .add("JS Map", () => {
         for (const { key, record, properties, updates } of actions) {
           const map = jsMap[key as keyof typeof jsMap];
@@ -352,7 +485,7 @@ describe("Benchmarks", () => {
   /* --------------------------------- QUERIES -------------------------------- */
   // Querying tables with provided properties
   it("Queries", async () => {
-    const { registry, store, components, elfStore, elfRefs, blinkTable, actions } = setup();
+    const { registry, store, components, blinkTable, elfStore, elfRefs, rxDb, actions } = await setup("Queries");
     const bench = new Bench({ time: BENCH_TIME });
     // Make sure results are the same across all implementations
     const results = Object.fromEntries(LIBRARIES.map((lib) => [lib, []])) as unknown as Record<
@@ -378,6 +511,17 @@ describe("Benchmarks", () => {
           results["RECS"].push(Array.from(res as unknown as Set<$Record>) || []);
         }
       })
+      .add("BlinkDB", async () => {
+        for (const { key, properties } of actions) {
+          const res = await many(blinkTable, {
+            where: {
+              table: key,
+              ...properties,
+            },
+          });
+          results["BlinkDB"].push(res.map((r) => r.record as $Record));
+        }
+      })
       .add("Elf", () => {
         for (const { key, properties } of actions) {
           const A = elfStore.query(
@@ -391,15 +535,25 @@ describe("Benchmarks", () => {
           results["Elf"].push(res.map((e) => e.id));
         }
       })
-      .add("BlinkDB", async () => {
+      .add("RxDB", async () => {
         for (const { key, properties } of actions) {
-          const res = await many(blinkTable, {
-            where: {
-              table: key,
-              ...properties,
-            },
-          });
-          results["BlinkDB"].push(res.map((r) => r.record as $Record));
+          // serialize bigint in Inventory
+          const serialized =
+            key === "Inventory"
+              ? { ...properties[0], totalWeight: (properties[0] as Properties<Inventory>).totalWeight.toString() }
+              : properties[0];
+
+          const A = await rxDb[key]
+            .find({
+              selector: {
+                ...serialized,
+              },
+            })
+            .exec();
+          const B = await rxDb.Counter.find({ selector: {} }).exec();
+
+          const res = A.filter((a) => B.includes(a));
+          results["RxDB"].push(res.map((e) => e.record));
         }
       });
 
@@ -417,8 +571,9 @@ describe("Benchmarks", () => {
   // Watching for changes on tables
   // BlinkDB `watch` doesn't include the updated record anyway, and doesn't separate tables so it's not even a contender in its
   // native state
-  it("Systems", () => {
-    const { registry, components, world, elfRegistry, elfRefs, elfStore, actions } = setup();
+  it("Systems", async () => {
+    const { registry, components, world, elfRegistry, elfRefs, elfStore, rxDbRegistry, rxDb, actions } =
+      await setup("Systems");
     const bench = new Bench({ time: BENCH_TIME });
 
     bench
@@ -482,6 +637,29 @@ describe("Benchmarks", () => {
             await elfRegistry[key].get(record[i]);
             await elfRegistry[key].update(updates[i], record[i]);
             await elfRegistry[key].get(record[i]);
+          }
+        }
+
+        subs.forEach((sub) => {
+          if (!sub.closed) sub.unsubscribe();
+        });
+      })
+      // samd here as it would need to be adapted to provide the updated entry (document) on change
+      .add("RxDB", async () => {
+        const updates = [];
+        const subs = [];
+
+        for (const { key } of actions) {
+          const subscription = rxDb[key].$.subscribe((entries) => updates.push(entries));
+          subs.push(subscription);
+        }
+
+        for (const { key, record, properties, updates } of actions) {
+          for (let i = 0; i < ITERATIONS; i++) {
+            await rxDbRegistry[key].set(properties[i], record[i]);
+            await rxDbRegistry[key].get(record[i]);
+            await rxDbRegistry[key].update(updates[i], record[i]);
+            await rxDbRegistry[key].get(record[i]);
           }
         }
 
