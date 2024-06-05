@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { assert, describe, it } from "vitest";
 import { Bench } from "tinybench";
 
@@ -53,7 +54,7 @@ import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 // The amount of repetitions for operations within each table
 const ITERATIONS = 1_000;
 // The time to run each benchmark for (calculate how many operations could be ran)
-const BENCH_TIME = 10_000;
+const BENCH_TIME = 5_000;
 // The amount of records to set/get/update
 const RECORDS = 1_000;
 // Tested libraries
@@ -644,7 +645,7 @@ describe("Benchmarks", () => {
           if (!sub.closed) sub.unsubscribe();
         });
       })
-      // samd here as it would need to be adapted to provide the updated entry (document) on change
+      // same here as it would need to be adapted to provide the updated entry (document) on change
       .add("RxDB", async () => {
         const updates = [];
         const subs = [];

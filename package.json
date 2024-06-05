@@ -17,7 +17,7 @@
     "dist"
   ],
   "scripts": {
-    "benchmark": "pnpm vitest __tests__/benchmark",
+    "benchmark": "pnpm vitest __tests__/benchmark --run",
     "build": "tsup",
     "build:contracts": "cd __tests__/contracts && pnpm run build",
     "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && find . -name 'pnpm-lock.yaml' -type f -prune -exec rm -rf '{}' +",
