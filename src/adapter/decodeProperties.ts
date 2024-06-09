@@ -1,4 +1,4 @@
-// Modified from https://github.com/latticexyz/mud/blob/ade94a7fa761070719bcd4b4dac6cb8cc7783c3b/packages/protocol-parser/src/decodeValueArgs.ts#L8
+// Modified from https://github.com/latticexyz/mud/blob/ade94a7fa761070719bcd4b4dac6cb8cc7783c3b/packages/protocol-parser/src/decodePropertiesArgs.ts#L8
 
 import { concatHex } from "viem";
 import { isDynamicAbiType, isStaticAbiType } from "@latticexyz/schema-type/internal";
@@ -7,7 +7,6 @@ import {
   decodeStaticField,
   hexToEncodedLengths,
   type Schema,
-  type SchemaToPrimitives,
   staticDataLength,
   type ValueArgs,
 } from "@latticexyz/protocol-parser/internal";
@@ -20,8 +19,7 @@ import {
 } from "@latticexyz/schema-type/internal";
 import { type Hex } from "viem";
 
-import { encodePropertiesToTinyBase } from "@/adapter/encodePropertiesToTinyBase";
-import { type PropertiesSchema } from "@/tables/contract";
+import type { AbiPropertiesSchema, SchemaToPrimitives } from "@/lib";
 
 /**
  * Decode the properties of a record from the data inside a log.
@@ -35,12 +33,12 @@ import { type PropertiesSchema } from "@/tables/contract";
  * @see [@]latticexyz/protocol-parser/internal/decodeValueArgs.ts
  * @category Adapter
  */
-export function decodeValueArgs<TSchema extends PropertiesSchema>(
+export function decodePropertiesArgs<TSchema extends AbiPropertiesSchema>(
   propertiesSchema: TSchema,
   args: ValueArgs,
 ): SchemaToPrimitives<TSchema> {
   const { staticData, encodedLengths, dynamicData } = args;
-  return decodeValue(
+  return decodeProperties(
     propertiesSchema,
     concatHex([
       readHex(staticData, 0, staticDataLength(Object.values(propertiesSchema).filter(isStaticAbiType))),
@@ -63,10 +61,9 @@ export function decodeValueArgs<TSchema extends PropertiesSchema>(
  * @param data The encoded hex data to decode the properties from.
  * @returns The decoded properties in a TinyBase-friendly format.
  * @see [@]latticexyz/protocol-parser/internal/decodeValue.ts
- * @see {@link encodePropertiesToTinyBase}
  * @category Adapter
  */
-export function decodeValue<TSchema extends PropertiesSchema>(
+export function decodeProperties<TSchema extends AbiPropertiesSchema>(
   propertiesSchema: TSchema,
   data: Hex,
 ): SchemaToPrimitives<TSchema> {
@@ -74,10 +71,8 @@ export function decodeValue<TSchema extends PropertiesSchema>(
   const dynamicFields = Object.values(propertiesSchema).filter(isDynamicAbiType);
 
   const valueTuple = decodeRecord({ staticFields, dynamicFields }, data);
-  // Modified: encode for TinyBase
-  // This will include formatted values + their types (e.g. `type__name` for `name`)
-  return encodePropertiesToTinyBase(
-    Object.fromEntries(Object.keys(propertiesSchema).map((key, i) => [key, valueTuple[i]])),
+  return Object.fromEntries(
+    Object.keys(propertiesSchema).map((name, i) => [name, valueTuple[i]]),
   ) as SchemaToPrimitives<TSchema>;
 }
 

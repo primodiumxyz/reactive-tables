@@ -1,33 +1,36 @@
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { resolveConfig } from "@latticexyz/store/internal";
 
+import { createContractTables, type ContractTables } from "@/tables";
 import { type StorageAdapter, createStorageAdapter } from "@/adapter";
-import { type ContractTables, createRegistry } from "@/tables/contract";
 import {
   type AllTableDefs,
-  createStore,
   type ContractTableDefs,
-  type Store,
   type StoreConfig,
   storeTableDefs,
   worldTableDefs,
+  type World,
 } from "@/lib";
 
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { createLocalTable } from "@/tables/local";
+import { createLocalTable } from "@/tables";
 
 /**
  * Defines the options for creating a TinyBase wrapper.
  *
  * @template config The type of the configuration object specifying tables definitions for contracts codegen.
  * @template extraTableDefs The types of any additional custom definitions to generate tables for.
+ * @param world The RECS world object, used for creating tables and records.
  * @param mudConfig The actual MUD configuration, usually retrieved for the contracts package.
  * @param otherTableDefs (optional) Custom definitions to generate tables for as well.
+ * @param skipUpdateStream (optional) Whether to skip the initial update stream (most likely to trigger it afterwards).
  */
 export type WrapperOptions<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
+  world: World;
   mudConfig: config;
   otherTableDefs?: extraTableDefs;
+  shouldSkipUpdateStream?: () => boolean;
 };
 
 /**
@@ -37,17 +40,16 @@ export type WrapperOptions<config extends StoreConfig, extraTableDefs extends Co
  *
  * @template config The type of the configuration object specifying tables definitions for contracts codegen.
  * @template tableDefs The types of the definitions used for generating tables.
- * @param registry The tables generated from all definitions (see {@link createRegistry}).
+ * @param tables The tables generated from all definitions (see {@link createContractTables}).
  * @param tableDefs The full definitions object, including provided MUD config and custom definitions, as well as store and world config tables.
- * @param store A wrapper around the TinyBase store, addressing either the "regular" or persistent store depending on the provided key,
- * as well as the queries instance (see {@link createStore}).
  * @param storageAdapter The storage adapter for formatting onchain logs into TinyBase tabular data (see {@link createStorageAdapter}).
+ * @param triggerUpdateStream A function to trigger the update stream on all tables and records (e.g. after completing sync).
  */
 export type WrapperResult<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
-  registry: ContractTables<AllTableDefs<config, extraTableDefs>>;
+  tables: ContractTables<AllTableDefs<config, extraTableDefs>>;
   tableDefs: AllTableDefs<config, extraTableDefs>;
-  store: Store;
   storageAdapter: StorageAdapter;
+  triggerUpdateStream: () => void;
 };
 
 /**
@@ -82,7 +84,7 @@ export type WrapperResult<config extends StoreConfig, extraTableDefs extends Con
  *   },
  * });
  *
- * const { registry } = createWrapper({ mudConfig });
+ * const { registry } = createWrapper({ world, mudConfig });
  * registry.Counter.set({ value: 13 }); // fully typed
  * const properties = registry.Counter.get();
  * console.log(properties);
@@ -91,8 +93,10 @@ export type WrapperResult<config extends StoreConfig, extraTableDefs extends Con
  * @category Creation
  */
 export const createWrapper = <config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined>({
+  world,
   mudConfig,
   otherTableDefs,
+  shouldSkipUpdateStream,
 }: WrapperOptions<config, extraTableDefs>): WrapperResult<config, extraTableDefs> => {
   /* ------------------------------- DEFINITIONS ------------------------------ */
   // Resolve tables definitions
@@ -104,14 +108,13 @@ export const createWrapper = <config extends StoreConfig, extraTableDefs extends
   } as unknown as AllTableDefs<config, extraTableDefs>;
 
   /* --------------------------------- TABLES --------------------------------- */
-  // Create the TinyBase store wrapper and queries instance
-  const store = createStore();
-  // Create tables registry from the definitions (format metadata, access/modify data using the store, perform queries)
-  const registry = createRegistry({ tableDefs, store: store(), queries: store().getQueries() });
+  // Create contract tables from the definitions (define metadata, create read/write methods, queries, and listeners APIs)
+  const tables = createContractTables({ world, tableDefs });
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create storage adapter (custom writer, see @primodiumxyz/sync-stack)
-  const storageAdapter = createStorageAdapter({ store });
+  // as well as a function to trigger update stream on all records for all tables (e.g. after completing sync)
+  const { storageAdapter, triggerUpdateStream } = createStorageAdapter({ tables, shouldSkipUpdateStream });
 
-  return { registry, tableDefs, store, storageAdapter };
+  return { tables, tableDefs, storageAdapter, triggerUpdateStream };
 };

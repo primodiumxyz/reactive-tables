@@ -16,3 +16,23 @@ export function mapObject<S extends { [key: string]: unknown }, T extends { [key
   }
   return target as T;
 }
+
+export function transformIterator<A, B>(iterator: Iterator<A>, transform: (value: A) => B): IterableIterator<B> {
+  return makeIterable({
+    next() {
+      const { done, value } = iterator.next();
+      return { done, value: done ? value : transform(value) };
+    },
+  });
+}
+
+export function makeIterable<T>(iterator: Iterator<T>): IterableIterator<T> {
+  const iterable: IterableIterator<T> = {
+    ...iterator,
+    [Symbol.iterator]() {
+      return this;
+    },
+  };
+
+  return iterable;
+}

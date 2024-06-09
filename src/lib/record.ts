@@ -1,7 +1,7 @@
 import type { SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
 import { concatHex, decodeAbiParameters, encodeAbiParameters, type Hex, isHex, size, sliceHex } from "viem";
 
-import type { AbiToKeySchema, KeySchema } from "@/tables/contract";
+import type { AbiToSchema, AbiKeySchema } from "@/tables/contract";
 import type { Properties } from "@/tables";
 
 // (jsdocs)
@@ -15,8 +15,8 @@ import { createTableKeyMethods } from "@/tables/contract";
  *
  * @category Record
  */
-// TODO(review): This was a string before, but shouldn't it be a hex string?
 export type $Record = Hex & { readonly __opaque__: "$Record" };
+export type $RecordSymbol = symbol & { readonly __opaque__: "$RecordSymbol" };
 
 /**
  * A singleton $Record associated with a table including a single row.
@@ -60,6 +60,8 @@ export function $recordToHexKeyTuple($record: $Record): readonly Hex[] {
   return new Array(length / 32).fill(0).map((_, index) => sliceHex($record, index * 32, (index + 1) * 32));
 }
 
+// Valid keys to use as schema
+
 /**
  * Concatenate a tuple of hex keys into a single record, after encoding them into hex strings.
  *
@@ -68,22 +70,18 @@ export function $recordToHexKeyTuple($record: $Record): readonly Hex[] {
  *
  * @category Record
  */
-export const encode$Record = <KS extends KeySchema, T = unknown>(
-  keySchema: KS,
-  keys: Properties<AbiToKeySchema<KS>, T>,
+export const encode$Record = <TKeySchema extends AbiKeySchema, T = unknown>(
+  abiKeySchema: TKeySchema,
+  keys: Properties<AbiToSchema<TKeySchema>, T>,
 ) => {
-  if (Object.keys(keySchema).length !== Object.keys(keys).length) {
+  if (Object.keys(abiKeySchema).length !== Object.keys(keys).length) {
     throw new Error(
-      `$record length ${Object.keys(keys).length} does not match $record schema length ${Object.keys(keySchema).length}`,
+      `$record length ${Object.keys(keys).length} does not match $record schema length ${Object.keys(abiKeySchema).length}`,
     );
   }
 
   return hexKeyTupleTo$Record(
-    // TODO(review): "Type 'string | number | bigint | boolean' is not assignable to type 'number | bigint | boolean | `0x${string}`'"
-    // Basically here it considers that `type` won't be of an ABI type that allows `keys[keyName]` to be a string; not sure what to do exactly about it
-    Object.entries(keySchema).map(([keyName, type]) =>
-      encodeAbiParameters([{ type }], [keys[keyName] as number | bigint | boolean | Hex]),
-    ),
+    Object.entries(abiKeySchema).map(([keyName, type]) => encodeAbiParameters([{ type }], [keys[keyName]])),
   );
 };
 
@@ -94,19 +92,19 @@ export const encode$Record = <KS extends KeySchema, T = unknown>(
  *
  * @category Record
  */
-export const decode$Record = <TKeySchema extends KeySchema>(
-  keySchema: TKeySchema,
+export const decode$Record = <TKeySchema extends AbiKeySchema>(
+  abiKeySchema: TKeySchema,
   $record: $Record,
 ): SchemaToPrimitives<TKeySchema> => {
   const hexKeyTuple = $recordToHexKeyTuple($record);
-  if (hexKeyTuple.length !== Object.keys(keySchema).length) {
+  if (hexKeyTuple.length !== Object.keys(abiKeySchema).length) {
     throw new Error(
-      `$record $record tuple length ${hexKeyTuple.length} does not match $record schema length ${Object.keys(keySchema).length}`,
+      `$record $record tuple length ${hexKeyTuple.length} does not match $record schema length ${Object.keys(abiKeySchema).length}`,
     );
   }
 
   return Object.fromEntries(
-    Object.entries(keySchema).map(([$record, type], index) => [
+    Object.entries(abiKeySchema).map(([$record, type], index) => [
       $record,
       decodeAbiParameters([{ type }], hexKeyTuple[index] as Hex)[0],
     ]),
@@ -114,31 +112,16 @@ export const decode$Record = <TKeySchema extends KeySchema>(
 };
 
 /**
- * Convert an array into an iterable iterator.
- *
- * Note: This is used for providing an iterator for all records inside a table, and provide a similar
- * API to the one provided by RECS (entities iterator).
- *
- * @param array Any array.
- * @returns An iterable iterator.
- * @category Record
+ * Get the symbol corresponding to a record's hex ID.
+ * Records are represented as symbols internally for memory efficiency.
  */
-export const arrayToIterator = <T>(array: T[]): IterableIterator<T> => {
-  let i = 0;
+export function get$RecordSymbol($recordHex: Hex): $RecordSymbol {
+  return Symbol.for($recordHex) as $RecordSymbol;
+}
 
-  const iterator: Iterator<T> = {
-    next() {
-      if (i >= array.length) return { done: true, value: undefined };
-      return { done: false, value: array[i++] };
-    },
-  };
-
-  const iterable: IterableIterator<T> = {
-    ...iterator,
-    [Symbol.iterator]() {
-      return this;
-    },
-  };
-
-  return iterable;
-};
+/**
+ * Get the underlying record hex of a record symbol.
+ */
+export function get$RecordHex($recordSymbol: $RecordSymbol): $Record {
+  return Symbol.keyFor($recordSymbol) as $Record;
+}

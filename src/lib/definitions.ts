@@ -1,7 +1,8 @@
 import type { Store as MUDStoreConfig } from "@latticexyz/store";
-import type { Table as MUDTableDef, Tables as MUDTableDefs } from "@latticexyz/store/internal";
+import type { Table as MUDTableDef } from "@latticexyz/store/internal";
 import { type ResolvedStoreConfig, resolveConfig } from "@latticexyz/store/config";
 import { storeToV1 } from "@latticexyz/store/config/v2";
+import { Hex } from "viem";
 
 /**
  * Defines the MUD store configuration provided to the wrapper.
@@ -20,13 +21,13 @@ export type StoreConfig = MUDStoreConfig;
  * @param valueSchema The schema of the properties associated with each record.
  * @category Tables
  */
-export type ContractTableDef = MUDTableDef;
+export type ContractTableDef = MUDTableDef & { address: Hex };
 /**
  * Defines a mapping of strings to their {@link ContractTableDef}, as initially provided to the wrapper.
  *
  * @category Tables
  */
-export type ContractTableDefs = MUDTableDefs;
+export type ContractTableDefs = { [key: string]: ContractTableDef };
 
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

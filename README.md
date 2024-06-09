@@ -72,7 +72,7 @@ import { createLocalTable } from "@primodiumxyz/reactive-tables";
 
 const Counter = createLocalNumberTable(store, { id: "Counter" });
 // or with any properties schema
-const Settings = createLocalTable(store, { language: PropType.String, darkMode: PropType.Bool }, { id: "Settings" });
+const Settings = createLocalTable(store, { language: Type.String, darkMode: Type.Bool }, { id: "Settings" });
 
 // and then use it as any other table
 Counter.set({ value: 1 });
@@ -85,7 +85,7 @@ Local tables can also be synced with local storage, using a persistent store, wh
 ```typescript
 // ...
 
-const { store } = createWrapper({ mudConfig });
+const { store } = createWrapper({ world, mudConfig });
 
 // Wait for the persistent store to be ready to use (meaning for the sync to restore previous state)
 // This needs to be done _before_ creating any local component
@@ -94,7 +94,7 @@ await store("PERSIST").ready();
 // Create a persisted local table
 const Settings = createLocalTable(
   store,
-  { language: PropType.String, darkMode: PropType.Bool },
+  { language: Type.String, darkMode: Type.Bool },
   { id: "Settings" },
   { persist: true },
 );
@@ -357,3 +357,5 @@ If you wish to contribute to the package, please open an issue first to make sur
 ## License
 
 This project is licensed under the MIT License - see [LICENSE](./LICENSE) for details.
+
+The library contains large chunks of code copied and modified from the MUD codebase, especially in `lib` and in type-focused files, e.g. for adapting them, changing naming conventions, or various other purposes. It is as best as possible documented above each block of code inside the JSDoc comments.

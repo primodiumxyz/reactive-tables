@@ -24,18 +24,18 @@ export type {
   TinyBaseQueries,
   TinyBaseStore,
 } from "@/lib";
-export { Type as PropType } from "@/lib/external/mud/schema";
+export { Type } from "@/lib/external/mud/schema";
 
 export type { QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
 export type { StorageAdapter } from "@/adapter";
 
 export type {
   AbiToPropertiesSchema,
-  AbiToKeySchema,
+  AbiToSchema,
   ContractTable,
   ContractTables,
-  KeySchema,
-  PropertiesSchema,
+  AbiKeySchema,
+  AbiPropertiesSchema,
 } from "@/tables/contract";
 export type { LocalTable } from "@/tables/local";
 export type { Properties, PropertiesSansMetadata } from "@/tables";

@@ -1,13 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { query } from "@/queries";
-import type { QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
-import { getPropertiesAndTypeFromRowChange } from "@/lib";
-import type { ContractTableDef, $Record, Schema, Store } from "@/lib";
-
-// TODO: this will clearly need to be optimized; there are probably a few options:
-// - setup a table listener by default on each table, then when setting up a query listener let that table know so it adds this callback to its array
-// - keep a single useQuery listening to all tables, then on change see across all actual useQuery hooks which ones need to be triggered
+import type { QueryOptions, TableWatcherCallbacks, TableUpdate } from "@/queries";
+import { queries } from "@/lib";
+import type { $Record } from "@/lib";
 
 /**
  * React hook to query all records matching multiple conditions across tables.
@@ -27,7 +23,7 @@ import type { ContractTableDef, $Record, Schema, Store } from "@/lib";
  * This example queries all records that have a score of 10 in the "Score" table and are not inside the "GameOver" table.
  *
  * ```ts
- * const { registry, store } = createWrapper({ mudConfig });
+ * const { registry, store } = createWrapper({ world, mudConfig });
  * registry.Score.set({ points: 10 }, recordA);
  * registry.Score.set({ points: 10 }, recordB);
  * registry.Score.set({ points: 3 }, recordC);
@@ -49,85 +45,50 @@ import type { ContractTableDef, $Record, Schema, Store } from "@/lib";
  * ```
  * @category Queries
  */
-export const useQuery = <tableDefs extends ContractTableDef[], S extends Schema, T = unknown>(
-  _store: Store,
-  options: QueryOptions<tableDefs, T>,
-  callbacks?: TableWatcherCallbacks<S, T>,
-): $Record[] => {
+export const useQuery = (options: QueryOptions, callbacks?: TableWatcherCallbacks): $Record[] => {
   // Not available in a non-browser environment
   if (typeof window === "undefined") throw new Error("useQuery is only available in a browser environment");
+  const { with: inside, without: notInside, withProperties, withoutProperties } = options;
   const { onChange, onEnter, onExit, onUpdate } = callbacks ?? {};
-  const store = _store();
 
-  const [$records, set$Records] = useState<$Record[]>([]);
-  // Create a ref for previous records (to provide the update type in the callback)
-  const prev$Records = useRef<$Record[]>([]);
+  const [records, setRecords] = useState<$Record[]>([]);
 
-  // Gather ids and schemas of all table we need to listen to
-  // tableId => schema keys
-  const tables = useMemo(() => {
-    const { with: inside, without: notInside, withProperties, withoutProperties } = options;
-    const tables: Record<string, string[]> = {};
-
-    (inside ?? []).concat(notInside ?? []).forEach((table) => {
-      tables[table.id] = Object.keys(table.schema);
-    });
-    (withProperties ?? []).concat(withoutProperties ?? []).forEach(({ table }) => {
-      tables[table.id] = Object.keys(table.schema);
-    });
-
-    return tables;
-  }, [options]);
+  const queryFragments = useMemo(
+    () => [
+      ...(inside?.map((fragment) => queries.With(fragment)) ?? []),
+      ...(withProperties?.map((matching) => queries.WithProperties(matching.table, { ...matching.properties })) ?? []),
+      ...(notInside?.map((table) => queries.Without(table)) ?? []),
+      ...(withoutProperties?.map((matching) => queries.WithoutProperties(matching.table, { ...matching.properties })) ??
+        []),
+    ],
+    [options],
+  );
 
   useEffect(() => {
-    // Initial query
-    const curr$Records = query(_store, options);
-    set$Records(curr$Records);
-    prev$Records.current = curr$Records;
+    setRecords(query(options, queryFragments)); // will throw if no positive fragment
 
-    // Listen to all tables (at each row)
-    const listenerId = store.addRowListener(null, null, (_, tableId, $recordKey, getCellChange) => {
-      if (!getCellChange) return;
-      const $record = $recordKey as $Record;
-
-      // Refetch matching $records if one of the tables included in the query changes
-      if (Object.keys(tables).includes(tableId)) {
-        const new$Records = query(_store, options);
-
-        // Figure out if it's an enter or an exit
-        let type = "change" as UpdateType;
-        const inPrev = prev$Records.current.includes($record);
-        const inCurrent = new$Records.includes($record);
-
-        // Gather the previous and current properties
-        const args = getPropertiesAndTypeFromRowChange(getCellChange, tables[tableId], tableId, $record) as TableUpdate<
-          S,
-          T
-        >;
-
-        // Run the callbacks
-        if (!inPrev && inCurrent) {
-          type = "enter";
-          onEnter?.({ ...args, type });
-        } else if (inPrev && !inCurrent) {
-          type = "exit";
-          onExit?.({ ...args, type });
-        } else {
-          onUpdate?.({ ...args, type });
-        }
-
-        onChange?.({ ...args, type });
-
-        // Update ref and state
-        set$Records(new$Records);
-        prev$Records.current = new$Records;
+    // fix: if pre-populated with state, useComponentValue doesn’t update when there’s a component that has been removed.
+    const queryResult = queries.defineQuery(queryFragments, { runOnInit: true });
+    const subscription = queryResult.update$.subscribe((_update) => {
+      const update = _update as TableUpdate<
+        (typeof _update)["table"]["propertiesSchema"],
+        (typeof _update)["table"]["metadata"]
+      >; // TODO: test if weird type casting useful
+      onUpdate?.(update);
+      if (update.type === "change") {
+        // record is changed within the query so no need to update records
+        onChange?.(update);
+      } else if (update.type === "enter") {
+        setRecords((prev) => [...prev, update.$record]);
+        onEnter?.(update);
+      } else if (update.type === "exit") {
+        setRecords((prev) => prev.filter((record) => record !== update.$record));
+        onExit?.(update);
       }
     });
 
-    return () => {
-      store.delListener(listenerId);
-    };
-  }, []);
+    return () => subscription.unsubscribe();
+  }, [options, queryFragments]);
 
-  return $records;
+  return records;
 };
