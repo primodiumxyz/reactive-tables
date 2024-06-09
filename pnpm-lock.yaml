@@ -120,6 +120,9 @@ importers:
       '@ngneat/elf-entities':
         specifier: ^5.0.2
         version: 5.0.2(@ngneat/elf@2.5.1)(rxjs@7.8.1)
+      '@primodiumxyz/reactive-tables-tinybase':
+        specifier: npm:@primodiumxyz/reactive-tables@^1.0.1
+        version: /@primodiumxyz/reactive-tables@1.0.1(prettier@3.2.5)(react-dom@18.3.1)(typescript@5.4.5)(zod@3.23.5)
       blinkdb:
         specifier: ^0.14.0
         version: 0.14.0
@@ -2543,6 +2546,39 @@ packages:
       - typescript
       - utf-8-validate
     dev: true
+
+  /@primodiumxyz/reactive-tables@1.0.1(prettier@3.2.5)(react-dom@18.3.1)(typescript@5.4.5)(zod@3.23.5):
+    resolution: {integrity: sha512-FHLExsxNEslg0VrmjOMA0LlKB0GdzGqm3lRya6iP6nedXzzEvZs/uSLqnvPAhzzAQ7iDXlh9LBXM+A4gSDtRsw==}
+    engines: {node: 20.x, pnpm: 8.x}
+    dependencies:
+      '@latticexyz/common': 2.0.6(typescript@5.4.5)(zod@3.23.5)
+      '@latticexyz/protocol-parser': 2.0.6(typescript@5.4.5)(zod@3.23.5)
+      '@latticexyz/schema-type': 2.0.6(typescript@5.4.5)(zod@3.23.5)
+      '@latticexyz/store': 2.0.6(typescript@5.4.5)
+      '@primodiumxyz/sync-stack': 0.6.5(typescript@5.4.5)
+      react: 18.3.1
+      tinybase: 4.8.7(prettier@3.2.5)(react-dom@18.3.1)(react@18.3.1)
+      viem: 2.9.20(typescript@5.4.5)(zod@3.23.5)
+    transitivePeerDependencies:
+      - '@automerge/automerge-repo'
+      - '@journeyapps/powersync-sdk-common'
+      - '@libsql/client'
+      - '@sqlite.org/sqlite-wasm'
+      - '@vlcn.io/crsqlite-wasm'
+      - bufferutil
+      - electric-sql
+      - expo-sqlite
+      - partykit
+      - partysocket
+      - prettier
+      - react-dom
+      - sqlite3
+      - supports-color
+      - typescript
+      - utf-8-validate
+      - yjs
+      - zod
+    dev: false
 
   /@primodiumxyz/sync-stack@0.6.5(typescript@5.4.5):
     resolution: {integrity: sha512-NjqntQwUGfDVT3+vTuERxd0cm2TD2m7TlN0Jk+tX2bLmFRTSPMonKxqxOAZ1VwC+jv3NxbcDrRW3EO9QPxp9Bw==}

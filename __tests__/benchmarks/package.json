@@ -12,6 +12,7 @@
   "dependencies": {
     "@ngneat/elf": "^2.5.1",
     "@ngneat/elf-entities": "^5.0.2",
+    "@primodiumxyz/reactive-tables-tinybase": "npm:@primodiumxyz/reactive-tables@^1.0.1",
     "blinkdb": "^0.14.0",
     "rxdb": "^15.23.0",
     "rxjs": "^7.8.1"

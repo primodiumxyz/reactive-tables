@@ -17,7 +17,7 @@ import {
 import { recsStorage } from "@latticexyz/store-sync/recs";
 import { Hex, padHex, toHex } from "viem";
 
-// src
+// src (version using TinyBase)
 import {
   createWrapper,
   default$Record,
@@ -26,7 +26,7 @@ import {
   Properties,
   Schema,
   PropType,
-} from "./dist_reactive-tables-tinybase";
+} from "@primodiumxyz/reactive-tables-tinybase";
 
 // utils
 import { getRandomBigInts, getRandomNumbers } from "@test/utils";
