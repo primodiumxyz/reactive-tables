@@ -8,9 +8,9 @@ import {
   merge,
   Observable,
   of,
-  type OperatorFunction,
   pipe,
   share,
+  type OperatorFunction,
 } from "rxjs";
 import { observable, ObservableSet } from "mobx";
 import isEqual from "fast-deep-equal";

@@ -3,7 +3,7 @@
 export * from "@/createWrapper";
 
 // Local tables (with custom schema and templates)
-export * from "@/tables/local/createLocalTable";
+export * from "@/tables/createLocalTable";
 
 // Queries: global (filtering keys and callbacks), query (direct query returning $Record[]), useQuery (React hook returning $Record[] with callbacks)
 export { $query, query, useQuery } from "@/queries";
@@ -13,6 +13,9 @@ export { default$Record, localProperties, metadataProperties } from "@/lib";
 
 /* --------------------------------- TYPES --------------------------------- */
 export type {
+  AbiKeySchema,
+  AbiPropertiesSchema,
+  AbiToSchema,
   AllTableDefs,
   ContractTableDef,
   ContractTableDefs,
@@ -20,9 +23,6 @@ export type {
   $Record,
   Schema,
   StoreConfig,
-  Store,
-  TinyBaseQueries,
-  TinyBaseStore,
 } from "@/lib";
 export { Type } from "@/lib/external/mud/schema";
 
@@ -30,12 +30,14 @@ export type { QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } fro
 export type { StorageAdapter } from "@/adapter";
 
 export type {
-  AbiToPropertiesSchema,
-  AbiToSchema,
+  BaseTable,
+  BaseTableMetadata,
   ContractTable,
   ContractTables,
-  AbiKeySchema,
-  AbiPropertiesSchema,
-} from "@/tables/contract";
-export type { LocalTable } from "@/tables/local";
-export type { Properties, PropertiesSansMetadata } from "@/tables";
+  ContractTableMetadata,
+  IndexedBaseTable,
+  Properties,
+  PropertiesSansMetadata,
+  Table,
+  Tables,
+} from "@/tables";

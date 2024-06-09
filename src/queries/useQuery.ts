@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { query } from "@/queries";
-import type { QueryOptions, TableWatcherCallbacks, TableUpdate } from "@/queries";
-import { queries } from "@/lib";
-import type { $Record } from "@/lib";
+import { query, type QueryOptions, type TableWatcherCallbacks, type TableUpdate } from "@/queries";
+import { queries, type $Record } from "@/lib";
 
 /**
  * React hook to query all records matching multiple conditions across tables.

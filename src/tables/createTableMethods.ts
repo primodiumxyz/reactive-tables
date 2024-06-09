@@ -2,14 +2,14 @@ import { Subject, filter, map } from "rxjs";
 import { useEffect, useState } from "react";
 
 import { createTableKeyMethods } from "@/tables";
-import type { Properties, PropertiesSansMetadata, BaseTable, BaseTableMetadata, TableMethods } from "@/tables";
-import { type TableWatcherOptions, createTableWatcher, type TableWatcherParams, TableUpdate } from "@/queries";
+import type { BaseTable, BaseTableMetadata, Properties, PropertiesSansMetadata, TableMethods } from "@/tables";
+import { createTableWatcher, type TableWatcherOptions, type TableWatcherParams, type TableUpdate } from "@/queries";
 import {
   default$Record,
-  type $Record,
   queries,
-  type Schema,
   tableOperations,
+  type $Record,
+  type Schema,
   type TableMutationOptions,
   type World,
 } from "@/lib";

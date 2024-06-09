@@ -1,23 +1,24 @@
 import { Subject } from "rxjs";
 
 import type {
-  $Record,
-  Schema,
-  MappedType,
-  ContractTableDef,
-  Metadata,
-  $RecordSymbol,
-  Type,
-  SchemaAbiTypeToRecsType,
-  SchemaAbiType,
-  ResourceLabel,
-  World,
-  StaticAbiType,
   AbiKeySchema,
   AbiToSchema,
+  ContractTableDef,
+  MappedType,
+  Metadata,
+  $Record,
+  $RecordSymbol,
+  ResourceLabel,
+  Schema,
+  SchemaAbiType,
+  SchemaAbiTypeToRecsType,
+  StaticAbiType,
   TableMutationOptions,
+  Type,
+  World,
 } from "@/lib";
-import type { CreateTableWatcherResult, TableUpdate, TableWatcherOptions, TableWatcherParams } from "@/queries";
+import type { TableUpdate, TableWatcherOptions, TableWatcherParams } from "@/queries";
+
 export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> {
   id: string;
   properties: { [key in keyof PS]: Map<$RecordSymbol, MappedType<T>[PS[key]]> };
@@ -514,7 +515,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
   watch: (
     options: Omit<TableWatcherOptions<PS, M, T>, "queries" | "tableId" | "schema">,
     params?: TableWatcherParams,
-  ) => CreateTableWatcherResult;
+  ) => void;
 };
 
 /**

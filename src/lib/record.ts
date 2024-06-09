@@ -1,12 +1,11 @@
-import type { SchemaToPrimitives } from "@latticexyz/protocol-parser/internal";
 import { concatHex, decodeAbiParameters, encodeAbiParameters, type Hex, isHex, size, sliceHex } from "viem";
 
-import type { AbiToSchema, AbiKeySchema } from "@/tables/contract";
 import type { Properties } from "@/tables";
+import type { AbiToSchema, AbiKeySchema, SchemaToPrimitives } from "@/lib";
 
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { createTableKeyMethods } from "@/tables/contract";
+import { createTableKeyMethods } from "@/tables";
 
 /**
  * A record is a string that represents a tuple of hex keys, to identify a row in a table.

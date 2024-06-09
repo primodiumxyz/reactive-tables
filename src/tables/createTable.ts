@@ -2,14 +2,14 @@ import { Subject } from "rxjs";
 
 import { createTableMethods, type BaseTableMetadata, type Table, type BaseTable } from "@/tables";
 import {
-  mapObject,
-  type Schema,
-  uuid,
-  type World,
-  transformIterator,
-  type $RecordSymbol,
-  get$RecordHex,
   createIndexer,
+  get$RecordHex,
+  mapObject,
+  transformIterator,
+  uuid,
+  type Schema,
+  type World,
+  type $RecordSymbol,
 } from "@/lib";
 
 /**
@@ -69,7 +69,7 @@ export function createTable<PS extends Schema, M extends BaseTableMetadata, T = 
     // generate abi types for the key schema in case none is provided
     // this will help having a unified API for all tables, including local tables created with RECS types
     // so we can use key methods on these as well
-    abiKeySchema: hasKeySchema ? options.metadata!.abiKeySchema! : { $record: "bytes32" },
+    abiKeySchema: hasKeySchema ? options.metadata!.abiKeySchema! : ({ $record: "bytes32" } as const),
   } as const satisfies BaseTableMetadata;
 
   const properties = mapObject(propertiesSchema, () => new Map()) as BaseTable<PS, typeof metadata, T>["properties"];

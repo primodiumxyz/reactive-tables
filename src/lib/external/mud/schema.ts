@@ -1,5 +1,5 @@
-import { SchemaAbiTypeToPrimitiveType } from "@latticexyz/schema-type/internal";
-import { Hex } from "viem";
+import type { SchemaAbiTypeToPrimitiveType } from "@latticexyz/schema-type/internal";
+import type { Hex } from "viem";
 
 import type { $Record } from "@/lib";
 

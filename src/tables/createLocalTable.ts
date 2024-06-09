@@ -1,14 +1,14 @@
-import { BaseTableMetadata, Table, TableOptions, createTable } from "@/tables";
-import { type Schema, Type, uuid, World } from "@/lib";
+import { createTable, type BaseTableMetadata, type Table, type TableOptions } from "@/tables";
+import { Type, uuid, type Schema, type World } from "@/lib";
 
 /**
- * Creates a local table with the specified schema, options and default properties.
+ * Creates a local table with the specified properties schema, options and default properties.
  *
  * These tables are meant to be created directly during implementation, then used alongside contract tables
  * the exact same way.
  *
  * @param world The MUD world object.
- * @param schema The schema of the table properties, defining their RECS types.
+ * @param propertiesSchema The schema of the table properties, defining their RECS types.
  * @param options (optional) The options for creating the table (see {@link CreateLocalTableOptions}).
  * if the table is persistent and already has properties from a previous session
  * @returns A local table object with the specified properties, and fully typed methods for data manipulation.
@@ -35,12 +35,12 @@ import { type Schema, Type, uuid, World } from "@/lib";
  * ```
  * @category Creation
  */
-export const createLocalTable = <S extends Schema, M extends BaseTableMetadata, T = unknown>(
+export const createLocalTable = <PS extends Schema, M extends BaseTableMetadata, T = unknown>(
   world: World,
-  schema: S,
+  propertiesSchema: PS,
   options?: TableOptions<M>,
-  // defaultProperties?: Properties<S, T>, // TODO: persistence
-): Table<S, M, T> => {
+  // defaultProperties?: Properties<PS, T>, // TODO: persistence
+) => {
   const { id, metadata: baseMetadata } = options ?? { id: uuid() };
 
   const metadata = {
@@ -49,10 +49,10 @@ export const createLocalTable = <S extends Schema, M extends BaseTableMetadata, 
     namespace: baseMetadata?.namespace ?? ("local" as const),
     globalName:
       baseMetadata?.globalName ?? baseMetadata?.namespace ? `${baseMetadata.namespace}__${id}` : `local__${id}`,
-    abiKeySchema: { $record: "bytes32" },
+    abiKeySchema: { $record: "bytes32" } as const,
   } as const satisfies BaseTableMetadata;
 
-  return createTable(world, schema, { ...options, id, metadata });
+  return createTable(world, propertiesSchema, { ...options, id, metadata }) as unknown as Table<PS, typeof metadata, T>;
 };
 
 /**
@@ -60,7 +60,7 @@ export const createLocalTable = <S extends Schema, M extends BaseTableMetadata, 
  */
 export type LocalNumberTable = ReturnType<typeof createLocalNumberTable>;
 /**
- * Creates a local table with the specified schema, options and default properties.
+ * Creates a local table with the specified properties schema, options and default properties.
  *
  * This is a shorthand for creating a local table with a single number property.
  * @see {@link createLocalTable}
@@ -78,7 +78,7 @@ export const createLocalNumberTable = <M extends BaseTableMetadata>(
  */
 export type LocalBigIntTable = ReturnType<typeof createLocalBigIntTable>;
 /**
- * Creates a local table with the specified schema, options and default properties.
+ * Creates a local table with the specified properties schema, options and default properties.
  *
  * This is a shorthand for creating a local table with a single BigInt property.
  * @see {@link createLocalTable}
@@ -96,7 +96,7 @@ export const createLocalBigIntTable = <M extends BaseTableMetadata>(
  */
 export type LocalStringTable = ReturnType<typeof createLocalStringTable>;
 /**
- * Creates a local table with the specified schema, options and default properties.
+ * Creates a local table with the specified properties schema, options and default properties.
  *
  * This is a shorthand for creating a local table with a single string property.
  * @see {@link createLocalTable}
@@ -114,7 +114,7 @@ export const createLocalStringTable = <M extends BaseTableMetadata>(
  */
 export type LocalCoordTable = ReturnType<typeof createLocalCoordTable>;
 /**
- * Creates a local table with the specified schema, options and default properties.
+ * Creates a local table with the specified properties schema, options and default properties.
  *
  * This is a shorthand for creating a local table with number properties for coordinates, specifically `x` and `y`.
  * @see {@link createLocalTable}
@@ -132,7 +132,7 @@ export const createLocalCoordTable = <M extends BaseTableMetadata>(
  */
 export type LocalBoolTable = ReturnType<typeof createLocalBoolTable>;
 /**
- * Creates a local table with the specified schema, options and default properties.
+ * Creates a local table with the specified properties schema, options and default properties.
  *
  * This is a shorthand for creating a local table with a single boolean property.
  * @see {@link createLocalTable}
@@ -150,7 +150,7 @@ export const createLocalBoolTable = <M extends BaseTableMetadata>(
  */
 export type Local$RecordTable = ReturnType<typeof createLocal$RecordTable>;
 /**
- * Creates a local table with the specified schema, options and default properties.
+ * Creates a local table with the specified properties schema, options and default properties.
  *
  * This is a shorthand for creating a local table with a single record property.
  * @see {@link createLocalTable}

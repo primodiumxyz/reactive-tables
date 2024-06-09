@@ -12,7 +12,7 @@ import {
   hexKeyTupleTo$Record,
   resourceToLabel,
 } from "@/lib";
-import { ContractTable, ContractTables } from "@/tables";
+import type { ContractTable, ContractTables } from "@/tables";
 
 export const createStorageAdapter = <config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined>({
   tables,

@@ -1,5 +1,5 @@
 import type { QueryOptions } from "@/queries";
-import { QueryFragment, queries, type $Record } from "@/lib";
+import { queries, type QueryFragment, type $Record } from "@/lib";
 
 /**
  * Queries all records matching multiple provided conditions across tables.

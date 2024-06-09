@@ -47,8 +47,6 @@ export type TableUpdate<PS extends Schema = Schema, M extends BaseTableMetadata 
  * @param onUpdate The callback to trigger when the properties of a record inside the table being watched have changed.
  * @see {@link TableUpdate}
  * @category Queries
- *
- * TODO(review): we can't typecheck complex union types with at least one required key
  */
 export type TableWatcherCallbacks<
   PS extends Schema = Schema,
@@ -103,7 +101,7 @@ type QueryMatchingProperties<
  * @param withoutProperties An array of table-properties pairs the records need to not match (at least one different property).
  * @category Queries
  *
- * TODO(review): fix type inference on heterogeneous array (with single ContractTableDef it wants the same table as the first one for all items)
+ * TODO: see if there is a way to handle type inference
  */
 export type QueryOptions = {
   with?: (BaseTable | Table)[]; // inside these tables

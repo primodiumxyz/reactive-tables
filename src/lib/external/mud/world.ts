@@ -1,6 +1,12 @@
-import { BaseTable } from "@/tables";
-import { tables as tableMethods } from "@/tables";
-import { get$RecordHex, get$RecordSymbol, transformIterator, type $Record, type $RecordSymbol } from "@/lib";
+import type { BaseTable } from "@/tables";
+import {
+  get$RecordHex,
+  get$RecordSymbol,
+  tableOperations,
+  transformIterator,
+  type $Record,
+  type $RecordSymbol,
+} from "@/lib";
 
 /**
  * Type of World returned by {@link createWorld}.
@@ -67,7 +73,7 @@ export function createWorld() {
 
   function delete$Record($record: $Record) {
     for (const table of tables) {
-      if (tableMethods.has$Record(table, $record)) tableMethods.remove$Record(table, $record);
+      if (tableOperations.has$Record(table, $record)) tableOperations.remove$Record(table, $record);
     }
 
     $recordSymbols.delete(get$RecordSymbol($record));
@@ -113,5 +119,5 @@ export function namespaceWorld(world: World, namespace: string) {
  * @returns Array of tables that have a value for the given $record.
  */
 export function get$RecordTables(world: World, $record: $Record): BaseTable[] {
-  return world.tables.filter((table) => tableMethods.has$Record(table, $record));
+  return world.tables.filter((table) => tableOperations.has$Record(table, $record));
 }

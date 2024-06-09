@@ -1,5 +1,3 @@
-// Modified from https://github.com/latticexyz/mud/blob/ade94a7fa761070719bcd4b4dac6cb8cc7783c3b/packages/protocol-parser/src/decodePropertiesArgs.ts#L8
-
 import { concatHex } from "viem";
 import { isDynamicAbiType, isStaticAbiType } from "@latticexyz/schema-type/internal";
 import {
@@ -20,6 +18,8 @@ import {
 import { type Hex } from "viem";
 
 import type { AbiPropertiesSchema, SchemaToPrimitives } from "@/lib";
+
+// Modified from https://github.com/latticexyz/mud/blob/ade94a7fa761070719bcd4b4dac6cb8cc7783c3b/packages/protocol-parser/src/decodePropertiesArgs.ts#L8
 
 /**
  * Decode the properties of a record from the data inside a log.
