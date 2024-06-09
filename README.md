@@ -275,6 +275,8 @@ The tests are intended to be published to a running anvil node, with the mock co
 
 The prerequisites are to have the repository cloned and installed, as well as Foundry available. If you wish to test the sync with the indexer, you should have a Docker instance running before starting the following steps.
 
+[Benchmarks](./__tests__/benchmarks) can use multiple versions of the library to measure against historic implementations; in such case, the specific version is installed directly from npm as an alias.
+
 1. Start the dev server, which encompasses spinning up an anvil node, deploying contracts, and if available starting a local indexer.
 
 ```bash
