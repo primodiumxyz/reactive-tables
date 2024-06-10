@@ -29,23 +29,23 @@ const { defineQuery, With, WithProperties, Without, WithoutProperties } = querie
  * This example queries all entities that have a score of 10 in the "Score" table and are not inside the "GameOver" table.
  *
  * ```ts
- * const { registry, store } = createWrapper({ world, mudConfig });
- * registry.Score.set({ points: 10 }, recordA);
- * registry.Score.set({ points: 10 }, recordB);
- * registry.Score.set({ points: 3 }, recordC);
- * registry.GameOver.set({ value: true }, recordB);
+ * const { tables } = createWrapper({ world, mudConfig });
+ * tables.Score.set({ points: 10 }, recordA);
+ * tables.Score.set({ points: 10 }, recordB);
+ * tables.Score.set({ points: 3 }, recordC);
+ * tables.GameOver.set({ value: true }, recordB);
  *
- * const entities = useQuery(store, {
- *   withProperties: [ { table: registry.Score, properties: { points: 10 } } ],
- *   without: [ registry.GameOver ],
+ * const entities = useQuery({
+ *   withProperties: [ { table: tables.Score, properties: { points: 10 } } ],
+ *   without: [ tables.GameOver ],
  * }, {
  *   onChange: (update) => console.log(update),
  * });
  * console.log(entities);
  * // -> [ recordA ]
  *
- * registry.Score.update({ points: 10 }, recordC);
- * // -> { table: registry.Score, entity: recordC, current: { points: 10 }, prev: { points: 3 }, type: "change" }
+ * tables.Score.update({ points: 10 }, recordC);
+ * // -> { table: tables.Score, entity: recordC, current: { points: 10 }, prev: { points: 3 }, type: "change" }
  * console.log(entities);
  * // -> [ recordA, recordC ]
  * ```

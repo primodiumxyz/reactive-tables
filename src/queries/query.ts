@@ -15,14 +15,14 @@ const { runQuery, With, WithProperties, Without, WithoutProperties } = queries()
  *
  * ```ts
  * const { tables } = createWrapper({ world, mudConfig });
- * registry.Score.set({ points: 10 }, recordA);
- * registry.Score.set({ points: 10 }, recordB);
- * registry.Score.set({ points: 3 }, recordC);
- * registry.GameOver.set({ value: true }, recordB);
+ * tables.Score.set({ points: 10 }, recordA);
+ * tables.Score.set({ points: 10 }, recordB);
+ * tables.Score.set({ points: 3 }, recordC);
+ * tables.GameOver.set({ value: true }, recordB);
  *
  * const entities = query({
- *   withProperties: [{ table: registry.Score, properties: { points: 10 } }],
- *   without: [registry.GameOver],
+ *   withProperties: [{ table: tables.Score, properties: { points: 10 } }],
+ *   without: [tables.GameOver],
  * });
  * console.log(entities);
  * // -> [ recordA ]

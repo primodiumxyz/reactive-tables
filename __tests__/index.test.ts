@@ -96,7 +96,7 @@ const setup = async (options: TestOptions = { useIndexer: false }) => {
   sync.start();
   world.registerDisposer(sync.unsubscribe);
 
-  // Sync RECS registry for comparison
+  // Sync RECS tables for comparison
   const { components: recsComponents } = await syncToRecs({
     world: recsWorld,
     config: mudConfig,
@@ -113,7 +113,7 @@ const setup = async (options: TestOptions = { useIndexer: false }) => {
     ...["A", "B", "C"].map((id) => padHex(toHex(`entity${id}`))),
   ] as Entity[];
 
-  // We want to wait for both registry/tables to be in sync & live
+  // We want to wait for both tables to be in sync & live
   const waitForSyncLive = async () => {
     let synced = false;
 
@@ -128,7 +128,7 @@ const setup = async (options: TestOptions = { useIndexer: false }) => {
 
   return {
     world,
-    registry: tables,
+    tables,
     tableDefs,
     storageAdapter,
     sync,
@@ -164,10 +164,10 @@ const waitForBlockSynced = async <tableDef extends ContractTableDef>(
 
 describe("setup: create wrapper", () => {
   it("should properly initialize and return expected objects", async () => {
-    const { registry, tableDefs, storageAdapter } = await setup();
+    const { tables, tableDefs, storageAdapter } = await setup();
 
     // Verify the existence of the result
-    expect(registry).toBeDefined();
+    expect(tables).toBeDefined();
     expect(tableDefs).toBeDefined();
     expect(storageAdapter).toBeDefined();
   });
@@ -176,18 +176,18 @@ describe("setup: create wrapper", () => {
 describe("local: create local table", () => {
   it("should be able to create tables from local definitions passed during initialization", async () => {
     const world = createWorld();
-    const registry = {
+    const tables = {
       A: createLocalCoordTable(world, { id: "A" }),
       B: createLocalTable(world, { bool: Type.Boolean, array: Type.EntityArray }),
     };
 
-    registry.A.set({ x: 1, y: 1 });
-    registry.B.set({ bool: true, array: [defaultEntity] });
+    tables.A.set({ x: 1, y: 1 });
+    tables.B.set({ bool: true, array: [defaultEntity] });
 
-    expect(registry.A.get()).toHaveProperty("x", 1);
-    expect(registry.A.get()).toHaveProperty("y", 1);
-    expect(registry.B.get()).toHaveProperty("bool", true);
-    expect(registry.B.get()).toHaveProperty("array", [defaultEntity]);
+    expect(tables.A.get()).toHaveProperty("x", 1);
+    expect(tables.A.get()).toHaveProperty("y", 1);
+    expect(tables.B.get()).toHaveProperty("bool", true);
+    expect(tables.B.get()).toHaveProperty("array", [defaultEntity]);
   });
 });
 
@@ -195,14 +195,14 @@ describe("local: create local table", () => {
 /*                                    SYNC                                    */
 /* -------------------------------------------------------------------------- */
 
-describe("sync: should properly sync similar properties to RECS registry", () => {
+describe("sync: should properly sync similar properties to RECS tables", () => {
   const runTest = async (options: TestOptions) => {
-    const { registry, recsComponents, entities, waitForSyncLive } = await setup(options);
+    const { tables, recsComponents, entities, waitForSyncLive } = await setup(options);
     const player = entities[0];
-    assert(registry);
+    assert(tables);
 
     // Run a few transactions; if it fails, try again
-    const targetTables = [registry.Counter, registry.Inventory, registry.Position] as unknown as ContractTable[];
+    const targetTables = [tables.Counter, tables.Inventory, tables.Position] as unknown as ContractTable[];
     let { blockNumber, status } = await fuzz(FUZZ_ITERATIONS, targetTables);
     while (status !== "success") {
       console.error("Fuzzing failed, retrying...");
@@ -218,14 +218,14 @@ describe("sync: should properly sync similar properties to RECS registry", () =>
     );
 
     // Ignore tables not registered in RECS (e.g. SyncSource)
-    const registryKeys = Object.keys(registry).filter((key) =>
+    const registryKeys = Object.keys(tables).filter((key) =>
       Object.keys(recsComponents).includes(key),
-    ) as (keyof typeof registry)[];
+    ) as (keyof typeof tables)[];
 
     // Verify the equality
     for (const key of registryKeys) {
-      const hasKey = Object.entries(registry[key].metadata.abiKeySchema ?? {}).length > 0;
-      const table = hasKey ? registry[key].get(player) : registry[key].get();
+      const hasKey = Object.entries(tables[key].metadata.abiKeySchema ?? {}).length > 0;
+      const table = hasKey ? tables[key].get(player) : tables[key].get();
 
       const recsComp = hasKey
         ? // @ts-expect-error key does exist in recsComponents
@@ -242,7 +242,7 @@ describe("sync: should properly sync similar properties to RECS registry", () =>
       }
 
       // Test properties schema
-      const propertiesSchema = registry[key].propertiesSchema ?? {};
+      const propertiesSchema = tables[key].propertiesSchema ?? {};
       for (const key of Object.keys(propertiesSchema)) {
         if (!(key in table) || key === "__lastSyncedAtBlock") {
           expect(recsComp[key]).toBeUndefined();
@@ -272,11 +272,11 @@ describe("sync: should properly sync similar properties to RECS registry", () =>
 describe("methods: should set and return intended properties", () => {
   /* ---------------------------------- BASIC --------------------------------- */
   describe("basic methods", () => {
-    // Init and return registry and utils
+    // Init and return tables and utils
     const preTest = async () => {
-      const { registry, entities } = await setup();
+      const { tables, entities } = await setup();
       const player = entities[0];
-      assert(registry);
+      assert(tables);
 
       // Generate random args
       const length = 5;
@@ -286,7 +286,7 @@ describe("methods: should set and return intended properties", () => {
         totalWeight: getRandomBigInts(1)[0],
       });
 
-      return { registry, player, getRandomArgs };
+      return { tables, player, getRandomArgs };
     };
 
     // Check returned properties against input args
@@ -298,22 +298,22 @@ describe("methods: should set and return intended properties", () => {
 
     // Get table properties after a transaction was made
     it("table.get(), table.getWithKeys()", async () => {
-      const { registry, player, getRandomArgs } = await preTest();
+      const { tables, player, getRandomArgs } = await preTest();
 
       // Set the items and wait for sync
       const args = getRandomArgs();
       const { blockNumber } = await setItems(args);
-      await waitForBlockSynced(blockNumber, registry.Inventory, player);
+      await waitForBlockSynced(blockNumber, tables.Inventory, player);
 
-      const properties = registry.Inventory.get(player);
-      const propsWithKeys = registry.Inventory.getWithKeys({ id: player });
+      const properties = tables.Inventory.get(player);
+      const propsWithKeys = tables.Inventory.getWithKeys({ id: player });
       postTest({ ...args, block: blockNumber }, { ...properties, block: properties?.__lastSyncedAtBlock });
       expect(properties).toEqual(propsWithKeys);
     });
 
     // Set table properties locally
     it("table.set(), table.setWithKeys", async () => {
-      const { registry, player, getRandomArgs } = await preTest();
+      const { tables, player, getRandomArgs } = await preTest();
 
       // Set the properties manually
       const args = {
@@ -323,10 +323,10 @@ describe("methods: should set and return intended properties", () => {
         __dynamicData: "0x" as Hex,
         __lastSyncedAtBlock: BigInt(0),
       };
-      registry.Inventory.set(args, player);
+      tables.Inventory.set(args, player);
 
-      const properties = registry.Inventory.get(player);
-      const propsWithKeys = registry.Inventory.getWithKeys({ id: player });
+      const properties = tables.Inventory.get(player);
+      const propsWithKeys = tables.Inventory.getWithKeys({ id: player });
       assert(properties);
       postTest(args, properties);
       expect(properties).toEqual(propsWithKeys);
@@ -334,35 +334,35 @@ describe("methods: should set and return intended properties", () => {
 
     // Update table properties client-side
     it("table.update()", async () => {
-      const { registry, player, getRandomArgs } = await preTest();
+      const { tables, player, getRandomArgs } = await preTest();
 
       // Set the items and wait for sync
       const args = getRandomArgs();
       const { blockNumber } = await setItems(args);
-      await waitForBlockSynced(blockNumber, registry.Inventory, player);
+      await waitForBlockSynced(blockNumber, tables.Inventory, player);
 
       // Update the table
       const updateArgs = getRandomArgs();
-      registry.Inventory.update(updateArgs, player);
+      tables.Inventory.update(updateArgs, player);
 
-      const properties = registry.Inventory.get(player);
+      const properties = tables.Inventory.get(player);
       assert(properties);
       postTest(updateArgs, properties);
     });
 
     // Remove table properties locally
     it("table.remove()", async () => {
-      const { registry, player, getRandomArgs } = await preTest();
+      const { tables, player, getRandomArgs } = await preTest();
 
       // Set the items and wait for sync
       const args = getRandomArgs();
       const { blockNumber } = await setItems(args);
-      await waitForBlockSynced(blockNumber, registry.Inventory, player);
+      await waitForBlockSynced(blockNumber, tables.Inventory, player);
 
       // Remove the entity from the table
-      registry.Inventory.remove(player);
+      tables.Inventory.remove(player);
 
-      const properties = registry.Inventory.get(player);
+      const properties = tables.Inventory.get(player);
       expect(properties).toBeUndefined();
     });
   });
@@ -371,13 +371,13 @@ describe("methods: should set and return intended properties", () => {
   describe("native methods", () => {
     // Records iterator
     it("table.entities()", async () => {
-      const { registry, entities, waitForSyncLive } = await setup();
-      assert(registry);
+      const { tables, entities, waitForSyncLive } = await setup();
+      assert(tables);
 
       await Promise.all(entities.map(async (entity) => await setPositionForEntity({ entity, x: 1, y: 1 })));
       await waitForSyncLive();
 
-      const iterator = registry.Position.entities();
+      const iterator = tables.Position.entities();
 
       // It _should_ already include the burner account from previous tests
       // Since we're not sure about the order, we can just test the global output
@@ -395,8 +395,8 @@ describe("methods: should set and return intended properties", () => {
     };
 
     const preTest = async () => {
-      const { registry, networkConfig, entities, waitForSyncLive } = await setup();
-      assert(registry);
+      const { tables, networkConfig, entities, waitForSyncLive } = await setup();
+      assert(tables);
 
       // 4 entities: A has some properties, B has different properties, C & D have the same properties
       // Obviously this might return similar values and break tests, or running tests a bunch of times over the same running local node might as well
@@ -409,22 +409,22 @@ describe("methods: should set and return intended properties", () => {
       await Promise.all(args.map(async (a) => await setPositionForEntity(a)));
       await waitForSyncLive();
 
-      return { registry, networkConfig, entities, args };
+      return { tables, networkConfig, entities, args };
     };
 
     it("table.getAll()", async () => {
-      const { registry, entities } = await preTest();
+      const { tables, entities } = await preTest();
 
-      const allEntities = registry.Position.getAll();
+      const allEntities = tables.Position.getAll();
       expect(allEntities.sort()).toEqual(entities.sort());
     });
 
     it("table.getAllWith()", async () => {
-      const { registry, entities, args } = await preTest();
+      const { tables, entities, args } = await preTest();
 
-      expect(registry.Position.getAllWith({ x: args[0].x, y: args[0].y })).toEqual([entities[0]]);
-      expect(registry.Position.getAllWith({ x: args[1].x, y: args[1].y })).toEqual([entities[1]]);
-      expect(registry.Position.getAllWith({ x: args[2].x, y: args[2].y }).sort()).toEqual(
+      expect(tables.Position.getAllWith({ x: args[0].x, y: args[0].y })).toEqual([entities[0]]);
+      expect(tables.Position.getAllWith({ x: args[1].x, y: args[1].y })).toEqual([entities[1]]);
+      expect(tables.Position.getAllWith({ x: args[2].x, y: args[2].y }).sort()).toEqual(
         [entities[2], entities[3]].sort(),
       );
 
@@ -433,26 +433,26 @@ describe("methods: should set and return intended properties", () => {
       while (args.some((a) => a.x === randomArgs.x && a.y === randomArgs.y)) {
         randomArgs = getRandomArgs(entities[0]);
       }
-      expect(registry.Position.getAllWith({ x: randomArgs.x, y: randomArgs.y })).toEqual([]);
+      expect(tables.Position.getAllWith({ x: randomArgs.x, y: randomArgs.y })).toEqual([]);
 
       // Matching only a part of the args should not be enough for the entity to be included
       let argsWithPartialEquality = getRandomArgs(entities[0]);
       while (args.some((a) => a.x === argsWithPartialEquality.x)) {
         argsWithPartialEquality = getRandomArgs(entities[0]);
       }
-      expect(registry.Position.getAllWith({ x: argsWithPartialEquality.x, y: args[0].y })).toEqual([]);
+      expect(tables.Position.getAllWith({ x: argsWithPartialEquality.x, y: args[0].y })).toEqual([]);
     });
 
     it("table.getAllWithout()", async () => {
-      const { registry, entities, args } = await preTest();
+      const { tables, entities, args } = await preTest();
 
-      expect(registry.Position.getAllWithout({ x: args[0].x, y: args[0].y }).sort()).toEqual(
+      expect(tables.Position.getAllWithout({ x: args[0].x, y: args[0].y }).sort()).toEqual(
         [entities[1], entities[2], entities[3]].sort(),
       );
-      expect(registry.Position.getAllWithout({ x: args[1].x, y: args[1].y }).sort()).toEqual(
+      expect(tables.Position.getAllWithout({ x: args[1].x, y: args[1].y }).sort()).toEqual(
         [entities[0], entities[2], entities[3]].sort(),
       );
-      expect(registry.Position.getAllWithout({ x: args[2].x, y: args[2].y }).sort()).toEqual(
+      expect(tables.Position.getAllWithout({ x: args[2].x, y: args[2].y }).sort()).toEqual(
         [entities[0], entities[1]].sort(),
       );
 
@@ -461,28 +461,28 @@ describe("methods: should set and return intended properties", () => {
       while (args.some((a) => a.x === randomArgs.x && a.y === randomArgs.y)) {
         randomArgs = getRandomArgs(entities[0]);
       }
-      expect(registry.Position.getAllWithout({ x: randomArgs.x, y: randomArgs.y }).sort()).toEqual(entities.sort());
+      expect(tables.Position.getAllWithout({ x: randomArgs.x, y: randomArgs.y }).sort()).toEqual(entities.sort());
     });
 
     it("table.clear()", async () => {
-      const { registry, entities } = await preTest();
-      expect(registry.Position.getAll().sort()).toEqual(entities.sort());
+      const { tables, entities } = await preTest();
+      expect(tables.Position.getAll().sort()).toEqual(entities.sort());
 
-      registry.Position.clear();
-      expect(registry.Position.getAll()).toEqual([]);
+      tables.Position.clear();
+      expect(tables.Position.getAll()).toEqual([]);
     });
 
     it("table.has(), table.hasWithKeys()", async () => {
-      const { registry, entities } = await preTest();
+      const { tables, entities } = await preTest();
 
       entities.forEach((entity) => {
-        expect(registry.Position.has(entity)).toBe(true);
-        expect(registry.Position.hasWithKeys({ id: entity })).toBe(true);
+        expect(tables.Position.has(entity)).toBe(true);
+        expect(tables.Position.hasWithKeys({ id: entity })).toBe(true);
       });
 
       const unknownEntity = padHex(toHex("unknownEntity"));
-      expect(registry.Position.has(unknownEntity as Entity)).toBe(false);
-      expect(registry.Position.hasWithKeys({ id: unknownEntity })).toBe(false);
+      expect(tables.Position.has(unknownEntity as Entity)).toBe(false);
+      expect(tables.Position.hasWithKeys({ id: unknownEntity })).toBe(false);
     });
   });
 
@@ -513,47 +513,47 @@ describe("methods: should set and return intended properties", () => {
     };
 
     it("table.use(), table.useWithKeys()", async () => {
-      const { registry, entities } = await setup();
-      assert(registry);
+      const { tables, entities } = await setup();
+      assert(tables);
       const player = entities[0];
 
-      const { result } = renderHook(() => registry.Position.use(player));
-      const { result: resultWithKeys } = renderHook(() => registry.Position.useWithKeys({ id: player }));
+      const { result } = renderHook(() => tables.Position.use(player));
+      const { result: resultWithKeys } = renderHook(() => tables.Position.useWithKeys({ id: player }));
 
       // Update the position
-      const { args } = await updatePosition(registry.Position, player);
+      const { args } = await updatePosition(tables.Position, player);
       expect(result.current).toHaveProperty("x", args.x);
       expect(result.current).toHaveProperty("y", args.y);
       expect(result.current).toEqual(resultWithKeys.current);
 
       // Update the position again with different properties
-      const { args: argsB } = await updatePosition(registry.Position, player);
+      const { args: argsB } = await updatePosition(tables.Position, player);
       expect(result.current).toHaveProperty("x", argsB.x);
       expect(result.current).toHaveProperty("y", argsB.y);
       expect(result.current).toEqual(resultWithKeys.current);
 
       // Remove an entity
-      registry.Position.remove(player);
+      tables.Position.remove(player);
       expect(result.current).toBeUndefined();
       expect(resultWithKeys.current).toBeUndefined();
     });
 
     it("table.pauseUpdates()", async () => {
-      const { registry, entities } = await setup();
-      assert(registry);
+      const { tables, entities } = await setup();
+      assert(tables);
       const player = entities[0];
 
-      const { result } = renderHook(() => registry.Position.use(entities[0]));
+      const { result } = renderHook(() => tables.Position.use(entities[0]));
 
       // Update the position
-      const { args } = await updatePosition(registry.Position, player);
+      const { args } = await updatePosition(tables.Position, player);
       expect(result.current).toHaveProperty("x", args.x);
       expect(result.current).toHaveProperty("y", args.y);
 
       // Pause updates
-      registry.Position.pauseUpdates(player, { x: args.x, y: args.y, ...emptyData });
+      tables.Position.pauseUpdates(player, { x: args.x, y: args.y, ...emptyData });
       // Update the position again with different properties
-      await updatePosition(registry.Position, player, false); // it won't sync since we paused updates
+      await updatePosition(tables.Position, player, false); // it won't sync since we paused updates
       await new Promise((resolve) => setTimeout(resolve, 1000));
       console.log("after update");
 
@@ -563,63 +563,63 @@ describe("methods: should set and return intended properties", () => {
     });
 
     it("table.resumeUpdates()", async () => {
-      const { registry, entities } = await setup();
-      assert(registry);
+      const { tables, entities } = await setup();
+      assert(tables);
       const player = entities[0];
 
-      const { result } = renderHook(() => registry.Position.use(entities[0]));
+      const { result } = renderHook(() => tables.Position.use(entities[0]));
 
       // Update the position
-      const { args } = await updatePosition(registry.Position, player);
+      const { args } = await updatePosition(tables.Position, player);
       expect(result.current).toHaveProperty("x", args.x);
       expect(result.current).toHaveProperty("y", args.y);
 
       // Pause updates
-      registry.Position.pauseUpdates(player, { x: args.x, y: args.y, ...emptyData });
+      tables.Position.pauseUpdates(player, { x: args.x, y: args.y, ...emptyData });
 
       // Update the position again with different properties
-      const { args: argsB } = await updatePosition(registry.Position, player, false);
+      const { args: argsB } = await updatePosition(tables.Position, player, false);
       await new Promise((resolve) => setTimeout(resolve, 1000));
       // It should keep the old properties
       expect(result.current).toHaveProperty("x", args.x);
       expect(result.current).toHaveProperty("y", args.y);
 
       // Resume updates
-      registry.Position.resumeUpdates(player);
+      tables.Position.resumeUpdates(player);
       // It should update to the new properties
       expect(result.current).toHaveProperty("x", argsB.x);
       expect(result.current).toHaveProperty("y", argsB.y);
     });
 
     it("table.useAll()", async () => {
-      const { registry, entities } = await setup();
-      assert(registry);
+      const { tables, entities } = await setup();
+      assert(tables);
 
-      const { result } = renderHook(() => registry.Position.useAll());
+      const { result } = renderHook(() => tables.Position.useAll());
 
       // Update the position for all entities
-      await Promise.all(entities.map(async (entity) => await updatePosition(registry.Position, entity)));
+      await Promise.all(entities.map(async (entity) => await updatePosition(tables.Position, entity)));
       expect(result.current.sort()).toEqual(entities.sort());
 
       // Clear the positions
-      registry.Position.clear();
+      tables.Position.clear();
       expect(result.current).toEqual([]);
 
       // Update the position for a few entities
-      await Promise.all(entities.slice(0, 2).map(async (entity) => await updatePosition(registry.Position, entity)));
+      await Promise.all(entities.slice(0, 2).map(async (entity) => await updatePosition(tables.Position, entity)));
       expect(result.current.sort()).toEqual(entities.slice(0, 2).sort());
 
       // Remove an entity
-      registry.Position.remove(entities[0]);
+      tables.Position.remove(entities[0]);
       expect(result.current).toEqual([entities[1]]);
     });
 
     it("table.useAllWith()", async () => {
-      const { registry, entities } = await setup();
-      assert(registry);
+      const { tables, entities } = await setup();
+      assert(tables);
 
       const targetPos = { x: 10, y: 10 };
-      const { result } = renderHook(() => registry.Position.useAllWith(targetPos));
+      const { result } = renderHook(() => tables.Position.useAllWith(targetPos));
 
       // Update the position for all entities (not to the target position)
       await Promise.all(
@@ -630,7 +630,7 @@ describe("methods: should set and return intended properties", () => {
           }
 
           const { blockNumber } = await setPositionForEntity(args);
-          await waitForBlockSynced(blockNumber, registry.Position, entity);
+          await waitForBlockSynced(blockNumber, tables.Position, entity);
         }),
       );
 
@@ -638,11 +638,11 @@ describe("methods: should set and return intended properties", () => {
 
       // Update the position for a few entities to the target position
       const { blockNumber: blockNumberB } = await setPositionForEntity({ ...targetPos, entity: entities[0] });
-      await waitForBlockSynced(blockNumberB, registry.Position, entities[0]);
+      await waitForBlockSynced(blockNumberB, tables.Position, entities[0]);
       expect(result.current).toEqual([entities[0]]);
 
       const { blockNumber: blockNumberC } = await setPositionForEntity({ ...targetPos, entity: entities[1] });
-      await waitForBlockSynced(blockNumberC, registry.Position, entities[1]);
+      await waitForBlockSynced(blockNumberC, tables.Position, entities[1]);
       expect(result.current.sort()).toEqual([entities[0], entities[1]].sort());
 
       // And with only part of the properties matching
@@ -651,20 +651,20 @@ describe("methods: should set and return intended properties", () => {
         y: 0,
         entity: entities[2],
       });
-      await waitForBlockSynced(blockNumberD, registry.Position, entities[2]);
+      await waitForBlockSynced(blockNumberD, tables.Position, entities[2]);
       expect(result.current.sort()).toEqual([entities[0], entities[1]].sort());
 
       // Remove an entity
-      registry.Position.remove(entities[0]);
+      tables.Position.remove(entities[0]);
       expect(result.current).toEqual([entities[1]]);
     });
 
     it("table.useAllWithout()", async () => {
-      const { registry, entities } = await setup();
-      assert(registry);
+      const { tables, entities } = await setup();
+      assert(tables);
 
       const targetPos = { x: 10, y: 10 };
-      const { result } = renderHook(() => registry.Position.useAllWithout(targetPos));
+      const { result } = renderHook(() => tables.Position.useAllWithout(targetPos));
 
       // Update the position for all entities (not to the target position)
       await Promise.all(
@@ -674,7 +674,7 @@ describe("methods: should set and return intended properties", () => {
             args = getRandomArgs(entity);
           }
           const { blockNumber } = await setPositionForEntity(args);
-          await waitForBlockSynced(blockNumber, registry.Position, entity);
+          await waitForBlockSynced(blockNumber, tables.Position, entity);
         }),
       );
 
@@ -682,11 +682,11 @@ describe("methods: should set and return intended properties", () => {
 
       // Update the position for a few entities to the target position
       const { blockNumber: blockNumberB } = await setPositionForEntity({ ...targetPos, entity: entities[0] });
-      await waitForBlockSynced(blockNumberB, registry.Position, entities[0]);
+      await waitForBlockSynced(blockNumberB, tables.Position, entities[0]);
       expect(result.current.sort()).toEqual(entities.slice(1).sort());
 
       const { blockNumber: blockNumberC } = await setPositionForEntity({ ...targetPos, entity: entities[1] });
-      await waitForBlockSynced(blockNumberC, registry.Position, entities[1]);
+      await waitForBlockSynced(blockNumberC, tables.Position, entities[1]);
       expect(result.current.sort()).toEqual(entities.slice(2).sort());
 
       // And with only part of the properties matching
@@ -695,11 +695,11 @@ describe("methods: should set and return intended properties", () => {
         y: 0,
         entity: entities[2],
       });
-      await waitForBlockSynced(blockNumberD, registry.Position, entities[2]);
+      await waitForBlockSynced(blockNumberD, tables.Position, entities[2]);
       expect(result.current.sort()).toEqual(entities.slice(2).sort());
 
       // Remove an entity
-      registry.Position.remove(entities[2]);
+      tables.Position.remove(entities[2]);
       expect(result.current).toEqual(entities.slice(3));
     });
   });
@@ -707,11 +707,11 @@ describe("methods: should set and return intended properties", () => {
   /* ---------------------------------- KEYS ---------------------------------- */
   describe("keys (contract-specific) methods", () => {
     it("table.getEntityKeys()", async () => {
-      const { registry, entities } = await setup();
-      assert(registry);
+      const { tables, entities } = await setup();
+      assert(tables);
 
       const player = entities[0];
-      const keys = registry.Position.getEntityKeys(player);
+      const keys = tables.Position.getEntityKeys(player);
       expect(keys).toEqual({ id: player });
     });
   });
@@ -742,8 +742,8 @@ describe("queries: should emit appropriate update events with the correct data",
   };
 
   const preTest = async () => {
-    const { world, registry, waitForSyncLive, entities } = await setup();
-    assert(registry);
+    const { world, tables, waitForSyncLive, entities } = await setup();
+    assert(tables);
     // Just wait for sync for the test to be accurate (prevent tampering data by syncing during the test)
     await waitForSyncLive();
 
@@ -751,20 +751,20 @@ describe("queries: should emit appropriate update events with the correct data",
     const aggregator: TableUpdate[] = [];
     const onUpdate = (update: (typeof aggregator)[number]) => aggregator.push(update);
 
-    return { world, registry, entities, onUpdate, aggregator };
+    return { world, tables, entities, onUpdate, aggregator };
   };
 
   it("table.watch()", async () => {
-    const { registry, entities, onUpdate, aggregator } = await preTest();
-    const table = registry.Position;
+    const { tables, entities, onUpdate, aggregator } = await preTest();
+    const table = tables.Position;
 
-    registry.Position.watch({ onUpdate }, { runOnInit: false });
+    tables.Position.watch({ onUpdate }, { runOnInit: false });
     expect(aggregator).toEqual([]);
 
     // Update the position for an entity (and enter the table)
-    const propsA = registry.Position.get(entities[0]);
-    await updatePosition(registry.Position, entities[0]);
-    const propsB = registry.Position.get(entities[0]);
+    const propsA = tables.Position.get(entities[0]);
+    await updatePosition(tables.Position, entities[0]);
+    const propsB = tables.Position.get(entities[0]);
 
     expect(aggregator).toEqual([
       {
@@ -776,14 +776,14 @@ describe("queries: should emit appropriate update events with the correct data",
     ]);
 
     // Update entity[1]
-    const propsC = registry.Position.get(entities[1]);
-    await updatePosition(registry.Position, entities[1]);
-    const propsD = registry.Position.get(entities[1]);
+    const propsC = tables.Position.get(entities[1]);
+    await updatePosition(tables.Position, entities[1]);
+    const propsD = tables.Position.get(entities[1]);
     // Exit entity[0]
-    registry.Position.remove(entities[0]);
+    tables.Position.remove(entities[0]);
     // Enter again entity[0]
-    await updatePosition(registry.Position, entities[0]);
-    const propsE = registry.Position.get(entities[0]);
+    await updatePosition(tables.Position, entities[0]);
+    const propsE = tables.Position.get(entities[0]);
 
     expect(aggregator).toEqual([
       {
@@ -814,40 +814,40 @@ describe("queries: should emit appropriate update events with the correct data",
   });
 
   it("table.watch(): run on init", async () => {
-    const { registry, entities, onUpdate, aggregator } = await preTest();
+    const { tables, entities, onUpdate, aggregator } = await preTest();
 
     // Enter entities
-    await Promise.all(entities.map(async (entity) => await updatePosition(registry.Position, entity)));
+    await Promise.all(entities.map(async (entity) => await updatePosition(tables.Position, entity)));
 
-    registry.Position.watch({ onUpdate }, { runOnInit: true });
+    tables.Position.watch({ onUpdate }, { runOnInit: true });
     expect(aggregator).toHaveLength(entities.length);
   });
 
   it("query() (query)", async () => {
-    const { registry, entities } = await setup();
+    const { tables, entities } = await setup();
     const [player, A, B, C] = entities;
 
     // Prepare entities
-    registry.Position.set({ x: 10, y: 10, ...emptyData }, player);
-    registry.Position.set({ x: 5, y: 5, ...emptyData }, A);
-    registry.Position.set({ x: 10, y: 10, ...emptyData }, B);
-    registry.Position.set({ x: 15, y: 10, ...emptyData }, C);
-    registry.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6), ...emptyData }, player);
-    registry.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6), ...emptyData }, A);
-    registry.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3), ...emptyData }, B);
+    tables.Position.set({ x: 10, y: 10, ...emptyData }, player);
+    tables.Position.set({ x: 5, y: 5, ...emptyData }, A);
+    tables.Position.set({ x: 10, y: 10, ...emptyData }, B);
+    tables.Position.set({ x: 15, y: 10, ...emptyData }, C);
+    tables.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6), ...emptyData }, player);
+    tables.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6), ...emptyData }, A);
+    tables.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3), ...emptyData }, B);
 
     // Entities inside the Position table
     expect(
       query({
-        with: [registry.Position],
+        with: [tables.Position],
       }).sort(),
     ).toEqual([player, A, B, C].sort());
 
     // Entities inside the Position table but not inside the Inventory table
     expect(
       query({
-        with: [registry.Position],
-        without: [registry.Inventory],
+        with: [tables.Position],
+        without: [tables.Inventory],
       }),
     ).toEqual([C]);
 
@@ -856,13 +856,13 @@ describe("queries: should emit appropriate update events with the correct data",
       query({
         withProperties: [
           {
-            table: registry.Inventory,
+            table: tables.Inventory,
             properties: { totalWeight: BigInt(6) },
           },
         ],
         withoutProperties: [
           {
-            table: registry.Position,
+            table: tables.Position,
             properties: { x: 5, y: 5 },
           },
         ],
@@ -874,13 +874,13 @@ describe("queries: should emit appropriate update events with the correct data",
       query({
         withProperties: [
           {
-            table: registry.Inventory,
+            table: tables.Inventory,
             properties: { totalWeight: BigInt(6) },
           },
         ],
         withoutProperties: [
           {
-            table: registry.Inventory,
+            table: tables.Inventory,
             properties: { weights: [1, 2, 3] },
           },
         ],
@@ -889,7 +889,7 @@ describe("queries: should emit appropriate update events with the correct data",
   });
 
   it("$query(), useQuery() (useQueryAllMatching)", async () => {
-    const { world, registry, entities, onUpdate: onUpdateHook, aggregator: aggregatorHook } = await preTest();
+    const { world, tables, entities, onUpdate: onUpdateHook, aggregator: aggregatorHook } = await preTest();
     const [player, A, B, C] = entities;
 
     // We need more aggregators for the query subscription
@@ -900,19 +900,19 @@ describe("queries: should emit appropriate update events with the correct data",
       aggregatorListenerRunOnInit.push(update);
 
     // Prepare entities
-    registry.Position.set({ x: 10, y: 10, ...emptyData }, player);
-    registry.Position.set({ x: 5, y: 5, ...emptyData }, A);
-    registry.Position.set({ x: 10, y: 10, ...emptyData }, B);
-    registry.Position.set({ x: 15, y: 10, ...emptyData }, C);
-    registry.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6), ...emptyData }, player);
-    registry.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6), ...emptyData }, A);
-    registry.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3), ...emptyData }, B);
+    tables.Position.set({ x: 10, y: 10, ...emptyData }, player);
+    tables.Position.set({ x: 5, y: 5, ...emptyData }, A);
+    tables.Position.set({ x: 10, y: 10, ...emptyData }, B);
+    tables.Position.set({ x: 15, y: 10, ...emptyData }, C);
+    tables.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6), ...emptyData }, player);
+    tables.Inventory.set({ items: [2, 3, 4], weights: [2, 3, 4], totalWeight: BigInt(6), ...emptyData }, A);
+    tables.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3), ...emptyData }, B);
 
     const queryOptions = {
-      with: [registry.Position],
+      with: [tables.Position],
       withProperties: [
         {
-          table: registry.Inventory,
+          table: tables.Inventory,
           properties: { totalWeight: BigInt(6) },
         },
       ],
@@ -933,15 +933,15 @@ describe("queries: should emit appropriate update events with the correct data",
     const expectedAggregatorItems = [
       {
         // not as base table since it's emitted directly from the table provided to the query
-        table: registry.Position,
+        table: tables.Position,
         entity: player,
-        properties: { current: registry.Position.get(player), prev: undefined },
+        properties: { current: tables.Position.get(player), prev: undefined },
         type: "enter",
       },
       {
-        table: registry.Position,
+        table: tables.Position,
         entity: A,
-        properties: { current: registry.Position.get(A), prev: undefined },
+        properties: { current: tables.Position.get(A), prev: undefined },
         type: "enter",
       },
     ];
@@ -953,13 +953,13 @@ describe("queries: should emit appropriate update events with the correct data",
     expect(aggregatorListenerRunOnInit.sort()).toEqual(expectedAggregatorItems.sort());
 
     // Update the totalWeight of player
-    const propsA = registry.Inventory.get(player);
-    registry.Inventory.update({ totalWeight: BigInt(3) }, player);
-    const propsB = registry.Inventory.get(player);
+    const propsA = tables.Inventory.get(player);
+    tables.Inventory.update({ totalWeight: BigInt(3) }, player);
+    const propsB = tables.Inventory.get(player);
 
     expect(result.current).toEqual([A]);
     const expectedAggregatorItemB = {
-      table: toBaseTable(registry.Inventory),
+      table: toBaseTable(tables.Inventory),
       entity: player,
       properties: { current: propsB, prev: propsA },
       type: "exit", // out of the query
@@ -971,13 +971,13 @@ describe("queries: should emit appropriate update events with the correct data",
     expect(aggregatorListener).toEqual([]);
 
     // Update the totalWeight of A
-    const propsC = registry.Inventory.get(A);
-    registry.Inventory.update({ totalWeight: BigInt(3) }, A);
-    const propsD = registry.Inventory.get(A);
+    const propsC = tables.Inventory.get(A);
+    tables.Inventory.update({ totalWeight: BigInt(3) }, A);
+    const propsD = tables.Inventory.get(A);
 
     expect(result.current).toEqual([]);
     const expectedAggregatorItemC = {
-      table: toBaseTable(registry.Inventory),
+      table: toBaseTable(tables.Inventory),
       entity: A,
       properties: { current: propsD, prev: propsC },
       type: "exit",
@@ -989,13 +989,13 @@ describe("queries: should emit appropriate update events with the correct data",
     expect(aggregatorListener).toEqual([]);
 
     // Update the totalWeight of B
-    const propsE = registry.Inventory.get(B);
-    registry.Inventory.update({ totalWeight: BigInt(6) }, B);
-    const propsF = registry.Inventory.get(B);
+    const propsE = tables.Inventory.get(B);
+    tables.Inventory.update({ totalWeight: BigInt(6) }, B);
+    const propsF = tables.Inventory.get(B);
 
     expect(result.current).toEqual([B]);
     const expectedAggregatorItemD = {
-      table: toBaseTable(registry.Inventory),
+      table: toBaseTable(tables.Inventory),
       entity: B,
       properties: { current: propsF, prev: propsE },
       type: "enter",
@@ -1007,20 +1007,20 @@ describe("queries: should emit appropriate update events with the correct data",
     expect(aggregatorListener).toEqual([expectedAggregatorItemD]);
 
     // Update, then remove B
-    const propsG = registry.Position.get(B);
-    registry.Position.update({ x: 20, y: 20 }, B);
-    const propsH = registry.Position.get(B);
-    registry.Position.remove(B);
+    const propsG = tables.Position.get(B);
+    tables.Position.update({ x: 20, y: 20 }, B);
+    const propsH = tables.Position.get(B);
+    tables.Position.remove(B);
 
     expect(result.current).toEqual([]);
     const expectedAggregatorItemE = {
-      table: toBaseTable(registry.Position),
+      table: toBaseTable(tables.Position),
       entity: B,
       properties: { current: propsH, prev: propsG },
       type: "change",
     };
     const expectedAggregatorItemF = {
-      table: toBaseTable(registry.Position),
+      table: toBaseTable(tables.Position),
       entity: B,
       properties: { current: undefined, prev: propsH },
       type: "exit",

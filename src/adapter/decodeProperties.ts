@@ -52,10 +52,7 @@ export function decodePropertiesArgs<TSchema extends AbiPropertiesSchema>(
 /**
  * Decode the properties of an entity from its hex metadata.
  *
- * This is an slightly modified version of the original MUD function.
- * The only difference is that the data is encoded to fit a TinyBase table when set inside the storage adapter.
- *
- * The properties will be appended with their types (e.g. `type__count` for `count`; or { count: 1 } will produce { type__count: "number" }).
+ * This is an unmodified version of the original MUD function.
  *
  * @template TSchema The schema of the properties to decode.
  * @param propertiesSchema The schema of the properties to decode.

@@ -18,7 +18,7 @@ export type UpdateType = "enter" | "exit" | "change" | "noop";
  * @template PS The schema of the properties for all entities inside the table being watched.
  * @template M The metadata of the table.
  * @template T The type of the properties to match.
- * @param table The table subject to change (without methods).
+ * @param table The table subject to change (usually without methods, except if ran on init).
  * If the query covers multiple tables, and `runOnInit` is set to `true` (see {@link CreateTableWatcherOptions}), this will be `undefined`.
  * @param entity The entity for which the update has occurred.
  * @param properties The properties of the entity before and after the update (whatever is available).
@@ -32,6 +32,27 @@ export type TableUpdate<PS extends Schema = Schema, M extends BaseTableMetadata 
   properties: { current: Properties<PS, T> | undefined; prev: Properties<PS, T> | undefined };
   type: UpdateType;
 };
+
+/* --------------------------------- WATCHER -------------------------------- */
+/**
+ * Defines the options for watching entities inside a specific table.
+ *
+ * Note: Some properties are abstracted from the implementation; meaning that these are provided as table methods and inferred from the table.
+ *
+ * @template PS The schema of the properties for all entities inside the table being watched.
+ * @template M The metadata of the table.
+ * @template T The type of the properties to match.
+ * @param world The RECS World object (abstracted).
+ * @param table The BaseTable to watch for changes (abstracted).
+ * @see {@link TableWatcherCallbacks}
+ * @category Queries
+ * @internal
+ */
+export type TableWatcherOptions<PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = {
+  world: World;
+  table: BaseTable<PS, M, T> | Table<PS, M, T>;
+  // Opt in to any callback
+} & TableWatcherCallbacks<PS, M, T>;
 
 /**
  * Defines the callbacks for a table watcher.
@@ -109,57 +130,3 @@ export type QueryOptions = {
   without?: (BaseTable | Table)[]; // not inside these tables
   withoutProperties?: QueryMatchingProperties[]; // without the specified propertiess for their associated tables
 };
-
-/* ------------------------------ TABLE WATCHER ----------------------------- */
-/**
- * Defines the options for querying entities inside a specific table.
- *
- * Note: Some properties are abstracted from the implementation; meaning that these are provided as table methods and inferred from the table.
- *
- * @template tableDef The definition of the contract table.
- * @param queries The TinyBase queries object to use for fetching entities (astracted).
- * @param table The table to query for entities (abstracted).
- * @param properties The properties to match for the given table.
- * @category Queries
- * @internal
- */
-export type TableQueryOptions<
-  PS extends Schema = Schema,
-  M extends BaseTableMetadata = BaseTableMetadata,
-  T = unknown,
-> = {
-  table: BaseTable<PS, M, T> | Table<PS, M, T>;
-  properties: Partial<Properties<PS, T>>;
-};
-
-/**
- * Defines the result of a query for entities inside a specific table.
- * @param id The id of the table being queried.
- * @param entities An array of {@link Entity} matching the query.
- * @category Queries
- * @internal
- */
-export type TableQueryResult = {
-  id: string;
-  entities: Entity[];
-};
-
-/**
- * Defines the options for watching entities inside a specific table.
- *
- * Note: Some properties are abstracted from the implementation; meaning that these are provided as table methods and inferred from the table.
- *
- * @template PS The schema of the properties for all entities inside the table being watched.
- * @template M The metadata of the table.
- * @template T The type of the properties to match.
- * @param world The RECS World object (abstracted).
- * @param table The BaseTable to watch for changes (abstracted).
- * @see {@link TableWatcherCallbacks}
- * @category Queries
- * @internal
- */
-export type TableWatcherOptions<PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = {
-  world: World;
-  table: BaseTable<PS, M, T> | Table<PS, M, T>;
-  // Opt in to any callback
-} & TableWatcherCallbacks<PS, M, T>;

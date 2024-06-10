@@ -1,5 +1,6 @@
 /* -------------------------------- EXTERNAL -------------------------------- */
 export * from "@/lib/external/mud/common";
+export * from "@/lib/external/mud/entity";
 export * from "@/lib/external/mud/indexer";
 export * from "@/lib/external/mud/schema";
 export * from "@/lib/external/mud/utils";
@@ -14,4 +15,3 @@ export * from "@/lib/external/mud/world";
 export * from "@/lib/constants";
 export * from "@/lib/debug";
 export * from "@/lib/definitions";
-export * from "@/lib/entity";

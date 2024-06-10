@@ -9,8 +9,7 @@ type CreateContractTablesOptions<config extends StoreConfig, extraTableDefs exte
 };
 
 /**
- * Creates a registry of contract tables with both their metadata (see {@link createMetadata}) and methods to retrieve/update
- * properties (see {@link createTableMethods}).
+ * Creates a registry of contract tables with both their metadata and methods to retrieve/update properties (see {@link createTable}).
  *
  * @param world The RECS world object.
  * @param tableDefs The contract table definitions.

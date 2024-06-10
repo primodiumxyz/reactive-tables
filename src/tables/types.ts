@@ -130,7 +130,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example retrieves the current properties of the "Counter" table, which has only a single `value` property.
    *
    * ```ts
-   * const count = registry.Counter.get();
+   * const count = tables.Counter.get();
    * console.log(count);
    * // -> { value: 0 }
    * ```
@@ -150,8 +150,8 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example sets the properties of the "Counter" table, which has only a single `value` property.
    *
    * ```ts
-   * registry.Counter.set({ value: 10 });
-   * const count = registry.Counter.get();
+   * tables.Counter.set({ value: 10 });
+   * const count = tables.Counter.get();
    * console.log(count);
    * // -> { value: 1° }
    * ```
@@ -167,10 +167,10 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example retrieves all entities in the "Player" table.
    *
    * ```ts
-   * registry.Player.set({ name: "Alice" }, recordA);
-   * registry.Player.set({ name: "Bob" }, recordB);
+   * tables.Player.set({ name: "Alice" }, recordA);
+   * tables.Player.set({ name: "Bob" }, recordB);
    *
-   * const players = registry.Player.getAll();
+   * const players = tables.Player.getAll();
    * console.log(players);
    * // -> [recordA, recordB]
    * ```
@@ -187,10 +187,10 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example retrieves all entities in the "Player" table with a score of 100.
    *
    * ```ts
-   * registry.Player.set({ name: "Alice", score: 30 }, recordA);
-   * registry.Player.set({ name: "Bob", score: 100 }, recordB);
+   * tables.Player.set({ name: "Alice", score: 30 }, recordA);
+   * tables.Player.set({ name: "Bob", score: 100 }, recordB);
    *
-   * const players = registry.Player.getAllWith({ score: 100 });
+   * const players = tables.Player.getAllWith({ score: 100 });
    * console.log(players);
    * // -> [recordB]
    * ```
@@ -207,10 +207,10 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example retrieves all entities in the "Player" table without a score of 0.
    *
    * ```ts
-   * registry.Player.set({ name: "Alice", score: 30 }, recordA);
-   * registry.Player.set({ name: "Bob", score: 0 }, recordB);
+   * tables.Player.set({ name: "Alice", score: 30 }, recordA);
+   * tables.Player.set({ name: "Bob", score: 0 }, recordB);
    *
-   * const players = registry.Player.getAllWithout({ score: 0 });
+   * const players = tables.Player.getAllWithout({ score: 0 });
    * console.log(players);
    * // -> [recordA]
    * ```
@@ -227,11 +227,11 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example retrieves all entities in the "Player" table.
    *
    * ```ts
-   * const players = registry.Player.useAll();
+   * const players = tables.Player.useAll();
    * console.log(players);
    * // -> []
    *
-   * registry.Player.set({ name: "Alice" }, recordA);
+   * tables.Player.set({ name: "Alice" }, recordA);
    * console.log(players);
    * // -> [recordA]
    * ```
@@ -249,15 +249,15 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example retrieves all entities in the "Player" table with a score of 100.
    *
    * ```ts
-   * const players = registry.Player.useAllWith({ score: 100 });
+   * const players = tables.Player.useAllWith({ score: 100 });
    * console.log(players);
    * // -> []
    *
-   * registry.Player.set({ name: "Alice", score: 100 }, recordA);
+   * tables.Player.set({ name: "Alice", score: 100 }, recordA);
    * console.log(players);
    * // -> [recordA]
    *
-   * registry.Player.update({ score: 200 }, recordA);
+   * tables.Player.update({ score: 200 }, recordA);
    * console.log(players);
    * // -> []
    * ```
@@ -275,15 +275,15 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example retrieves all entities in the "Player" table without a score of 0.
    *
    * ```ts
-   * const players = registry.Player.useAllWithout({ score: 0 });
+   * const players = tables.Player.useAllWithout({ score: 0 });
    * console.log(players);
    * // -> []
    *
-   * registry.Player.set({ name: "Alice", score: 30 }, recordA);
+   * tables.Player.set({ name: "Alice", score: 30 }, recordA);
    * console.log(players);
    * // -> [recordA]
    *
-   * registry.Player.update({ score: 0 }, recordA);
+   * tables.Player.update({ score: 0 }, recordA);
    * console.log(players);
    * // -> []
    * ```
@@ -299,14 +299,14 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example removes an entity from the "Player" table.
    *
    * ```ts
-   * registry.Player.set({ name: "Alice" }, recordA);
-   * registry.Player.set({ name: "Bob" }, recordB);
-   * const originalPlayers = registry.Player.getAll();
+   * tables.Player.set({ name: "Alice" }, recordA);
+   * tables.Player.set({ name: "Bob" }, recordB);
+   * const originalPlayers = tables.Player.getAll();
    * console.log(originalPlayers);
    * // -> [recordA, recordB]
    *
-   * registry.Player.remove(recordA);
-   * const players = registry.Player.getAll();
+   * tables.Player.remove(recordA);
+   * const players = tables.Player.getAll();
    * console.log(players);
    * // -> [recordB]
    * ```
@@ -321,8 +321,8 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example clears the "Player" table.
    *
    * ```ts
-   * registry.Player.clear();
-   * const players = registry.Player.getAll();
+   * tables.Player.clear();
+   * const players = tables.Player.getAll();
    * console.log(players);
    * // -> []
    * ```
@@ -342,11 +342,10 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example updates the score of a player in the "Player" table.
    *
    * ```ts
-   * const { recordA } = getRecord(); // for the sake of the example
-   * registry.Player.set({ name: "Alice", score: 30 }, recordA);
+   * tables.Player.set({ name: "Alice", score: 30 }, recordA);
    *
-   * registry.Player.update({ score: 100 }, entity);
-   * const player = registry.Player.get(recordA);
+   * tables.Player.update({ score: 100 }, recordA);
+   * const player = tables.Player.get(recordA);
    * console.log(player);
    * // -> { name: "Alice", score: 100 }
    * ```
@@ -363,13 +362,12 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example checks if an entity exists in the "Player" table.
    *
    * ```ts
-   * const { recordA } = getRecord(); // for the sake of the example
-   * const exists = registry.Player.has(recordA);
+   * const exists = tables.Player.has(recordA);
    * console.log(exists);
    * // -> false
    *
-   * registry.Player.set({ name: "Alice" }, recordA);
-   * const existsNow = registry.Player.has(recordA);
+   * tables.Player.set({ name: "Alice" }, recordA);
+   * const existsNow = tables.Player.has(recordA);
    * console.log(existsNow);
    * // -> true
    * ```
@@ -387,12 +385,11 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example retrieves the properties of an entity in the "Player" table.
    *
    * ```ts
-   * const { recordA } = getRecord(); // for the sake of the example
-   * const player = registry.Player.use(recordA, { name: "unknown", score: 0 });
+   * const player = tables.Player.use(recordA, { name: "unknown", score: 0 });
    * console.log(player);
    * // -> { name: "unknown", score: 0 }
    *
-   * registry.Player.set({ name: "Alice", score: 30 }, recordA);
+   * tables.Player.set({ name: "Alice", score: 30 }, recordA);
    * console.log(player);
    * // -> { name: "Alice", score: 30 }
    *
@@ -416,14 +413,13 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example pauses updates for an entity in the "Player" table.
    *
    * ```ts
-   * const { recordA } = getRecord(); // for the sake of the example
-   * const player = registry.Player.use(recordA);
-   * registry.Player.set({ name: "Alice", score: 0 }, recordA);
+   * const player = tables.Player.use(recordA);
+   * tables.Player.set({ name: "Alice", score: 0 }, recordA);
    * console.log(player);
    * // -> { name: "Alice", score: 0 }
    *
-   * registry.Player.pauseUpdates(recordA);
-   * registry.Player.update({ score: 30 }, recordA);
+   * tables.Player.pauseUpdates(recordA);
+   * tables.Player.update({ score: 30 }, recordA);
    * console.log(player);
    * // -> { name: "Alice", score: 0 }
    * ```
@@ -440,18 +436,17 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * This example enables updates for an entity in the "Player" table after it's been paused.
    *
    * ```ts
-   * const { recordA } = getRecord(); // for the sake of the example
-   * const player = registry.Player.use(recordA);
-   * registry.Player.set({ name: "Alice", score: 0 }, recordA);
+   * const player = tables.Player.use(recordA);
+   * tables.Player.set({ name: "Alice", score: 0 }, recordA);
    * console.log(player);
    * // -> { name: "Alice", score: 0 }
    *
-   * registry.Player.pauseUpdates(recordA);
-   * registry.Player.update({ score: 30 }, recordA);
+   * tables.Player.pauseUpdates(recordA);
+   * tables.Player.update({ score: 30 }, recordA);
    * console.log(player);
    * // -> { name: "Alice", score: 0 }
    *
-   * registry.Player.resumeUpdates(recordA);
+   * tables.Player.resumeUpdates(recordA);
    * console.log(player);
    * // -> { name: "Alice", score: 30 }
    * ```
@@ -460,59 +455,40 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
   resumeUpdates: (entity?: Entity, options?: TableMutationOptions) => void;
 
   /**
-   * Create a watcher for the table, either globally (on all changes) or within a TinyQL query.
+   * Create a watcher/listener for a table, on all changes or selective ones (enter, exit, change, any update).
+   * This will listen to changes in the table and trigger callbacks when entities enter, exit, or change.
    *
-   * See {@link createTableWatcher} for detailed information on the configuration and behavior of the watcher.
-   *
-   * @param options The options for the watcher.
-   * - `query` - (optional) A TinyQL query to filter the entities. If not provided, it will watch all entities in the table without discrimination.
-   * - `onChange` - Callback triggered on any change in the table/query (encompassing enter, exit, and update).
-   * - `onEnter` - Callback triggered when an entity enters the table/query (`properties.prev` will be undefined).
-   * - `onExit` - Callback triggered when an entity exits the table/query (`properties.current` will be undefined).
-   * - `onUpdate` - Callback triggered when the properties of an entity are updated (within the query if provided).
-   * @param params Optional parameters for the watcher.
-   * - `runOnInit` - Whether to trigger the callbacks for all entities on initialization (default: `true`).
-   * @returns An object with an `unsubscribe` method to stop listening to the table.
-   * This example creates a watcher for all entities within the "Player" table.
-   *
-   * ```ts
-   * registry.Player.set({ health: 100 }, recordA);
-   *
-   * registry.Player.watch({
-   *   onChange: (update) => console.log(update),
-   * });
-   * // -> { table: undefined, entity: recordA, current: undefined, prev: undefined, type: "enter" }
-   *
-   * registry.Player.update({ health: 90 }, recordA);
-   * // -> { table: registry.Player, entity: recordA, current: { health: 90 }, prev: { health: 100 }, type: "change" }
-   *
-   * registry.Player.remove(recordA);
-   * // -> { table: registry.Player, entity: recordA, current: undefined, prev: { health: 90 }, type: "exit" }
-   * ```
-   *
-   * This example creates a watcher for all entities with more than 10 points in the "Score" table.
+   * @param options The {@link TableWatcherOptions} for creating the table watcher.
+   * - `world` The RECS world containing the table to watch (abstracted).
+   * - `table` The table to watch for changes (abstracted).
+   * - `onChange` Callback triggered on any change in the table/query (encompassing enter, exit, and update).
+   * - `onEnter` Callback triggered when an entity enters the table/query (`properties.prev` will be undefined).
+   * - `onExit` Callback triggered when an entity exits the table/query (`properties.current` will be undefined).
+   * - `onUpdate` Callback triggered when the properties of an entity are updated (within the query if provided).
+   * @param params Additional {@link TableWatcherParams} for the watcher.
+   * @example
+   * This example creates a watcher for all entities within (with properties inside) the "Player" table.
    *
    * ```ts
-   * registry.Score.set({ points: 0 }, recordA);
-   * registry.Score.set({ points: 20 }, recordB);
+   * const { tables } = createWrapper({ world, mudConfig });
+   * tables.Player.set({ health: 100 }, playerRecord);
    *
-   * registry.Score.watch({
+   * // The function should be accessed from the table's methods
+   * tables.Player.watch({
    *   onChange: (update) => console.log(update),
-   *   query: ({ where }) => {
-   *     where((getCell) => (getCell("points") as number) > 10);
-   *   },
    * }, {
    *   runOnInit: false,
    * });
-   * // -> no output
+   * // no output
    *
-   * registry.Score.update({ points: 15 }, recordA);
-   * // -> { table: registry.Score, entity: recordA, current: { points: 15 }, prev: { points: 0 }, type: "enter" }
+   * tables.Player.update({ health: 90 }, playerRecord);
+   * // -> { table: tables.Player, entity: playerRecord, current: { health: 90 }, prev: { health: 100 }, type: "change" }
    *
-   * registry.Score.update({ points: 0 }, recordB);
-   * // -> { table: registry.Score, entity: recordB, current: undefined, prev: { points: 20 }, type: "exit" }
+   * tables.Player.remove(playerRecord);
+   * // -> { table: tables.Player, entity: playerRecord, current: undefined, prev: { health: 90 }, type: "exit" }
    * ```
    * @category Methods
+   * @internal
    */
   watch: (options: Omit<TableWatcherOptions<PS, M, T>, "world" | "table">, params?: TableWatcherParams) => void;
 };
@@ -535,9 +511,9 @@ export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata 
    *
    * ```ts
    * // The keys that get encoded as an entity are: { server: "serverA", id: "playerA" }
-   * registry.Player.setWithKeys({ name: "Alice" }, { server: "serverA", id: "playerA" });
+   * tables.Player.setWithKeys({ name: "Alice" }, { server: "serverA", id: "playerA" });
    *
-   * const player = registry.Player.getWithKeys({ server: "serverA", id: "playerA" });
+   * const player = tables.Player.getWithKeys({ server: "serverA", id: "playerA" });
    * console.log(player);
    * // -> { name: "Alice" }
    * ```
@@ -557,13 +533,13 @@ export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata 
    *
    * ```ts
    * // The keys that get encoded as an entity are: { server: "serverA", id: "playerA" }
-   * registry.Player.setWithKeys({ name: "Alice" }, { server: "serverA", id: "playerA" });
+   * tables.Player.setWithKeys({ name: "Alice" }, { server: "serverA", id: "playerA" });
    *
-   * const exists = registry.Player.hasWithKeys({ server: "serverA", id: "playerA" });
+   * const exists = tables.Player.hasWithKeys({ server: "serverA", id: "playerA" });
    * console.log(exists);
    * // -> true
    *
-   * const existsNot = registry.Player.hasWithKeys({ server: "serverB", id: "playerA" });
+   * const existsNot = tables.Player.hasWithKeys({ server: "serverB", id: "playerA" });
    * console.log(existsNot);
    * // -> false
    * ```
@@ -582,13 +558,13 @@ export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata 
    *
    * ```ts
    * // The keys that get encoded as an entity are: { server: "serverA", id: "playerA" }
-   * registry.Player.setWithKeys({ name: "Alice", score: 0 }, { server: "serverA", id: "playerA" });
+   * tables.Player.setWithKeys({ name: "Alice", score: 0 }, { server: "serverA", id: "playerA" });
    *
-   * const player = registry.Player.useWithKeys({ server: "serverA", id: "playerA" });
+   * const player = tables.Player.useWithKeys({ server: "serverA", id: "playerA" });
    * console.log(player);
    * // -> { name: "Alice", score: 0 }
    *
-   * registry.Player.setWithKeys({ name: "Alice", score: 10 }, { server: "serverA", id: "playerA" });
+   * tables.Player.setWithKeys({ name: "Alice", score: 10 }, { server: "serverA", id: "playerA" });
    * console.log(player);
    * // -> { name: "Alice", score: 10 }
    * ```
@@ -607,8 +583,8 @@ export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata 
    *
    * ```ts
    * // The keys that get encoded as an entity are: { server: "serverA", id: "playerA" }
-   * registry.Player.setWithKeys({ name: "Alice", score: 10 }, { server: "serverA", id: "playerA" });
-   * const player = registry.Player.getWithKeys({ server: "serverA", id: "playerA" });
+   * tables.Player.setWithKeys({ name: "Alice", score: 10 }, { server: "serverA", id: "playerA" });
+   * const player = tables.Player.getWithKeys({ server: "serverA", id: "playerA" });
    * console.log(player);
    * // -> { name: "Alice", score: 10 }
    * ```
@@ -626,10 +602,9 @@ export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata 
    *
    * ```ts
    * // `recordA` is a hex string representation of the keys properties: { server: "serverA", id: "playerA" }
-   * const { recordA } = getRecord(); // for the sake of the example
-   * registry.Player.set({ name: "Alice", score: 0 }, recordA);
+   * tables.Player.set({ name: "Alice", score: 0 }, recordA);
    *
-   * const keys = registry.Player.getEntityKeys(recordA);
+   * const keys = tables.Player.getEntityKeys(recordA);
    * console.log(keys);
    * // -> { server: "serverA", id: "playerA" }
    * ```

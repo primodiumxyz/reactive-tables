@@ -16,7 +16,7 @@ const { With, WithProperties, Without, WithoutProperties } = queries();
  * @param queryOptions The {@link QueryOptions} object containing the conditions to match.
  * @param callbacks The {@link TableWatcherCallbacks} to trigger on changes. Including: onChange, onEnter, onExit, onUpdate.
  * These will trigger a {@link TableUpdate} object inside the id of the updated table, the entity, the previous and new properties of the entity and the type of update.
- * @param options (optional) Additional options for the query. Currently only supports `runOnInit` to trigger the callbacks for all matching entities on initialization.
+ * @param params (optional) Additional {@link TableWatcherParams} for the query. Currently only supports `runOnInit` to trigger the callbacks for all matching entities on initialization.
  * @returns An object inside an `unsubscribe` method to stop listening to the query.
  * @example
  * This example creates a query that listens to all entities that represent online players notInside a score of 0.
@@ -27,14 +27,14 @@ const { With, WithProperties, Without, WithoutProperties } = queries();
  * tables.Player.set({ score: 0, online: true }, recordB);
  * tables.Player.set({ score: 10, online: false }, recordC);
  *
- * const { unsubscribe } = $query(store, {
+ * $query(world, {
  *   withProperties: [{ table: tables.Player, properties: { online: true } }],
  *   withoutProperties: [{ table: tables.Player, properties: { score: 0 } }],
  * }, {
  *  onEnter: (update) => console.log(update),
  *  onExit: (update) => console.log(update),
  * }, { runOnInit: true }); // this is the default behavior
- * // -> { table: undefined, entity: recordA, current: undefined, prev: undefined, type: "enter" }
+ * // -> { table: tables.Player, entity: recordA, current: { score: 10, online: true }, prev: undefined, type: "enter" }
  *
  * tables.Player.update({ score: 15 }, recordA);
  * // -> { table: tables.Player, entity: recordA, current: { online: true, score: 15 }, prev: { online: true, score: 10 }, type: "change" }

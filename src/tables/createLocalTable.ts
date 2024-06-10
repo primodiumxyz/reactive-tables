@@ -2,28 +2,25 @@ import { createTable, type BaseTableMetadata, type Table, type TableOptions } fr
 import { Type, uuid, type Schema, type World } from "@/lib";
 
 /**
- * Creates a local table with the specified properties schema, options and default properties.
+ * Creates a local table with the specified properties schema, options and metadata.
  *
  * These tables are meant to be created directly during implementation, then used alongside contract tables
- * the exact same way.
+ * with the exact same API.
  *
  * @param world The MUD world object.
  * @param propertiesSchema The schema of the table properties, defining their RECS types.
- * @param options (optional) The options for creating the table (see {@link CreateLocalTableOptions}).
- * if the table is persistent and already has properties from a previous session
+ * @param options (optional) The options for creating the table (see {@link TableOptions}).
  * @returns A local table object with the specified properties, and fully typed methods for data manipulation.
  * @example
- * This example creates a local table with a single property, "darkMode", set to false.
+ * This example creates a local table with a single property, "darkMode".
  *
  * ```ts
- * const darkModeTable = createLocalTable(world, { darkMode: Type.Boolean }, { id: "DarkMode" }, { darkMode: false });
- * console.log(darkModeTable.get());
- * // -> { darkMode: false }
- *
+ * const darkModeTable = createLocalTable(world, { darkMode: Type.Boolean }, { id: "DarkMode" });
  * // or more simply
- * const darkModeTable = createLocalBoolTable(world, { id: "DarkMode" }, { value: false });
+ * const darkModeTable = createLocalBoolTable(world, { id: "DarkMode" });
+ * darkModeTable.set({ value: true });
  * console.log(darkModeTable.get());
- * // -> { value: false }
+ * // -> { value: true }
  * ```
  *
  * @example @todo persistence

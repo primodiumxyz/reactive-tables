@@ -42,7 +42,7 @@ export const worldTableDefs = resolveConfig(storeToV1(worldConfig)).tables;
  * Defines the union of definitions from the provided MUD configuration, original
  * MUD store and world configurations resolved into tables definitions, and any additional defs provided by the consumer.
  *
- * This type is used to extract types out of all tables definitions relevant to the registry, to provide type safety
+ * This type is used to extract types out of all tables definitions relevant to them, to provide type safety
  * for constant data such as schemas, keys, and other table metadata (e.g. namespace).
  *
  * @template config The type of the MUD configuration provided to the wrapper.

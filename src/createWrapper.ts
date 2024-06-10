@@ -24,7 +24,7 @@ import { createLocalTable } from "@/tables";
  * @param world The RECS world object, used for creating tables and entities.
  * @param mudConfig The actual MUD configuration, usually retrieved for the contracts package.
  * @param otherTableDefs (optional) Custom definitions to generate tables for as well.
- * @param skipUpdateStream (optional) Whether to skip the initial update stream (most likely to trigger it afterwards).
+ * @param shouldSkipUpdateStream (optional) Whether to skip the initial update stream (most likely to trigger it afterwards).
  */
 export type WrapperOptions<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
   world: World;
@@ -36,7 +36,7 @@ export type WrapperOptions<config extends StoreConfig, extraTableDefs extends Co
 /**
  * The result of going through the TinyBase wrapper creation process.
  *
- * The registry is the main entity point to all kind of data retrieval and manipulation.
+ * Tables are the main entity point to all kind of data retrieval and manipulation.
  *
  * @template config The type of the configuration object specifying tables definitions for contracts codegen.
  * @template tableDefs The types of the definitions used for generating tables.
@@ -84,11 +84,37 @@ export type WrapperResult<config extends StoreConfig, extraTableDefs extends Con
  *   },
  * });
  *
- * const { registry } = createWrapper({ world, mudConfig });
- * registry.Counter.set({ value: 13 }); // fully typed
- * const properties = registry.Counter.get();
+ * const { tables } = createWrapper({ world, mudConfig });
+ *
+ * tables.Counter.set({ value: 13 }); // fully typed
+ * const properties = tables.Counter.get();
  * console.log(properties);
  * // -> { value: 13 }
+ * ```
+ *
+ * @example
+ * This example waits for the sync with the indexer to be done before reacting to updates on tables.
+ *
+ * ```ts
+ * const SyncProgress = createLocalTable(world, { progress: Type.Number, status: Type.Number }, { id: "SyncProgress" });
+ * const { tables, storageAdapter, triggerUpdateStream } = createWrapper({
+ *   world,
+ *   mudConfig,
+ *   shouldSkipUpdateStream: () => SyncProgress.get().status !== SyncStatus.Live,
+ * });
+ *
+ * // Handle sync
+ * const sync = createSync({
+ *   ...
+ *   onSyncLive: {
+ *     SyncProgress.set({ progress: 100, status: SyncStatus.Live });
+ *     // Trigger update stream now that all tables are synced
+ *     triggerUpdateStream();
+ *   },
+ * });
+ *
+ * sync.start();
+ * world.registerDisposer(sync.unsubscribe);
  * ```
  * @category Creation
  */

@@ -3,6 +3,10 @@ import type { Hex } from "viem";
 
 import type { Entity } from "@/lib";
 
+/* -------------------------------------------------------------------------- */
+/*                                   SCHEMAS                                  */
+/* -------------------------------------------------------------------------- */
+
 /**
  * Defines the schema of a properties entity inside a {@link Table} or {@link BaseTable}.
  *
@@ -24,6 +28,32 @@ export type Metadata =
       [key: string]: unknown;
     }
   | undefined;
+
+export type UserTypes = Record<string, { internalType: SchemaAbiType }>;
+
+export type AbiKeySchema<userTypes extends UserTypes | undefined = undefined> = Record<
+  string,
+  userTypes extends UserTypes ? StaticAbiType | keyof userTypes : StaticAbiType
+>;
+export type AbiPropertiesSchema<userTypes extends UserTypes | undefined = undefined> = Record<
+  string,
+  userTypes extends UserTypes ? SchemaAbiType | keyof userTypes : SchemaAbiType
+>;
+
+export type UnparsedAbiKeySchema = {
+  readonly [k: string]: {
+    readonly type: StaticAbiType;
+  };
+};
+export type UnparsedAbiPropertiesSchema = {
+  readonly [k: string]: {
+    readonly type: SchemaAbiType;
+  };
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                    TYPES                                   */
+/* -------------------------------------------------------------------------- */
 
 /**
  * Used to specify the types for properties, and infer their TypeScript type.
@@ -336,6 +366,10 @@ export type TupleSplit<T, N extends number, O extends readonly any[] = readonly 
     ? TupleSplit<readonly [...R], N, readonly [...O, F]>
     : [O, T];
 
+/* -------------------------------------------------------------------------- */
+/*                                 CONVERSION                                 */
+/* -------------------------------------------------------------------------- */
+
 /**
  * Convert a schema ABI type to an TypeScript understandable type.
  *
@@ -554,28 +588,6 @@ export const schemaAbiTypeToRecsType = {
  * @category RECS
  */
 export type SchemaAbiTypeToRecsType<T extends SchemaAbiType> = (typeof schemaAbiTypeToRecsType)[T];
-
-export type UserTypes = Record<string, { internalType: SchemaAbiType }>;
-
-export type AbiKeySchema<userTypes extends UserTypes | undefined = undefined> = Record<
-  string,
-  userTypes extends UserTypes ? StaticAbiType | keyof userTypes : StaticAbiType
->;
-export type AbiPropertiesSchema<userTypes extends UserTypes | undefined = undefined> = Record<
-  string,
-  userTypes extends UserTypes ? SchemaAbiType | keyof userTypes : SchemaAbiType
->;
-
-export type UnparsedAbiKeySchema = {
-  readonly [k: string]: {
-    readonly type: StaticAbiType;
-  };
-};
-export type UnparsedAbiPropertiesSchema = {
-  readonly [k: string]: {
-    readonly type: SchemaAbiType;
-  };
-};
 
 /** Map a table schema like `{ value: "uint256" }` to its primitive types like `{ value: bigint }` */
 export type SchemaToPrimitives<TSchema extends AbiPropertiesSchema> = {
