@@ -1,7 +1,7 @@
 import { waitForTransactionReceipt } from "viem/actions";
 import { ContractFunctionArgs, ContractFunctionName, Hex, encodeFunctionData } from "viem";
 
-import { $Record, ContractTable } from "@/index";
+import { Record, ContractTable } from "@/index";
 
 import { networkConfig } from "@test/utils/networkConfig";
 import { resourceToHex } from "@latticexyz/common";
@@ -72,9 +72,9 @@ export const setItems = async (args: { items: number[]; weights: number[]; total
 };
 
 // Set the position of a record
-export const setPositionFor$Record = async (args: { $record: $Record; x: number; y: number }) => {
-  const { $record, x, y } = args;
-  const hash = await networkConfig.worldContract.write.moveWithArbitraryKey([$record as Hex, x, y], {
+export const setPositionForRecord = async (args: { record: Record; x: number; y: number }) => {
+  const { record, x, y } = args;
+  const hash = await networkConfig.worldContract.write.moveWithArbitraryKey([record as Hex, x, y], {
     chain: networkConfig.chain,
     account: networkConfig.burnerAccount.address,
   });

@@ -20,9 +20,9 @@ import { Hex, padHex, toHex } from "viem";
 // src (version using TinyBase)
 import {
   createWrapper,
-  default$Record,
+  defaultRecord,
   query,
-  $Record,
+  Record,
   Properties,
   Schema,
   PropType,
@@ -119,7 +119,7 @@ const setup = async (scope = "tables") => {
   });
   const blinkRegistry = TABLES.reduce(
     (acc, key) => {
-      const get = async (record: $Record) => {
+      const get = async (record: Record) => {
         const id = `${key}__${record}`;
         const data = await first(blinkTable, {
           where: {
@@ -130,11 +130,11 @@ const setup = async (scope = "tables") => {
         });
         return data?.properties;
       };
-      const update = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: $Record) => {
+      const update = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: Record) => {
         const id = `${key}__${record}`;
         await updateDB(blinkTable, { id, properties });
       };
-      const set = async (properties: Properties<Schema, unknown>, record: $Record) => {
+      const set = async (properties: Properties<Schema, unknown>, record: Record) => {
         // cheaper than upsert
         if (await get(record)) {
           await update(properties, record);
@@ -150,9 +150,9 @@ const setup = async (scope = "tables") => {
     {} as Record<
       string,
       {
-        get: (record: $Record) => Promise<Properties<Schema, unknown> | undefined>;
-        update: (properties: Properties<Schema, unknown>, record: $Record) => Promise<void>;
-        set: (properties: Properties<Schema, unknown>, record: $Record) => Promise<void>;
+        get: (record: Record) => Promise<Properties<Schema, unknown> | undefined>;
+        update: (properties: Properties<Schema, unknown>, record: Record) => Promise<void>;
+        set: (properties: Properties<Schema, unknown>, record: Record) => Promise<void>;
       }
     >,
   );
@@ -163,9 +163,9 @@ const setup = async (scope = "tables") => {
   const { InventoryEntitiesRef, withInventoryEntities } = entitiesPropsFactory("Inventory");
   const elfStore = createElfStore(
     { name: scope },
-    withCounterEntities<Properties<typeof registry.Counter.schema> & { id: $Record }>(),
-    withPositionEntities<Properties<typeof registry.Position.schema> & { id: $Record }>(),
-    withInventoryEntities<Properties<typeof registry.Inventory.schema> & { id: $Record }>(),
+    withCounterEntities<Properties<typeof registry.Counter.schema> & { id: Record }>(),
+    withPositionEntities<Properties<typeof registry.Position.schema> & { id: Record }>(),
+    withInventoryEntities<Properties<typeof registry.Inventory.schema> & { id: Record }>(),
   );
   const elfRefs = {
     Counter: CounterEntitiesRef,
@@ -173,9 +173,9 @@ const setup = async (scope = "tables") => {
     Inventory: InventoryEntitiesRef,
   } as const;
   // same was possible with separate stores but not worth it; same performance but prevents efficiently querying multiple tables
-  // const counterStore = createElfStore({ name: "Counter" }, withEntities<typeof registry.Counter.schema & { id: $Record }>());
-  // const positionStore = createElfStore({ name: "Position" }, withEntities<typeof registry.Position.schema & { id: $Record }>());
-  // const inventoryStore = createElfStore({ name: "Inventory" }, withEntities<typeof registry.Inventory.schema & { id: $Record }>());
+  // const counterStore = createElfStore({ name: "Counter" }, withEntities<typeof registry.Counter.schema & { id: Record }>());
+  // const positionStore = createElfStore({ name: "Position" }, withEntities<typeof registry.Position.schema & { id: Record }>());
+  // const inventoryStore = createElfStore({ name: "Inventory" }, withEntities<typeof registry.Inventory.schema & { id: Record }>());
   // const elfStore = {
   //   Counter: counterStore,
   //   Position: positionStore,
@@ -184,13 +184,13 @@ const setup = async (scope = "tables") => {
 
   const elfRegistry = Object.entries(elfRefs).reduce(
     (acc, [key, ref]) => {
-      const get = async (record: $Record) => {
+      const get = async (record: Record) => {
         return elfStore.query(getEntity(record, { ref }));
       };
-      const update = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: $Record) => {
+      const update = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: Record) => {
         elfStore.update(updateEntities(record, (props) => ({ ...props, ...properties }), { ref }));
       };
-      const set = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: $Record) => {
+      const set = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: Record) => {
         elfStore.update(upsertEntities({ id: record, ...properties }, { ref }));
       };
 
@@ -200,14 +200,14 @@ const setup = async (scope = "tables") => {
     {} as Record<
       string,
       {
-        get: (record: $Record) => Promise<Properties<(typeof registry)[keyof typeof registry]["schema"]> | undefined>;
+        get: (record: Record) => Promise<Properties<(typeof registry)[keyof typeof registry]["schema"]> | undefined>;
         update: (
           properties: Properties<(typeof registry)[keyof typeof registry]["schema"]>,
-          record: $Record,
+          record: Record,
         ) => Promise<void>;
         set: (
           properties: Properties<(typeof registry)[keyof typeof registry]["schema"]>,
-          record: $Record,
+          record: Record,
         ) => Promise<void>;
       }
     >,
@@ -275,7 +275,7 @@ const setup = async (scope = "tables") => {
     (acc, key) => {
       const collection = rxDb[key];
 
-      const get = async (record: $Record) => {
+      const get = async (record: Record) => {
         const item = await collection.findOne(record).exec();
         // this would be handled generically
         if (key === "Inventory") {
@@ -284,10 +284,10 @@ const setup = async (scope = "tables") => {
           return item;
         }
       };
-      const update = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: $Record) => {
+      const update = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: Record) => {
         set(properties, record);
       };
-      const set = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: $Record) => {
+      const set = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: Record) => {
         if (key === "Inventory" && properties.totalWeight) {
           collection.upsert({
             ...properties,
@@ -305,14 +305,14 @@ const setup = async (scope = "tables") => {
     {} as Record<
       string,
       {
-        get: (record: $Record) => Promise<Properties<(typeof registry)[keyof typeof registry]["schema"]> | undefined>;
+        get: (record: Record) => Promise<Properties<(typeof registry)[keyof typeof registry]["schema"]> | undefined>;
         update: (
           properties: Properties<(typeof registry)[keyof typeof registry]["schema"]>,
-          record: $Record,
+          record: Record,
         ) => Promise<void>;
         set: (
           properties: Properties<(typeof registry)[keyof typeof registry]["schema"]>,
-          record: $Record,
+          record: Record,
         ) => Promise<void>;
       }
     >,
@@ -320,7 +320,7 @@ const setup = async (scope = "tables") => {
 
   /* -------------------------------- UTILITIES ------------------------------- */
   // Grab a few records to use across tests
-  const $records = Array.from({ length: RECORDS }, (_, i) => padHex(toHex(`record${i}`))) as $Record[];
+  const records = Array.from({ length: RECORDS }, (_, i) => padHex(toHex(`record${i}`))) as Record[];
 
   // Create a JS map to compare with (basically RECS but stripped of anything else)
   const jsMap = {
@@ -334,14 +334,14 @@ const setup = async (scope = "tables") => {
   const actions = [
     {
       key: "Counter" as keyof typeof registry,
-      record: Array.from({ length: ITERATIONS }, () => default$Record),
+      record: Array.from({ length: ITERATIONS }, () => defaultRecord),
       properties: getRandomNumbers(ITERATIONS).map((value) => ({ value, ...emptyMetadata })),
       updates: getRandomNumbers(ITERATIONS).map((value) => ({ value, ...emptyMetadata })),
     },
     {
       key: "Position" as keyof typeof registry,
       // Choose a record
-      record: Array.from({ length: ITERATIONS }, (_, i) => $records[i % RECORDS]),
+      record: Array.from({ length: ITERATIONS }, (_, i) => records[i % RECORDS]),
       // Get random x and y values for each iteration
       properties: getRandomNumbers(2 * ITERATIONS).reduce(
         (acc, value, i) => {
@@ -362,7 +362,7 @@ const setup = async (scope = "tables") => {
     },
     {
       key: "Inventory" as keyof typeof registry,
-      record: Array.from({ length: ITERATIONS }, (_, i) => $records[i % RECORDS]),
+      record: Array.from({ length: ITERATIONS }, (_, i) => records[i % RECORDS]),
       // Get a random total weight for each iteration
       properties: getRandomBigInts(ITERATIONS).reduce(
         (acc, totalWeight, i) => {
@@ -491,7 +491,7 @@ describe("Benchmarks", () => {
     // Make sure results are the same across all implementations
     const results = Object.fromEntries(LIBRARIES.map((lib) => [lib, []])) as unknown as Record<
       (typeof LIBRARIES)[number],
-      $Record[][]
+      Record[][]
     >;
 
     bench
@@ -509,7 +509,7 @@ describe("Benchmarks", () => {
       .add("RECS", () => {
         for (const { key, properties } of actions) {
           const res = runQuery([Has(components.Counter), HasValue(components[key], properties[0])]);
-          results["RECS"].push(Array.from(res as unknown as Set<$Record>) || []);
+          results["RECS"].push(Array.from(res as unknown as Set<Record>) || []);
         }
       })
       .add("BlinkDB", async () => {
@@ -520,7 +520,7 @@ describe("Benchmarks", () => {
               ...properties,
             },
           });
-          results["BlinkDB"].push(res.map((r) => r.record as $Record));
+          results["BlinkDB"].push(res.map((r) => r.record as Record));
         }
       })
       .add("Elf", () => {

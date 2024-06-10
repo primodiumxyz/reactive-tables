@@ -2,8 +2,8 @@ import { concat, EMPTY, from, Observable } from "rxjs";
 
 import type { BaseTable, Properties } from "@/tables";
 import type { TableUpdate, TableWatcherParams } from "@/queries";
-import { tableOperations, queries, type World, type QueryFragment, type Schema, type $Record } from "@/lib";
-const { getTable$Records, set$Record, remove$Record, toUpdateStream } = tableOperations();
+import { tableOperations, queries, type World, type QueryFragment, type Schema, type Record } from "@/lib";
+const { getTableRecords, setRecord, removeRecord, toUpdateStream } = tableOperations();
 const { defineChangeQuery, defineEnterQuery, defineExitQuery, defineQuery } = queries();
 
 // All of the following code is taken and modified from MUD to fit new types and naming conventions.
@@ -122,7 +122,7 @@ export const systems = () => {
     system: (update: TableUpdate<S>) => void,
     options: TableWatcherParams = { runOnInit: true },
   ) => {
-    const initial$ = options?.runOnInit ? from(getTable$Records(table)).pipe(toUpdateStream(table)) : EMPTY;
+    const initial$ = options?.runOnInit ? from(getTableRecords(table)).pipe(toUpdateStream(table)) : EMPTY;
     defineRxSystem(world, concat(initial$, table.update$), system);
   };
 
@@ -137,17 +137,17 @@ export const systems = () => {
   const defineSyncSystem = <S extends Schema>(
     world: World,
     query: QueryFragment[],
-    table: ($record: $Record) => BaseTable<S>,
-    properties: ($record: $Record) => Properties<S>,
+    table: (record: Record) => BaseTable<S>,
+    properties: (record: Record) => Properties<S>,
     options: TableWatcherParams & { update?: boolean } = { runOnInit: true, update: false },
   ) => {
     defineSystem(
       world,
       query,
-      ({ $record, type }) => {
-        if (type === "enter") set$Record(table($record), $record, properties($record));
-        if (type === "exit") remove$Record(table($record), $record);
-        if (options?.update && type === "change") set$Record(table($record), $record, properties($record));
+      ({ record, type }) => {
+        if (type === "enter") setRecord(table(record), record, properties(record));
+        if (type === "exit") removeRecord(table(record), record);
+        if (options?.update && type === "change") setRecord(table(record), record, properties(record));
       },
       options,
     );

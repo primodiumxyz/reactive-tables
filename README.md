@@ -201,19 +201,19 @@ const { unsubscribe } = $query(
   { runOnInit: true },
 ); // this is the default behavior
 // `runOnInit` can be set to false to avoid triggering the callbacks on the initial state
-// -> { table: undefined, $record: bobRecord, current: undefined, prev: undefined, type: "enter" }
+// -> { table: undefined, record: bobRecord, current: undefined, prev: undefined, type: "enter" }
 
 // Increase the score of Charlie, which will have them enter the query condition
 registry.Player.update({ score: 1 }, charlieRecord);
-// -> { table: registry.Player, $record: charlieRecord, current: { id: "player3", name: "Charlie", score: 1, level: 1 }, prev: undefined, type: "enter" }
+// -> { table: registry.Player, record: charlieRecord, current: { id: "player3", name: "Charlie", score: 1, level: 1 }, prev: undefined, type: "enter" }
 
 // Update their score again, within the query condition
 registry.Player.update({ score: 5 }, charlieRecord);
-// -> { table: registry.Player, $record: charlieRecord, current: { id: "player3", name: "Charlie", score: 5, level: 1 }, prev: { id: "player3", name: "Charlie", score: 1, level: 1 }, type: "update" }
+// -> { table: registry.Player, record: charlieRecord, current: { id: "player3", name: "Charlie", score: 5, level: 1 }, prev: { id: "player3", name: "Charlie", score: 1, level: 1 }, type: "update" }
 
 // Increase the level of Bob, which will have them exit the query condition
 registry.Player.update({ level: 2, score: 0 }, bobRecord);
-// -> { table: registry.Player, $record: bobRecord, current: undefined, prev: { id: "player2", name: "Bob", score: 10, level: 1 }, type: "exit" }
+// -> { table: registry.Player, record: bobRecord, current: undefined, prev: { id: "player2", name: "Bob", score: 10, level: 1 }, type: "exit" }
 
 // Unsubscribe from the query (when done or on unmount)
 unsubscribe();
@@ -235,7 +235,7 @@ const { unsubscribe } = registry.Player.watch(
 );
 
 registry.Player.update({ score: 20 }, aliceRecord);
-// -> { table: registry.Player, $record: aliceRecord, current: { id: "player1", name: "Alice", score: 20, level: 3 }, prev: { id: "player1", name: "Alice", score: 15, level: 3 }, type: "update" }
+// -> { table: registry.Player, record: aliceRecord, current: { id: "player1", name: "Alice", score: 20, level: 3 }, prev: { id: "player1", name: "Alice", score: 15, level: 3 }, type: "update" }
 
 unsubscribe();
 ```
@@ -260,11 +260,11 @@ const { unsubscribe } = registry.Player.watch(
 
 // Update Alice's score, within the query condition
 registry.Player.update({ score: 20 }, aliceRecord);
-// -> { table: registry.Player, $record: aliceRecord, current: { id: "player1", name: "Alice", score: 20, level: 3 }, prev: { id: "player1", name: "Alice", score: 15, level: 3 }, type: "update" }
+// -> { table: registry.Player, record: aliceRecord, current: { id: "player1", name: "Alice", score: 20, level: 3 }, prev: { id: "player1", name: "Alice", score: 15, level: 3 }, type: "update" }
 
 // Update Bob's score, outside the query condition
 registry.Player.update({ level: 2, score: 0 }, bobRecord);
-// -> { table: registry.Player, $record: bobRecord, current: undefined, prev: { id: "player2", name: "Bob", score: 10, level: 1 }, type: "update" }
+// -> { table: registry.Player, record: bobRecord, current: undefined, prev: { id: "player2", name: "Bob", score: 10, level: 1 }, type: "update" }
 
 unsubscribe();
 ```

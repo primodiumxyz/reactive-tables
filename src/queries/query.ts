@@ -1,5 +1,5 @@
 import type { QueryOptions } from "@/queries";
-import { queries, type QueryFragment, type $Record } from "@/lib";
+import { queries, type QueryFragment, type Record } from "@/lib";
 const { runQuery, With, WithProperties, Without, WithoutProperties } = queries();
 
 /**
@@ -9,7 +9,7 @@ const { runQuery, With, WithProperties, Without, WithoutProperties } = queries()
  *
  * @param options The {@link QueryOptions} object containing the conditions to match.
  * @param fragments (optional) Query fragments to bypass the options conversion and directly provide the resulting fragments.
- * @returns An array of {@link $Record} objects matching all conditions.
+ * @returns An array of {@link Record} objects matching all conditions.
  * @example
  * This example queries all records that have a score of 10 in the "Score" table and are not inside the "GameOver" table.
  *
@@ -29,7 +29,7 @@ const { runQuery, With, WithProperties, Without, WithoutProperties } = queries()
  * ```
  * @category Queries
  */
-export const query = (options: QueryOptions, fragments?: QueryFragment[]): $Record[] => {
+export const query = (options: QueryOptions, fragments?: QueryFragment[]): Record[] => {
   const { with: inside, without: notInside, withProperties, withoutProperties } = options;
   if (!fragments && !inside && !withProperties) {
     throw new Error("At least one `with` or `withProperties` condition needs to be provided");

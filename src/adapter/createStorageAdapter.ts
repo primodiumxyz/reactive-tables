@@ -9,7 +9,7 @@ import {
   type ContractTableDefs,
   type StoreConfig,
   debug,
-  hexKeyTupleTo$Record,
+  hexKeyTupleToRecord,
   resourceToLabel,
 } from "@/lib";
 import type { ContractTable, ContractTables, Properties } from "@/tables";
@@ -22,7 +22,7 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
   shouldSkipUpdateStream?: () => boolean;
 }) => {
   const processLog = (log: StorageAdapterLog) => {
-    const $record = hexKeyTupleTo$Record(log.args.keyTuple);
+    const record = hexKeyTupleToRecord(log.args.keyTuple);
 
     const table = Object.values(tables).find(
       (table) => table.id === log.args.tableId,
@@ -34,7 +34,7 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
       return;
     }
 
-    return { $record, table };
+    return { record, table };
   };
 
   const storageAdapter = Write.toCustom({
@@ -43,14 +43,14 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
       const processed = processLog(log);
 
       if (!processed) return;
-      const { $record, table } = processed;
+      const { record, table } = processed;
 
       const properties = decodeArgs(table.metadata.abiPropertiesSchema, log.args);
 
       debug("setting properties", {
         namespace: table.metadata.namespace,
         name: table.metadata.name,
-        $record,
+        record,
         properties,
       });
 
@@ -62,7 +62,7 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
           __dynamicData: log.args.dynamicData,
           __lastSyncedAtBlock: log.blockNumber,
         },
-        $record,
+        record,
         { skipUpdateStream: shouldSkipUpdateStream?.() },
       );
     },
@@ -70,9 +70,9 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
     updateStatic: (log) => {
       const processed = processLog(log);
       if (!processed) return;
-      const { $record, table } = processed;
+      const { record, table } = processed;
 
-      const previousProperties = table.get($record);
+      const previousProperties = table.get(record);
       const previousStaticData = previousProperties?.__staticData ?? ("0x" as Hex);
       const newStaticData = spliceHex(previousStaticData, log.args.start, size(log.args.data), log.args.data);
       const newProperties = decodeArgs(table.metadata.abiPropertiesSchema, {
@@ -84,7 +84,7 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
       debug("setting properties via splice static", {
         namespace: table.metadata.namespace,
         name: table.metadata.name,
-        $record,
+        record,
         previousStaticData,
         newStaticData,
         previousProperties,
@@ -97,7 +97,7 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
           __staticData: newStaticData,
           __lastSyncedAtBlock: log.blockNumber,
         },
-        $record,
+        record,
         { skipUpdateStream: shouldSkipUpdateStream?.() },
       );
     },
@@ -105,9 +105,9 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
     updateDynamic: (log) => {
       const processed = processLog(log);
       if (!processed) return;
-      const { $record, table } = processed;
+      const { record, table } = processed;
 
-      const previousProperties = table.get($record);
+      const previousProperties = table.get(record);
       const previousDynamicData = previousProperties?.__dynamicData ?? ("0x" as Hex);
       const newDynamicData = spliceHex(previousDynamicData, log.args.start, log.args.deleteCount, log.args.data);
       const newProperties = decodeArgs(table.metadata.abiPropertiesSchema, {
@@ -119,7 +119,7 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
       debug("setting properties via splice dynamic", {
         namespace: table.metadata.namespace,
         name: table.metadata.name,
-        $record,
+        record,
         previousDynamicData,
         newDynamicData,
         previousProperties,
@@ -133,7 +133,7 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
           __dynamicData: newDynamicData,
           __lastSyncedAtBlock: log.blockNumber,
         },
-        $record,
+        record,
         { skipUpdateStream: shouldSkipUpdateStream?.() },
       );
     },
@@ -141,15 +141,15 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
     delete: (log) => {
       const processed = processLog(log);
       if (!processed) return;
-      const { $record, table } = processed;
+      const { record, table } = processed;
 
       debug("deleting properties", {
         namespace: table.metadata.namespace,
         name: table.metadata.name,
-        $record,
+        record,
       });
 
-      table.remove($record);
+      table.remove(record);
     },
   });
 
@@ -157,9 +157,9 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
     // @ts-expect-error too complex union type
     for (const _table of Object.values(tables)) {
       const table = _table as ContractTable<ContractTableDef>;
-      for (const $record of table.$records()) {
-        const properties = table.get($record);
-        table.update$.next({ table, $record, properties: { current: properties, prev: properties }, type: "noop" });
+      for (const record of table.records()) {
+        const properties = table.get(record);
+        table.update$.next({ table, record, properties: { current: properties, prev: properties }, type: "noop" });
       }
     }
   };

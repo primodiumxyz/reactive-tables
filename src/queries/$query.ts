@@ -34,13 +34,13 @@ const { With, WithProperties, Without, WithoutProperties } = queries();
  *  onEnter: (update) => console.log(update),
  *  onExit: (update) => console.log(update),
  * }, { runOnInit: true }); // this is the default behavior
- * // -> { table: undefined, $record: recordA, current: undefined, prev: undefined, type: "enter" }
+ * // -> { table: undefined, record: recordA, current: undefined, prev: undefined, type: "enter" }
  *
  * tables.Player.update({ score: 15 }, recordA);
- * // -> { table: tables.Player, $record: recordA, current: { online: true, score: 15 }, prev: { online: true, score: 10 }, type: "change" }
+ * // -> { table: tables.Player, record: recordA, current: { online: true, score: 15 }, prev: { online: true, score: 10 }, type: "change" }
  *
  * tables.Player.update({ online: false }, recordA);
- * // -> { table: tables.Player, $record: recordA, current: { online: false, score: 15 }, prev: { online: true, score: 15 }, type: "change" }
+ * // -> { table: tables.Player, record: recordA, current: { online: false, score: 15 }, prev: { online: true, score: 15 }, type: "change" }
  * ```
  * @category Queries
  */

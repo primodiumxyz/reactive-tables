@@ -7,13 +7,13 @@ import {
   type TableUpdate,
   type TableWatcherParams,
 } from "@/queries";
-import { queries, type $Record } from "@/lib";
+import { queries, type Record } from "@/lib";
 const { defineQuery, With, WithProperties, Without, WithoutProperties } = queries();
 
 /**
  * React hook to query all records matching multiple conditions across tables.
  *
- * This will return an array of $Record objects matching all conditions, and will trigger the provided callbacks on changes.
+ * This will return an array of Record objects matching all conditions, and will trigger the provided callbacks on changes.
  *
  * Note: See {@link QueryOptions} for more details on conditions criteria.
  *
@@ -24,7 +24,7 @@ const { defineQuery, With, WithProperties, Without, WithoutProperties } = querie
  * @param callbacks (optional) The {@link TableWatcherCallbacks} to trigger on changes. Including: onChange, onEnter, onExit, onUpdate.
  * These will trigger a {@link TableUpdate} object with the id of the updated table, the record, the previous and new properties of the record and the type of update.
  * @param params (optional) Additional {@link TableWatcherParams} for the query. Currently only supports `runOnInit` to trigger the callbacks for all matching records on initialization.
- * @returns An array of {@link $Record} matching all conditions.
+ * @returns An array of {@link Record} matching all conditions.
  * @example
  * This example queries all records that have a score of 10 in the "Score" table and are not inside the "GameOver" table.
  *
@@ -45,7 +45,7 @@ const { defineQuery, With, WithProperties, Without, WithoutProperties } = querie
  * // -> [ recordA ]
  *
  * registry.Score.update({ points: 10 }, recordC);
- * // -> { table: registry.Score, $record: recordC, current: { points: 10 }, prev: { points: 3 }, type: "change" }
+ * // -> { table: registry.Score, record: recordC, current: { points: 10 }, prev: { points: 3 }, type: "change" }
  * console.log(records);
  * // -> [ recordA, recordC ]
  * ```
@@ -55,13 +55,13 @@ export const useQuery = (
   options: QueryOptions,
   callbacks?: TableWatcherCallbacks,
   params: TableWatcherParams = { runOnInit: true },
-): $Record[] => {
+): Record[] => {
   // Not available in a non-browser environment
   if (typeof window === "undefined") throw new Error("useQuery is only available in a browser environment");
   const { with: inside, without: notInside, withProperties, withoutProperties } = options;
   const { onChange, onEnter, onExit, onUpdate } = callbacks ?? {};
 
-  const [records, setRecords] = useState<$Record[]>([]);
+  const [records, setRecords] = useState<Record[]>([]);
 
   const queryFragments = useMemo(
     () => [
@@ -88,10 +88,10 @@ export const useQuery = (
         // record is changed within the query so no need to update records
         onChange?.(update);
       } else if (update.type === "enter") {
-        setRecords((prev) => [...prev, update.$record]);
+        setRecords((prev) => [...prev, update.record]);
         onEnter?.(update);
       } else if (update.type === "exit") {
-        setRecords((prev) => prev.filter((record) => record !== update.$record));
+        setRecords((prev) => prev.filter((record) => record !== update.record));
         onExit?.(update);
       }
     });

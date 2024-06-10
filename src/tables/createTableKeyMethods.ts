@@ -7,11 +7,11 @@ import type {
   TableBaseMethods,
   TableWithKeysMethods,
 } from "@/tables";
-import { decode$Record, encode$Record, default$Record, type $Record, type Schema } from "@/lib";
+import { decodeRecord, encodeRecord, defaultRecord, type Record, type Schema } from "@/lib";
 
 /**
  * Create a set of methods to interact with a table using values for its keys properties,
- * that get encoded into a $Record.
+ * that get encoded into a Record.
  *
  * Note: See {@link TableWithKeyMethods} for more information about each method.
  *
@@ -39,31 +39,31 @@ export const createTableKeyMethods = <PS extends Schema, M extends BaseTableMeta
     defaultProperties?: PropertiesSansMetadata<PS, T>,
   ): Properties<PS, T>;
   function getWithKeys(keys?: Keys<M["abiKeySchema"], T>, defaultProperties?: PropertiesSansMetadata<PS, T>) {
-    const $record = keys ? encode$Record(abiKeySchema, keys) : default$Record;
-    return get($record, defaultProperties);
+    const record = keys ? encodeRecord(abiKeySchema, keys) : defaultRecord;
+    return get(record, defaultProperties);
   }
 
   // Check if a record exists inside the table using its keys
   const hasWithKeys = (keys?: Keys<M["abiKeySchema"], T>) => {
-    const $record = keys ? encode$Record(abiKeySchema, keys) : default$Record;
-    return has($record);
+    const record = keys ? encodeRecord(abiKeySchema, keys) : defaultRecord;
+    return has(record);
   };
 
   // Use (hook) the properties of a record using its keys
   const useWithKeys = (keys?: Keys<M["abiKeySchema"], T>, defaultProperties?: PropertiesSansMetadata<PS, T>) => {
-    const $record = keys ? encode$Record(abiKeySchema, keys) : default$Record;
-    return use($record, defaultProperties);
+    const record = keys ? encodeRecord(abiKeySchema, keys) : defaultRecord;
+    return use(record, defaultProperties);
   };
 
   // Set the properties of a record using its keys
   const setWithKeys = (properties: Properties<PS, T>, keys: Keys<M["abiKeySchema"], T>) => {
-    const $record = keys ? encode$Record(abiKeySchema, keys) : default$Record;
-    return set(properties, $record);
+    const record = keys ? encodeRecord(abiKeySchema, keys) : defaultRecord;
+    return set(properties, record);
   };
 
   // Get the keys properties of a record using its record
-  const get$RecordKeys = ($record: $Record) => {
-    return decode$Record(abiKeySchema, $record) as unknown as Keys<M["abiKeySchema"], T>;
+  const getRecordKeys = (record: Record) => {
+    return decodeRecord(abiKeySchema, record) as unknown as Keys<M["abiKeySchema"], T>;
   };
 
   return {
@@ -77,6 +77,6 @@ export const createTableKeyMethods = <PS extends Schema, M extends BaseTableMeta
             throw new Error("The method useWithKeys is only available in the browser");
           },
     setWithKeys,
-    get$RecordKeys,
+    getRecordKeys,
   };
 };

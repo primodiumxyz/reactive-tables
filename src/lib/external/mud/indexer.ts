@@ -1,4 +1,4 @@
-import { type Schema, type $Record, type $RecordSymbol, get$RecordHex, get$RecordSymbol, tableOperations } from "@/lib";
+import { type Schema, type Record, type RecordSymbol, getRecordHex, getRecordSymbol, tableOperations } from "@/lib";
 import type { BaseTable, BaseTableMetadata, Properties } from "@/tables";
 
 /**
@@ -21,54 +21,54 @@ import type { BaseTable, BaseTableMetadata, Properties } from "@/tables";
 export const createIndexer = <S extends Schema, M extends BaseTableMetadata, T = unknown>(
   table: BaseTable<S, M, T>,
 ): BaseTable<S, M, T> & {
-  get$RecordsWithValue: (properties: Properties<S, T>) => Set<$Record>;
+  getRecordsWithValue: (properties: Properties<S, T>) => Set<Record>;
 } => {
-  const propertiesTo$Records = new Map<string, Set<$RecordSymbol>>();
+  const propertiesToRecords = new Map<string, Set<RecordSymbol>>();
 
-  function get$RecordsWithValue(properties: Properties<S, T>) {
-    const $records = propertiesTo$Records.get(getPropertiesKey(properties));
-    return $records ? new Set([...$records].map(get$RecordHex)) : new Set<$Record>();
+  function getRecordsWithValue(properties: Properties<S, T>) {
+    const records = propertiesToRecords.get(getPropertiesKey(properties));
+    return records ? new Set([...records].map(getRecordHex)) : new Set<Record>();
   }
 
   function getPropertiesKey(properties: Properties<S, T>): string {
     return Object.values(properties).join("/");
   }
 
-  function add($record: $RecordSymbol, properties: Properties<S, T> | undefined) {
+  function add(record: RecordSymbol, properties: Properties<S, T> | undefined) {
     if (!properties) return;
     const propertiesKey = getPropertiesKey(properties);
-    let $recordsWithProperties = propertiesTo$Records.get(propertiesKey);
-    if (!$recordsWithProperties) {
-      $recordsWithProperties = new Set<$RecordSymbol>();
-      propertiesTo$Records.set(propertiesKey, $recordsWithProperties);
+    let recordsWithProperties = propertiesToRecords.get(propertiesKey);
+    if (!recordsWithProperties) {
+      recordsWithProperties = new Set<RecordSymbol>();
+      propertiesToRecords.set(propertiesKey, recordsWithProperties);
     }
-    $recordsWithProperties.add($record);
+    recordsWithProperties.add(record);
   }
 
-  function remove($record: $RecordSymbol, properties: Properties<S, T> | undefined) {
+  function remove(record: RecordSymbol, properties: Properties<S, T> | undefined) {
     if (!properties) return;
     const propertiesKey = getPropertiesKey(properties);
-    const $recordsWithProperties = propertiesTo$Records.get(propertiesKey);
-    if (!$recordsWithProperties) return;
-    $recordsWithProperties.delete($record);
+    const recordsWithProperties = propertiesToRecords.get(propertiesKey);
+    if (!recordsWithProperties) return;
+    recordsWithProperties.delete(record);
   }
 
   // Initial indexing
-  for (const $record of table.$records()) {
-    const properties = tableOperations().get$RecordProperties(table, $record);
-    add(get$RecordSymbol($record), properties);
+  for (const record of table.records()) {
+    const properties = tableOperations().getRecordProperties(table, record);
+    add(getRecordSymbol(record), properties);
   }
 
   // Keeping index up to date
-  const subscription = table.update$.subscribe(({ $record, properties }) => {
+  const subscription = table.update$.subscribe(({ record, properties }) => {
     // Remove from previous location
-    remove(get$RecordSymbol($record), properties.prev);
+    remove(getRecordSymbol(record), properties.prev);
 
     // Add to new location
-    add(get$RecordSymbol($record), properties.current);
+    add(getRecordSymbol(record), properties.current);
   });
 
   table.world.registerDisposer(() => subscription?.unsubscribe());
 
-  return { ...table, get$RecordsWithValue };
+  return { ...table, getRecordsWithValue };
 };

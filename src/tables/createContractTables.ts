@@ -1,5 +1,5 @@
 import { createTable, type ContractTables } from "@/tables";
-import { default$Record, mapObject, resourceToLabel, schemaAbiTypeToRecsType, Type } from "@/lib";
+import { defaultRecord, mapObject, resourceToLabel, schemaAbiTypeToRecsType, Type } from "@/lib";
 import type { ContractTableDefs, StoreConfig, SchemaAbiType, AllTableDefs, Schema, World } from "@/lib";
 
 type CreateContractTablesOptions<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
@@ -22,7 +22,7 @@ export const createContractTables = <config extends StoreConfig, extraTableDefs 
   world,
   tableDefs,
 }: CreateContractTablesOptions<config, extraTableDefs>) => {
-  world.register$Record({ id: default$Record });
+  world.registerRecord({ id: defaultRecord });
 
   return mapObject(tableDefs, (def) => {
     const propertiesSchema = {

@@ -1,7 +1,7 @@
 import type { SchemaAbiTypeToPrimitiveType } from "@latticexyz/schema-type/internal";
 import type { Hex } from "viem";
 
-import type { $Record } from "@/lib";
+import type { Record } from "@/lib";
 
 /**
  * Defines the schema of a properties record inside a {@link Table} or {@link BaseTable}.
@@ -50,10 +50,10 @@ export enum Type {
   OptionalHex,
   HexArray,
   OptionalHexArray,
-  $Record,
-  Optional$Record,
-  $RecordArray,
-  Optional$RecordArray,
+  Record,
+  OptionalRecord,
+  RecordArray,
+  OptionalRecordArray,
   T,
   OptionalT,
 }
@@ -69,22 +69,22 @@ export type MappedType<T = unknown> = {
   [Type.BigInt]: bigint;
   [Type.String]: string;
   [Type.Hex]: Hex;
-  [Type.$Record]: $Record;
+  [Type.Record]: Record;
   [Type.NumberArray]: number[];
   [Type.BigIntArray]: bigint[];
   [Type.StringArray]: string[];
   [Type.HexArray]: Hex[];
-  [Type.$RecordArray]: $Record[];
+  [Type.RecordArray]: Record[];
   [Type.OptionalNumber]: number | undefined;
   [Type.OptionalBigInt]: bigint | undefined;
   [Type.OptionalString]: string | undefined;
   [Type.OptionalHex]: Hex | undefined;
-  [Type.Optional$Record]: $Record | undefined;
+  [Type.OptionalRecord]: Record | undefined;
   [Type.OptionalNumberArray]: number[] | undefined;
   [Type.OptionalBigIntArray]: bigint[] | undefined;
   [Type.OptionalStringArray]: string[] | undefined;
   [Type.OptionalHexArray]: Hex[] | undefined;
-  [Type.Optional$RecordArray]: $Record[] | undefined;
+  [Type.OptionalRecordArray]: Record[] | undefined;
   [Type.T]: T;
   [Type.OptionalT]: T | undefined;
 };
@@ -93,8 +93,8 @@ export type MappedType<T = unknown> = {
  * Helper constant with all optional {@link Type}s.
  */
 export const OptionalTypes = [
-  Type.Optional$Record,
-  Type.Optional$RecordArray,
+  Type.OptionalRecord,
+  Type.OptionalRecordArray,
   Type.OptionalNumber,
   Type.OptionalNumberArray,
   Type.OptionalBigInt,

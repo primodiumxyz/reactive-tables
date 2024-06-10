@@ -1,11 +1,11 @@
 export {
   // Decoding/encoding keys from/into a record
-  decode$Record,
-  encode$Record,
+  decodeRecord,
+  encodeRecord,
   // Concat a tuple of hex keys into a single record
-  hexKeyTupleTo$Record,
+  hexKeyTupleToRecord,
   // Convert a record into a tuple of hex keys
-  $recordToHexKeyTuple,
+  recordToHexKeyTuple,
   // Convert ABI types to TypeScript understandable types
   schemaAbiTypeToRecsType,
   // uuid

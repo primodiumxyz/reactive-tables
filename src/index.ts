@@ -5,11 +5,11 @@ export * from "@/createWrapper";
 // Local tables (with custom schema and templates)
 export * from "@/tables/createLocalTable";
 
-// Queries: global (filtering keys and callbacks), query (direct query returning $Record[]), useQuery (React hook returning $Record[] with callbacks)
+// Queries: global (filtering keys and callbacks), query (direct query returning Record[]), useQuery (React hook returning Record[] with callbacks)
 export { $query, query, useQuery } from "@/queries";
 
 /* -------------------------------- CONSTANTS ------------------------------- */
-export { default$Record, localProperties, metadataProperties } from "@/lib";
+export { defaultRecord, localProperties, metadataProperties } from "@/lib";
 
 /* --------------------------------- TYPES --------------------------------- */
 export type {
@@ -20,7 +20,7 @@ export type {
   ContractTableDef,
   ContractTableDefs,
   Metadata,
-  $Record,
+  Record,
   Schema,
   StoreConfig,
   World,

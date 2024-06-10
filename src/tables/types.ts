@@ -6,8 +6,8 @@ import type {
   ContractTableDef,
   MappedType,
   Metadata,
-  $Record,
-  $RecordSymbol,
+  Record,
+  RecordSymbol,
   ResourceLabel,
   Schema,
   SchemaAbiType,
@@ -21,12 +21,12 @@ import type { TableUpdate, TableWatcherOptions, TableWatcherParams } from "@/que
 
 export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> {
   id: string;
-  properties: { [key in keyof PS]: Map<$RecordSymbol, MappedType<T>[PS[key]]> };
+  properties: { [key in keyof PS]: Map<RecordSymbol, MappedType<T>[PS[key]]> };
   propertiesSchema: PS;
-  // keySchema: KS | { $record: Type.$Record }; // default key schema for tables without keys
+  // keySchema: KS | { record: Type.Record }; // default key schema for tables without keys
   metadata: M;
   world: World;
-  $records: () => IterableIterator<$Record>;
+  records: () => IterableIterator<Record>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   update$: Subject<TableUpdate<PS, M, T>> & { observers: any };
 }
@@ -36,7 +36,7 @@ export type IndexedBaseTable<
   M extends BaseTableMetadata = BaseTableMetadata,
   T = unknown,
 > = BaseTable<PS, M, T> & {
-  get$RecordsWithProperties: (properties: Properties<PS, T>) => Set<$Record>;
+  getRecordsWithProperties: (properties: Properties<PS, T>) => Set<Record>;
 };
 
 export type BaseTableMetadata<M extends Metadata = Metadata> = M & {
@@ -123,7 +123,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
   /**
    * Get the current properties of a record, or the table as a whole if it doesn't require any keys.
    *
-   * @param $record (optional) The record to get the properties for.
+   * @param record (optional) The record to get the properties for.
    * @param defaultProperties (optional) The default properties to return if the record doesn't exist.
    * @returns The current properties of the record.
    * @example
@@ -137,14 +137,14 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * @category Methods
    */
   get(): Properties<PS, T> | undefined;
-  get($record: $Record | undefined): Properties<PS, T> | undefined;
-  get($record?: $Record | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
+  get(record: Record | undefined): Properties<PS, T> | undefined;
+  get(record?: Record | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   /**
    * Set the properties of a record.
    *
    * @param properties The properties to set.
-   * @param $record (optional) The record to set the properties for.
+   * @param record (optional) The record to set the properties for.
    * @param options (optional) Additional {@link TableMutationOptions} for the mutation.
    * @example
    * This example sets the properties of the "Counter" table, which has only a single `value` property.
@@ -157,7 +157,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  set: (properties: Properties<PS, T>, $record?: $Record, options?: TableMutationOptions) => void;
+  set: (properties: Properties<PS, T>, record?: Record, options?: TableMutationOptions) => void;
 
   /**
    * Get all records in the table.
@@ -176,7 +176,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  getAll: () => $Record[];
+  getAll: () => Record[];
 
   /**
    * Get all records in the table with specific properties.
@@ -196,7 +196,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  getAllWith: (properties: Partial<Properties<PS, T>>) => $Record[];
+  getAllWith: (properties: Partial<Properties<PS, T>>) => Record[];
 
   /**
    * Get all records in the table without specific properties.
@@ -216,7 +216,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  getAllWithout: (properties: Partial<Properties<PS, T>>) => $Record[];
+  getAllWithout: (properties: Partial<Properties<PS, T>>) => Record[];
 
   /**
    * Get all records in the table with a React hook.
@@ -237,7 +237,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  useAll: () => $Record[];
+  useAll: () => Record[];
 
   /**
    * Get all records in the table with specific properties with a React hook.
@@ -263,7 +263,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  useAllWith: (properties: Partial<Properties<PS, T>>) => $Record[];
+  useAllWith: (properties: Partial<Properties<PS, T>>) => Record[];
 
   /**
    * Get all records in the table without specific properties with a React hook.
@@ -289,12 +289,12 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  useAllWithout: (properties: Partial<Properties<PS, T>>) => $Record[];
+  useAllWithout: (properties: Partial<Properties<PS, T>>) => Record[];
 
   /**
    * Remove a record from the table.
    *
-   * @param $record (optional) The record to remove.
+   * @param record (optional) The record to remove.
    * @example
    * This example removes a record from the "Player" table.
    *
@@ -312,7 +312,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  remove: ($record?: $Record) => void;
+  remove: (record?: Record) => void;
 
   /**
    * Clear the table, removing all records.
@@ -336,7 +336,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * Note: This will throw an error if the record doesn't exist in the table (if it was never set).
    *
    * @param properties The properties to update (meaning not necessarily all properties need to be provided)
-   * @param $record (optional) The record to update the properties for.
+   * @param record (optional) The record to update the properties for.
    * @param options (optional) Additional {@link TableMutationOptions} for the mutation.
    * @example
    * This example updates the score of a player in the "Player" table.
@@ -352,12 +352,12 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  update: (properties: Partial<Properties<PS, T>>, $record?: $Record, options?: TableMutationOptions) => void;
+  update: (properties: Partial<Properties<PS, T>>, record?: Record, options?: TableMutationOptions) => void;
 
   /**
    * Check if a record exists in the table.
    *
-   * @param $record (optional) The record to check.
+   * @param record (optional) The record to check.
    * @returns Whether the record exists in the table.
    * @example
    * This example checks if a record exists in the "Player" table.
@@ -375,12 +375,12 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  has: ($record?: $Record) => boolean;
+  has: (record?: Record) => boolean;
 
   /**
    * Get the current properties of a record with a React hook.
    *
-   * @param $record (optional) The record to get the properties for.
+   * @param record (optional) The record to get the properties for.
    * @param defaultProperties (optional) The default properties to return if the record doesn't exist.
    * @returns The current properties of the record, updated whenever the data changes.
    * @example
@@ -399,17 +399,17 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  use($record?: $Record | undefined): Properties<PS, T> | undefined;
-  use($record: $Record | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
+  use(record?: Record | undefined): Properties<PS, T> | undefined;
+  use(record: Record | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   // TODO: document
-  blockUpdates: ($record?: $Record) => void;
-  unblockUpdates: ($record?: $Record) => void;
+  blockUpdates: (record?: Record) => void;
+  unblockUpdates: (record?: Record) => void;
 
   /**
    * Pause updates for a record or the table as a whole, meaning it won't react to changes in the store anymore.
    *
-   * @param $record (optional) The record to pause updates for.
+   * @param record (optional) The record to pause updates for.
    * @param properties (optional) The properties to set when pausing updates.
    * @param options (optional) Additional {@link TableMutationOptions} for the mutation.
    * @example
@@ -429,12 +429,12 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  pauseUpdates: ($record?: $Record, properties?: Properties<PS, T>, options?: TableMutationOptions) => void;
+  pauseUpdates: (record?: Record, properties?: Properties<PS, T>, options?: TableMutationOptions) => void;
 
   /**
    * Enable updates for a record or the table as a whole, meaning it will react to changes in the store again.
    *
-   * @param $record (optional) The record to enable updates for.
+   * @param record (optional) The record to enable updates for.
    * @param options (optional) Additional {@link TableMutationOptions} for the mutation.
    * @example
    * This example enables updates for a record in the "Player" table after it's been paused.
@@ -457,7 +457,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  resumeUpdates: ($record?: $Record, options?: TableMutationOptions) => void;
+  resumeUpdates: (record?: Record, options?: TableMutationOptions) => void;
 
   /**
    * Create a watcher for the table, either globally (on all changes) or within a TinyQL query.
@@ -481,13 +481,13 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * registry.Player.watch({
    *   onChange: (update) => console.log(update),
    * });
-   * // -> { table: undefined, $record: recordA, current: undefined, prev: undefined, type: "enter" }
+   * // -> { table: undefined, record: recordA, current: undefined, prev: undefined, type: "enter" }
    *
    * registry.Player.update({ health: 90 }, recordA);
-   * // -> { table: registry.Player, $record: recordA, current: { health: 90 }, prev: { health: 100 }, type: "change" }
+   * // -> { table: registry.Player, record: recordA, current: { health: 90 }, prev: { health: 100 }, type: "change" }
    *
    * registry.Player.remove(recordA);
-   * // -> { table: registry.Player, $record: recordA, current: undefined, prev: { health: 90 }, type: "exit" }
+   * // -> { table: registry.Player, record: recordA, current: undefined, prev: { health: 90 }, type: "exit" }
    * ```
    *
    * This example creates a watcher for all records with more than 10 points in the "Score" table.
@@ -507,10 +507,10 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * // -> no output
    *
    * registry.Score.update({ points: 15 }, recordA);
-   * // -> { table: registry.Score, $record: recordA, current: { points: 15 }, prev: { points: 0 }, type: "enter" }
+   * // -> { table: registry.Score, record: recordA, current: { points: 15 }, prev: { points: 0 }, type: "enter" }
    *
    * registry.Score.update({ points: 0 }, recordB);
-   * // -> { table: registry.Score, $record: recordB, current: undefined, prev: { points: 20 }, type: "exit" }
+   * // -> { table: registry.Score, record: recordB, current: undefined, prev: { points: 20 }, type: "exit" }
    * ```
    * @category Methods
    */
@@ -619,7 +619,7 @@ export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata 
   /**
    * Get the keys properties of a record using its hex string representation.
    *
-   * @param $record The record to get the keys for.
+   * @param record The record to get the keys for.
    * @returns The keys properties of the record.
    * @example
    * This example retrieves the keys properties of a record in the "Player" table.
@@ -629,11 +629,11 @@ export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata 
    * const { recordA } = getRecord(); // for the sake of the example
    * registry.Player.set({ name: "Alice", score: 0 }, recordA);
    *
-   * const keys = registry.Player.get$RecordKeys(recordA);
+   * const keys = registry.Player.getRecordKeys(recordA);
    * console.log(keys);
    * // -> { server: "serverA", id: "playerA" }
    * ```
    * @category Methods
    */
-  get$RecordKeys: ($record: $Record) => Keys<M["abiKeySchema"], T>;
+  getRecordKeys: (record: Record) => Keys<M["abiKeySchema"], T>;
 };

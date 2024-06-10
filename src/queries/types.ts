@@ -1,5 +1,5 @@
 import type { BaseTable, BaseTableMetadata, Properties, Table } from "@/tables";
-import type { $Record, Schema, World } from "@/lib";
+import type { Record, Schema, World } from "@/lib";
 
 /* --------------------------------- GLOBAL --------------------------------- */
 /**
@@ -20,7 +20,7 @@ export type UpdateType = "enter" | "exit" | "change" | "noop";
  * @template T The type of the properties to match.
  * @param table The table subject to change (without methods).
  * If the query covers multiple tables, and `runOnInit` is set to `true` (see {@link CreateTableWatcherOptions}), this will be `undefined`.
- * @param $record The record for which the update has occurred.
+ * @param record The record for which the update has occurred.
  * @param properties The properties of the record before and after the update (whatever is available).
  * If the record is entering the query, `prev` will be `undefined`. If the record is exiting the query, `current` will be `undefined`.
  * @param type The type of update that has occurred (see {@link UpdateType}).
@@ -28,7 +28,7 @@ export type UpdateType = "enter" | "exit" | "change" | "noop";
  */
 export type TableUpdate<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = {
   table: BaseTable<PS, M, T> | Table<PS, M, T>;
-  $record: $Record;
+  record: Record;
   properties: { current: Properties<PS, T> | undefined; prev: Properties<PS, T> | undefined };
   type: UpdateType;
 };
@@ -135,13 +135,13 @@ export type TableQueryOptions<
 /**
  * Defines the result of a query for records inside a specific table.
  * @param id The id of the table being queried.
- * @param $records An array of {@link $Record} matching the query.
+ * @param records An array of {@link Record} matching the query.
  * @category Queries
  * @internal
  */
 export type TableQueryResult = {
   id: string;
-  $records: $Record[];
+  records: Record[];
 };
 
 /**

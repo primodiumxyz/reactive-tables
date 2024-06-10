@@ -33,10 +33,10 @@ import { systems, type Schema } from "@/lib";
  * // no output
  *
  * registry.Player.update({ health: 90 }, playerRecord);
- * // -> { table: registry.Player, $record: playerRecord, current: { health: 90 }, prev: { health: 100 }, type: "change" }
+ * // -> { table: registry.Player, record: playerRecord, current: { health: 90 }, prev: { health: 100 }, type: "change" }
  *
  * registry.Player.remove(playerRecord);
- * // -> { table: registry.Player, $record: playerRecord, current: undefined, prev: { health: 90 }, type: "exit" }
+ * // -> { table: registry.Player, record: playerRecord, current: undefined, prev: { health: 90 }, type: "exit" }
  *
  * // Unsubscribe from the watcher once you're done or when disposing of the component
  * // This will be done automatically when disposing of the world
