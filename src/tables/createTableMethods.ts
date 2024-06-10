@@ -13,7 +13,15 @@ import {
   type TableMutationOptions,
   type World,
 } from "@/lib";
-const { runQuery, defineQuery, use$RecordQuery, With, WithProperties, WithoutProperties } = queries;
+const { runQuery, defineQuery, use$RecordQuery, With, WithProperties, WithoutProperties } = queries();
+const {
+  set$Record,
+  remove$Record,
+  update$Record,
+  get$RecordProperties,
+  has$Record,
+  isTableUpdate: _isTableUpdate,
+} = tableOperations();
 
 /* -------------------------------------------------------------------------- */
 /*                               ATTACH METHODS                               */
@@ -32,16 +40,20 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
 
   /* --------------------------------- STREAMS -------------------------------- */
   // Pause updates for a record (don't react to changes in hooks, e.g. useProperties)
-  const pauseUpdates = ($record?: $Record, properties?: Properties<PS, T>, skipUpdateStream = false) => {
+  const pauseUpdates = (
+    $record?: $Record,
+    properties?: Properties<PS, T>,
+    options: TableMutationOptions = { skipUpdateStream: false },
+  ) => {
     $record = $record ?? default$Record;
 
     paused.set($record, true);
-    if (properties) tableOperations.set$Record(table, $record, properties, { skipUpdateStream });
+    if (properties) set$Record(table, $record, properties, options);
   };
 
   // Enable updates for a record (react again to changes in the store, e.g. useProperties)
   // If any update happened during the pause, the state will be updated to the latest properties
-  const resumeUpdates = ($record?: $Record, skipUpdateStream = false) => {
+  const resumeUpdates = ($record?: $Record, options: TableMutationOptions = { skipUpdateStream: false }) => {
     $record = $record ?? default$Record;
 
     if (!paused.get($record)) return;
@@ -50,11 +62,9 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
     const update = pendingUpdate.get($record);
     if (!update) return;
 
-    if (update.properties.prev)
-      tableOperations.set$Record(table, $record, update.properties.prev, { skipUpdateStream: true });
-    if (update.properties.current)
-      tableOperations.set$Record(table, $record, update.properties.current, { skipUpdateStream });
-    else tableOperations.remove$Record(table, $record);
+    if (update.properties.prev) set$Record(table, $record, update.properties.prev, { skipUpdateStream: true });
+    if (update.properties.current) set$Record(table, $record, update.properties.current, options);
+    else remove$Record(table, $record);
 
     pendingUpdate.delete($record);
   };
@@ -93,8 +103,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
 
     if (blocked.get($record)) return;
     if (paused.get($record)) {
-      const prevProperties =
-        pendingUpdate.get($record)?.properties.current ?? tableOperations.get$RecordProperties(table, $record);
+      const prevProperties = pendingUpdate.get($record)?.properties.current ?? get$RecordProperties(table, $record);
       pendingUpdate.set($record, {
         $record,
         properties: { current: properties, prev: prevProperties },
@@ -102,7 +111,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
         type: prevProperties ? "change" : "enter",
       });
     } else {
-      tableOperations.set$Record(table, $record, properties, options);
+      set$Record(table, $record, properties, options);
     }
   };
 
@@ -113,7 +122,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
   function get($record?: $Record | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
   function get($record?: $Record, defaultProperties?: PropertiesSansMetadata<PS, T>) {
     $record = $record ?? default$Record;
-    return tableOperations.get$RecordProperties(table, $record) ?? defaultProperties;
+    return get$RecordProperties(table, $record) ?? defaultProperties;
   }
 
   /* --------------------------------- QUERIES -------------------------------- */
@@ -131,7 +140,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
 
   // Get all records without specific properties
   const getAllWithout = (properties: Partial<Properties<PS, T>>) => {
-    const $records = runQuery([WithoutProperties(table, properties)]);
+    const $records = runQuery([With(table), WithoutProperties(table, properties)]);
     return [...$records];
   };
 
@@ -150,7 +159,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
 
   // Hook to get all records without specific properties
   const useAllWithout = (properties: Partial<Properties<PS, T>>) => {
-    const $records = use$RecordQuery([WithoutProperties(table, properties)]);
+    const $records = use$RecordQuery([With(table), WithoutProperties(table, properties)]);
     return [...$records];
   };
 
@@ -158,14 +167,14 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
   // Remove a record from the table (delete its properties)
   const remove = ($record?: $Record) => {
     $record = $record ?? default$Record;
-    tableOperations.remove$Record(table, $record);
+    remove$Record(table, $record);
   };
 
   /* ---------------------------------- CLEAR --------------------------------- */
   // Clear the table (remove all records)
   const clear = () => {
     for (const $record of runQuery([With(table)])) {
-      tableOperations.remove$Record(table, $record);
+      remove$Record(table, $record);
     }
   };
 
@@ -173,18 +182,18 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
   // Update the properties for a record, possibly with partial properties
   const update = (properties: Partial<Properties<PS, T>>, $record?: $Record, options?: TableMutationOptions) => {
     $record = $record ?? default$Record;
-    tableOperations.update$Record(table, $record, properties, undefined, options);
+    update$Record(table, $record, properties, undefined, options);
   };
 
   /* ----------------------------------- HAS ---------------------------------- */
   // Check if a record exists in the table
   const has = ($record?: $Record) => {
     if (!$record) return false;
-    return tableOperations.has$Record(table, $record);
+    return has$Record(table, $record);
   };
 
   const isTableUpdate = (update: TableUpdate<PS, M, T>): update is TableUpdate<PS, M, T> => {
-    return tableOperations.isTableUpdate(update, table);
+    return _isTableUpdate(update, table);
   };
 
   /* ----------------------------- USE PROPERTIES ----------------------------- */
@@ -201,7 +210,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
     );
 
     useEffect(() => {
-      setProperties(tableOperations.get$RecordProperties(table, $record));
+      setProperties(get$RecordProperties(table, $record));
 
       // fix: if pre-populated with state, useComponentValue doesn’t update when there’s a component that has been removed.
       const queryResult = defineQuery([With(table)], { runOnInit: true });

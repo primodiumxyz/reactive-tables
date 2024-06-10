@@ -55,10 +55,10 @@ export type Table<PS extends Schema = Schema, M extends BaseTableMetadata = Base
   TableMethods<PS, M, T>;
 
 export type ContractTables<tableDefs extends Record<string, ContractTableDef>> = {
-  [name in keyof tableDefs & string]: ContractTable<tableDefs[name]>;
+  [name in keyof tableDefs]: ContractTable<tableDefs[name]>;
 };
 export type ContractTable<
-  tableDef extends ContractTableDef,
+  tableDef extends ContractTableDef = ContractTableDef,
   PS extends ContractTablePropertiesSchema<tableDef> = ContractTablePropertiesSchema<tableDef>,
   // KS extends ContractTableKeySchema<tableDef> = ContractTableKeySchema<tableDef>,
 > = Table<PS, ContractTableMetadata<tableDef>>;
@@ -411,6 +411,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    *
    * @param $record (optional) The record to pause updates for.
    * @param properties (optional) The properties to set when pausing updates.
+   * @param options (optional) Additional {@link TableMutationOptions} for the mutation.
    * @example
    * This example pauses updates for a record in the "Player" table.
    *
@@ -428,12 +429,13 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  pauseUpdates: ($record?: $Record, properties?: Properties<PS, T>) => void;
+  pauseUpdates: ($record?: $Record, properties?: Properties<PS, T>, options?: TableMutationOptions) => void;
 
   /**
    * Enable updates for a record or the table as a whole, meaning it will react to changes in the store again.
    *
    * @param $record (optional) The record to enable updates for.
+   * @param options (optional) Additional {@link TableMutationOptions} for the mutation.
    * @example
    * This example enables updates for a record in the "Player" table after it's been paused.
    *
@@ -455,7 +457,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  resumeUpdates: ($record?: $Record) => void;
+  resumeUpdates: ($record?: $Record, options?: TableMutationOptions) => void;
 
   /**
    * Create a watcher for the table, either globally (on all changes) or within a TinyQL query.
@@ -512,10 +514,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  watch: (
-    options: Omit<TableWatcherOptions<PS, M, T>, "queries" | "tableId" | "schema">,
-    params?: TableWatcherParams,
-  ) => void;
+  watch: (options: Omit<TableWatcherOptions<PS, M, T>, "world" | "table">, params?: TableWatcherParams) => void;
 };
 
 /**

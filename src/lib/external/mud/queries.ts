@@ -19,6 +19,14 @@ import { useEffect, useMemo, useState } from "react";
 import type { TableUpdate } from "@/queries";
 import type { BaseTable, Properties } from "@/tables";
 import { type $Record, type Schema, tableOperations, Type } from "@/lib";
+const {
+  has$Record,
+  get$RecordProperties,
+  $recordPropertiesEqual,
+  getTable$Records,
+  get$RecordsWithProperties,
+  toUpdateStream,
+} = tableOperations();
 
 // All of the following code is taken and modified from MUD to fit new types and naming conventions.
 
@@ -109,7 +117,7 @@ function useDeepMemo<T>(currentProperties: T): T {
   return stableProperties;
 }
 
-export const queries = {
+export const queries = () => {
   /**
    * Create a {@link WithQueryFragment}.
    *
@@ -124,11 +132,11 @@ export const queries = {
    * ```
    *
    * @param table BaseTable this query fragment refers to.
-   * @returns query fragment to be used in {@link queries.runQuery} or {@link queries.defineQuery}.
+   * @returns query fragment to be used in {@link runQuery} or {@link defineQuery}.
    */
-  With<T extends Schema>(table: BaseTable<T>): WithQueryFragment<T> {
+  const With = <T extends Schema>(table: BaseTable<T>): WithQueryFragment<T> => {
     return { type: QueryFragmentType.With, table };
-  },
+  };
 
   /**
    * Create a {@link WithoutQueryFragment}.
@@ -144,11 +152,11 @@ export const queries = {
    * ```
    *
    * @param table BaseTable this query fragment refers to.
-   * @returns query fragment to be used in {@link queries.runQuery} or {@link queries.defineQuery}.
+   * @returns query fragment to be used in {@link runQuery} or {@link defineQuery}.
    */
-  Without<T extends Schema>(table: BaseTable<T>): WithoutQueryFragment<T> {
+  const Without = <T extends Schema>(table: BaseTable<T>): WithoutQueryFragment<T> => {
     return { type: QueryFragmentType.Without, table };
-  },
+  };
 
   /**
    * Create a {@link WithPropertiesQueryFragment}.
@@ -165,14 +173,14 @@ export const queries = {
    *
    * @param table BaseTable this query fragment refers to.
    * @param properties Only include $records with this (partial) table properties from the result.
-   * @returns query fragment to be used in {@link queries.runQuery} or {@link queries.defineQuery}.
+   * @returns query fragment to be used in {@link runQuery} or {@link defineQuery}.
    */
-  WithProperties<T extends Schema>(
+  const WithProperties = <T extends Schema>(
     table: BaseTable<T>,
     properties: Partial<Properties<T>>,
-  ): WithPropertiesQueryFragment<T> {
+  ): WithPropertiesQueryFragment<T> => {
     return { type: QueryFragmentType.WithProperties, table, properties };
-  },
+  };
 
   /**
    * Create a {@link WithoutPropertiesQueryFragment}.
@@ -189,14 +197,14 @@ export const queries = {
    *
    * @param table BaseTable this query fragment refers to.
    * @param properties Exclude $records with this (partial) table properties from the result.
-   * @returns query fragment to be used in {@link queries.runQuery} or {@link queries.defineQuery}.
+   * @returns query fragment to be used in {@link runQuery} or {@link defineQuery}.
    */
-  WithoutProperties<T extends Schema>(
+  const WithoutProperties = <T extends Schema>(
     table: BaseTable<T>,
     properties: Partial<Properties<T>>,
-  ): WithoutPropertiesQueryFragment<T> {
+  ): WithoutPropertiesQueryFragment<T> => {
     return { type: QueryFragmentType.WithoutProperties, table, properties };
-  },
+  };
 
   /**
    * Create a {@link ProxyReadQueryFragment}.
@@ -214,11 +222,11 @@ export const queries = {
    *
    * @param table BaseTable this query fragment refers to.
    * @param depth Max depth in the relationship chain to traverse.
-   * @returns query fragment to be used in {@link queries.runQuery} or {@link queries.defineQuery}.
+   * @returns query fragment to be used in {@link runQuery} or {@link defineQuery}.
    */
-  ProxyRead(table: BaseTable<{ properties: Type.$Record }>, depth: number): ProxyReadQueryFragment {
+  const ProxyRead = (table: BaseTable<{ properties: Type.$Record }>, depth: number): ProxyReadQueryFragment => {
     return { type: QueryFragmentType.ProxyRead, table, depth };
-  },
+  };
 
   /**
    * Create a {@link ProxyExpandQueryFragment}.
@@ -236,11 +244,11 @@ export const queries = {
    *
    * @param table BaseTable to apply this query fragment to.
    * @param depth Max depth in the relationship chain to traverse.
-   * @returns query fragment to be used in {@link queries.runQuery} or {@link queries.defineQuery}.
+   * @returns query fragment to be used in {@link runQuery} or {@link defineQuery}.
    */
-  ProxyExpand(table: BaseTable<{ properties: Type.$Record }>, depth: number): ProxyExpandQueryFragment {
+  const ProxyExpand = (table: BaseTable<{ properties: Type.$Record }>, depth: number): ProxyExpandQueryFragment => {
     return { type: QueryFragmentType.ProxyExpand, table, depth };
-  },
+  };
 
   /**
    * Helper function to check whether a given $record passes a given query fragment.
@@ -249,35 +257,29 @@ export const queries = {
    * @param fragment Query fragment to check.
    * @returns True if the $record passes the query fragment, else false.
    */
-  passesQueryFragment<T extends Schema>($record: $Record, fragment: $RecordQueryFragment<T>): boolean {
+  const passesQueryFragment = <T extends Schema>($record: $Record, fragment: $RecordQueryFragment<T>): boolean => {
     if (fragment.type === QueryFragmentType.With) {
       // $Record must have the given table
-      return tableOperations.has$Record(fragment.table, $record);
+      return has$Record(fragment.table, $record);
     }
 
     if (fragment.type === QueryFragmentType.WithProperties) {
       // $Record must have the given table properties
-      return tableOperations.$recordPropertiesEqual(
-        fragment.properties,
-        tableOperations.get$RecordProperties(fragment.table, $record),
-      );
+      return $recordPropertiesEqual(fragment.properties, get$RecordProperties(fragment.table, $record));
     }
 
     if (fragment.type === QueryFragmentType.Without) {
       // $Record must not have the given table
-      return !tableOperations.has$Record(fragment.table, $record);
+      return !has$Record(fragment.table, $record);
     }
 
     if (fragment.type === QueryFragmentType.WithoutProperties) {
       // $Record must not have the given table properties
-      return !tableOperations.$recordPropertiesEqual(
-        fragment.properties,
-        tableOperations.get$RecordProperties(fragment.table, $record),
-      );
+      return !$recordPropertiesEqual(fragment.properties, get$RecordProperties(fragment.table, $record));
     }
 
     throw new Error("Unknown query fragment");
-  },
+  };
 
   /**
    * Helper function to check whether a query fragment is "positive" (ie `With` or `WithProperties`)
@@ -285,11 +287,11 @@ export const queries = {
    * @param fragment Query fragment to check.
    * @returns True if the query fragment is positive, else false.
    */
-  isPositiveFragment<T extends Schema>(
+  const isPositiveFragment = <T extends Schema>(
     fragment: QueryFragment<T>,
-  ): fragment is WithQueryFragment<T> | WithPropertiesQueryFragment<T> {
+  ): fragment is WithQueryFragment<T> | WithPropertiesQueryFragment<T> => {
     return fragment.type === QueryFragmentType.With || fragment.type == QueryFragmentType.WithProperties;
-  },
+  };
 
   /**
    * Helper function to check whether a query fragment is "negative" (ie `Without` or `WithoutProperties`)
@@ -297,11 +299,11 @@ export const queries = {
    * @param fragment Query fragment to check.
    * @returns True if the query fragment is negative, else false.
    */
-  isNegativeFragment<T extends Schema>(
+  const isNegativeFragment = <T extends Schema>(
     fragment: QueryFragment<T>,
-  ): fragment is WithoutQueryFragment<T> | WithoutPropertiesQueryFragment<T> {
+  ): fragment is WithoutQueryFragment<T> | WithoutPropertiesQueryFragment<T> => {
     return fragment.type === QueryFragmentType.Without || fragment.type == QueryFragmentType.WithoutProperties;
-  },
+  };
 
   /**
    * Helper function to check whether a query fragment is a setting fragment (ie `ProxyExpand` or `ProxyRead`)
@@ -309,9 +311,9 @@ export const queries = {
    * @param fragment Query fragment to check.
    * @returns True if the query fragment is a setting fragment, else false.
    */
-  isSettingFragment<T extends Schema>(fragment: QueryFragment<T>): fragment is SettingQueryFragment {
+  const isSettingFragment = <T extends Schema>(fragment: QueryFragment<T>): fragment is SettingQueryFragment => {
     return fragment.type === QueryFragmentType.ProxyExpand || fragment.type == QueryFragmentType.ProxyRead;
-  },
+  };
 
   /**
    * Helper function to check whether the result of a query pass check is a breaking state.
@@ -325,9 +327,9 @@ export const queries = {
    * @param fragment Fragment that was used in the query pass check.
    * @returns True if the result is breaking pass state, else false.
    */
-  isBreakingPassState(passes: boolean, fragment: $RecordQueryFragment<Schema>) {
-    return (passes && this.isPositiveFragment(fragment)) || (!passes && this.isNegativeFragment(fragment));
-  },
+  const isBreakingPassState = (passes: boolean, fragment: $RecordQueryFragment<Schema>) => {
+    return (passes && isPositiveFragment(fragment)) || (!passes && isNegativeFragment(fragment));
+  };
 
   /**
    * Helper function to check whether a $record passes a query fragment when taking into account a {@link ProxyReadQueryFragment}.
@@ -337,15 +339,15 @@ export const queries = {
    * @param proxyRead {@link ProxyReadQueryFragment} to take into account.
    * @returns True if the $record passes the query fragment, else false.
    */
-  passesQueryFragmentProxy<T extends Schema>(
+  const passesQueryFragmentProxy = <T extends Schema>(
     $record: $Record,
     fragment: $RecordQueryFragment<T>,
     proxyRead: ProxyReadQueryFragment,
-  ): boolean | null {
+  ): boolean | null => {
     let proxyEntity = $record;
     let passes = false;
     for (let i = 0; i < proxyRead.depth; i++) {
-      const properties = tableOperations.get$RecordProperties(proxyRead.table, proxyEntity);
+      const properties = get$RecordProperties(proxyRead.table, proxyEntity);
       // If the current $record does not have the proxy table, abort
       if (!properties) return null;
 
@@ -354,14 +356,14 @@ export const queries = {
 
       // Move up the proxy chain
       proxyEntity = $record;
-      passes = this.passesQueryFragment(proxyEntity, fragment);
+      passes = passesQueryFragment(proxyEntity, fragment);
 
-      if (this.isBreakingPassState(passes, fragment)) {
+      if (isBreakingPassState(passes, fragment)) {
         return passes;
       }
     }
     return passes;
-  },
+  };
 
   /**
    * Recursively compute all direct and indirect child $records up to the specified depth
@@ -372,18 +374,22 @@ export const queries = {
    * @param depth Depth up to which the recursion should be applied.
    * @returns Set of $records that are child $records of the given $record via the given table.
    */
-  getChild$Records($record: $Record, table: BaseTable<{ properties: Type.$Record }>, depth: number): Set<$Record> {
+  const getChild$Records = (
+    $record: $Record,
+    table: BaseTable<{ properties: Type.$Record }>,
+    depth: number,
+  ): Set<$Record> => {
     if (depth === 0) return new Set();
 
-    const directChildEntities = tableOperations.get$RecordsWithProperties(table, { properties: $record });
+    const directChildEntities = get$RecordsWithProperties(table, { properties: $record });
     if (depth === 1) return directChildEntities;
 
     const indirectChildEntities = [...directChildEntities]
-      .map((child$Record) => [...this.getChild$Records(child$Record, table, depth - 1)])
+      .map((child$Record) => [...getChild$Records(child$Record, table, depth - 1)])
       .flat();
 
     return new Set([...directChildEntities, ...indirectChildEntities]);
-  },
+  };
 
   /**
    * Execute a list of query fragments to receive a Set of matching $records.
@@ -400,7 +406,7 @@ export const queries = {
    * @param initialSet Optional: provide a Set of $records to execute the query on. If none is given, all existing $records are used for the query.
    * @returns Set of $records matching the query fragments.
    */
-  runQuery(fragments: QueryFragment[], initialSet?: Set<$Record>): Set<$Record> {
+  const runQuery = (fragments: QueryFragment[], initialSet?: Set<$Record>): Set<$Record> => {
     let $records: Set<$Record> | undefined = initialSet ? new Set([...initialSet]) : undefined; // Copy to a fresh set because it will be modified in place
     let proxyRead: ProxyReadQueryFragment | undefined = undefined;
     let proxyExpand: ProxyExpandQueryFragment | undefined = undefined;
@@ -408,27 +414,27 @@ export const queries = {
     // Process fragments
     for (let i = 0; i < fragments.length; i++) {
       const fragment = fragments[i];
-      if (this.isSettingFragment(fragment)) {
+      if (isSettingFragment(fragment)) {
         // Store setting fragments for subsequent query fragments
         if (fragment.type === QueryFragmentType.ProxyRead) proxyRead = fragment;
         if (fragment.type === QueryFragmentType.ProxyExpand) proxyExpand = fragment;
       } else if (!$records) {
         // Handle $record query fragments
         // First regular fragment must be With or WithProperties
-        if (this.isNegativeFragment(fragment)) {
+        if (isNegativeFragment(fragment)) {
           throw new Error("First $RecordQueryFragment must be With or WithProperties");
         }
 
         // Create the first interim result
         $records =
           fragment.type === QueryFragmentType.With
-            ? new Set([...tableOperations.getTable$Records(fragment.table)])
-            : tableOperations.get$RecordsWithProperties(fragment.table, fragment.properties);
+            ? new Set([...getTable$Records(fragment.table)])
+            : get$RecordsWithProperties(fragment.table, fragment.properties);
 
         // Add $record's children up to the specified depth if proxy expand is active
         if (proxyExpand && proxyExpand.depth > 0) {
           for (const $record of [...$records]) {
-            for (const child$Record of this.getChild$Records($record, proxyExpand.table, proxyExpand.depth)) {
+            for (const child$Record of getChild$Records($record, proxyExpand.table, proxyExpand.depth)) {
               $records.add(child$Record);
             }
           }
@@ -437,11 +443,11 @@ export const queries = {
         // There already is an interim result, apply the current fragment
         for (const $record of [...$records]) {
           // Branch 1: Simple / check if the current $record passes the query fragment
-          let passes = this.passesQueryFragment($record, fragment);
+          let passes = passesQueryFragment($record, fragment);
 
           // Branch 2: Proxy upwards / check if proxy $record passes the query
-          if (proxyRead && proxyRead.depth > 0 && !this.isBreakingPassState(passes, fragment)) {
-            passes = this.passesQueryFragmentProxy($record, fragment, proxyRead) ?? passes;
+          if (proxyRead && proxyRead.depth > 0 && !isBreakingPassState(passes, fragment)) {
+            passes = passesQueryFragmentProxy($record, fragment, proxyRead) ?? passes;
           }
 
           // If the $record didn't pass the query fragment, remove it from the interim set
@@ -449,13 +455,13 @@ export const queries = {
 
           // Branch 3: Proxy downwards / run the query fragments on child $records if proxy expand is active
           if (proxyExpand && proxyExpand.depth > 0) {
-            const child$Records = this.getChild$Records($record, proxyExpand.table, proxyExpand.depth);
+            const child$Records = getChild$Records($record, proxyExpand.table, proxyExpand.depth);
             for (const child$Record of child$Records) {
               // Add the child $record if it passes the direct check
               // or if a proxy read is active and it passes the proxy read check
               if (
-                this.passesQueryFragment(child$Record, fragment) ||
-                (proxyRead && proxyRead.depth > 0 && this.passesQueryFragmentProxy(child$Record, fragment, proxyRead))
+                passesQueryFragment(child$Record, fragment) ||
+                (proxyRead && proxyRead.depth > 0 && passesQueryFragmentProxy(child$Record, fragment, proxyRead))
               )
                 $records.add(child$Record);
             }
@@ -465,7 +471,7 @@ export const queries = {
     }
 
     return $records ?? new Set<$Record>();
-  },
+  };
 
   /**
    * Create a query object including an update$ stream and a Set of $records currently matching the query.
@@ -497,18 +503,18 @@ export const queries = {
    *  matching: Mobx observable set of $records currently matching the query.
    * }.
    */
-  defineQuery(
+  const defineQuery = (
     fragments: QueryFragment[],
     options?: { runOnInit?: boolean; initialSet?: Set<$Record> },
   ): {
     update$: Observable<TableUpdate>;
     matching: ObservableSet<$Record>;
-  } {
+  } => {
     const initialSet =
-      options?.runOnInit || options?.initialSet ? this.runQuery(fragments, options.initialSet) : new Set<$Record>();
+      options?.runOnInit || options?.initialSet ? runQuery(fragments, options.initialSet) : new Set<$Record>();
 
     const matching = observable(initialSet);
-    const initial$ = from(matching).pipe(tableOperations.toUpdateStream(fragments[0].table));
+    const initial$ = from(matching).pipe(toUpdateStream(fragments[0].table));
 
     const containsProxy =
       fragments.findIndex((v) => [QueryFragmentType.ProxyExpand, QueryFragmentType.ProxyRead].includes(v.type)) !== -1;
@@ -521,7 +527,7 @@ export const queries = {
               // We have to run the entire query again and compare the result.
               // TODO(MUD): We might be able to make this more efficient by first computing the set of $records that are potentially touched by this update
               // and then only rerun the query on this set.
-              const newMatchingSet = this.runQuery(fragments, options?.initialSet);
+              const newMatchingSet = runQuery(fragments, options?.initialSet);
               const updates: TableUpdate[] = [];
 
               for (const previouslyMatching$Record of matching) {
@@ -545,7 +551,7 @@ export const queries = {
                     type: "change",
                     table: update.table,
                     properties: {
-                      current: tableOperations.get$RecordProperties(update.table, matchingEntity),
+                      current: get$RecordProperties(update.table, matchingEntity),
                       prev: undefined,
                     },
                   });
@@ -557,7 +563,7 @@ export const queries = {
                     type: "enter",
                     table: update.table,
                     properties: {
-                      current: tableOperations.get$RecordProperties(update.table, matchingEntity),
+                      current: get$RecordProperties(update.table, matchingEntity),
                       prev: undefined,
                     },
                   });
@@ -573,7 +579,7 @@ export const queries = {
                 // Find fragments accessign this table (linear search is fine since the number fragments is likely small)
                 const relevantFragments = fragments.filter((f) => f.table.id === update.table.id);
                 const pass = relevantFragments.every((f) =>
-                  this.passesQueryFragment(update.$record, f as $RecordQueryFragment),
+                  passesQueryFragment(update.$record, f as $RecordQueryFragment),
                 ); // We early return if the query contains proxies
 
                 if (pass) {
@@ -587,7 +593,7 @@ export const queries = {
               }
 
               // This $record didn't match before, check all fragments
-              const pass = fragments.every((f) => this.passesQueryFragment(update.$record, f as $RecordQueryFragment)); // We early return if the query contains proxies
+              const pass = fragments.every((f) => passesQueryFragment(update.$record, f as $RecordQueryFragment)); // We early return if the query contains proxies
               if (pass) {
                 // $Record didn't pass before but passes now, forward update end enter
                 matching.add(update.$record);
@@ -601,40 +607,43 @@ export const queries = {
       matching,
       update$: concat(initial$, internal$).pipe(share()),
     };
-  },
+  };
 
   /**
    * Define a query object that only passes update events of type {@link UpdateType `change`} to the `update$` stream.
-   * See {@link queries.defineQuery} for details.
+   * See {@link defineQuery} for details.
    *
    * @param fragments Query fragments
    * @returns Stream of table updates of $records that had already matched the query
    */
-  defineUpdateQuery(fragments: QueryFragment[], options?: { runOnInit?: boolean }): Observable<TableUpdate> {
-    return this.defineQuery(fragments, options).update$.pipe(filter((e) => e.type === "change"));
-  },
+  const defineChangeQuery = (
+    fragments: QueryFragment[],
+    options?: { runOnInit?: boolean },
+  ): Observable<TableUpdate> => {
+    return defineQuery(fragments, options).update$.pipe(filter((e) => e.type === "change"));
+  };
 
   /**
    * Define a query object that only passes update events of type {@link UpdateType `enter`} to the `update$` stream.
-   * See {@link queries.defineQuery} for details.
+   * See {@link defineQuery} for details.
    *
    * @param fragments Query fragments
    * @returns Stream of table updates of $records matching the query for the first time
    */
-  defineEnterQuery(fragments: QueryFragment[], options?: { runOnInit?: boolean }): Observable<TableUpdate> {
-    return this.defineQuery(fragments, options).update$.pipe(filter((e) => e.type === "enter"));
-  },
+  const defineEnterQuery = (fragments: QueryFragment[], options?: { runOnInit?: boolean }): Observable<TableUpdate> => {
+    return defineQuery(fragments, options).update$.pipe(filter((e) => e.type === "enter"));
+  };
 
   /**
    * Define a query object that only passes update events of type {@link UpdateType `exit`} to the `update$` stream.
-   * See {@link queries.defineQuery} for details.
+   * See {@link defineQuery} for details.
    *
    * @param fragments Query fragments
    * @returns Stream of table updates of $records not matching the query anymore for the first time
    */
-  defineExitQuery(fragments: QueryFragment[], options?: { runOnInit?: boolean }): Observable<TableUpdate> {
-    return this.defineQuery(fragments, options).update$.pipe(filter((e) => e.type === "exit"));
-  },
+  const defineExitQuery = (fragments: QueryFragment[], options?: { runOnInit?: boolean }): Observable<TableUpdate> => {
+    return defineQuery(fragments, options).update$.pipe(filter((e) => e.type === "exit"));
+  };
 
   /**
    * Returns all matching $records for a given $record query,
@@ -644,12 +653,12 @@ export const queries = {
    * @param options.updateOnValueChange False - re-renders only on $record array changes. True (default) - also on table properties changes.
    * @returns Set of $records matching the query fragments.
    */
-  use$RecordQuery(fragments: QueryFragment[], options?: { updateOnValueChange?: boolean }) {
+  const use$RecordQuery = (fragments: QueryFragment[], options?: { updateOnValueChange?: boolean }) => {
     const updateOnValueChange = options?.updateOnValueChange ?? true;
 
     const stableFragments = useDeepMemo(fragments);
-    const query = useMemo(() => this.defineQuery(stableFragments, { runOnInit: true }), [stableFragments]);
-    const [entities, setEntities] = useState([...query.matching]);
+    const query = useMemo(() => defineQuery(stableFragments, { runOnInit: true }), [stableFragments]);
+    const [$records, setEntities] = useState([...query.matching]);
 
     useEffect(() => {
       setEntities([...query.matching]);
@@ -658,10 +667,25 @@ export const queries = {
         // re-render only on entity array changes
         observable = observable.pipe(distinctUntilChanged((a, b) => isEqual(a, b)));
       }
-      const subscription = observable.subscribe((entities) => setEntities(entities));
+      const subscription = observable.subscribe(($records) => setEntities($records));
       return () => subscription.unsubscribe();
     }, [query, updateOnValueChange]);
 
-    return entities;
-  },
+    return $records;
+  };
+
+  return {
+    With,
+    WithProperties,
+    Without,
+    WithoutProperties,
+    ProxyRead,
+    ProxyExpand,
+    runQuery,
+    defineQuery,
+    defineChangeQuery,
+    defineEnterQuery,
+    defineExitQuery,
+    use$RecordQuery,
+  };
 };

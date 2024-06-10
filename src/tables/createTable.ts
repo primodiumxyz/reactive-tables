@@ -1,6 +1,8 @@
 import { Subject } from "rxjs";
 
-import { createTableMethods, type BaseTableMetadata, type Table, type BaseTable } from "@/tables";
+// import { createTableMethods, type BaseTableMetadata, type Table, type BaseTable } from "@/tables";
+import { createTableMethods } from "./createTableMethods";
+import type { BaseTable, BaseTableMetadata, Table } from "./types";
 import {
   createIndexer,
   get$RecordHex,

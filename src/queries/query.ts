@@ -1,5 +1,6 @@
 import type { QueryOptions } from "@/queries";
 import { queries, type QueryFragment, type $Record } from "@/lib";
+const { runQuery, With, WithProperties, Without, WithoutProperties } = queries();
 
 /**
  * Queries all records matching multiple provided conditions across tables.
@@ -34,14 +35,13 @@ export const query = (options: QueryOptions, fragments?: QueryFragment[]): $Reco
     throw new Error("At least one `with` or `withProperties` condition needs to be provided");
   }
 
-  if (fragments) return [...queries.runQuery(fragments)];
+  if (fragments) return [...runQuery(fragments)];
   return [
-    ...queries.runQuery([
-      ...(inside?.map((fragment) => queries.With(fragment)) ?? []),
-      ...(withProperties?.map((matching) => queries.WithProperties(matching.table, { ...matching.properties })) ?? []),
-      ...(notInside?.map((table) => queries.Without(table)) ?? []),
-      ...(withoutProperties?.map((matching) => queries.WithoutProperties(matching.table, { ...matching.properties })) ??
-        []),
+    ...runQuery([
+      ...(inside?.map((fragment) => With(fragment)) ?? []),
+      ...(withProperties?.map((matching) => WithProperties(matching.table, { ...matching.properties })) ?? []),
+      ...(notInside?.map((table) => Without(table)) ?? []),
+      ...(withoutProperties?.map((matching) => WithoutProperties(matching.table, { ...matching.properties })) ?? []),
     ]),
   ];
 };

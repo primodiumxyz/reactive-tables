@@ -32,9 +32,10 @@ export const createContractTables = <config extends StoreConfig, extraTableDefs 
           schemaAbiTypeToRecsType[schemaAbiType as SchemaAbiType],
         ]),
       ),
-      __staticData: Type.OptionalString,
-      __encodedLengths: Type.OptionalString,
-      __dynamicData: Type.OptionalString,
+      __staticData: Type.OptionalHex,
+      __encodedLengths: Type.OptionalHex,
+      __dynamicData: Type.OptionalHex,
+      __lastSyncedAtBlock: Type.OptionalBigInt,
     } as const satisfies Schema;
 
     // const keySchema = {
@@ -61,5 +62,5 @@ export const createContractTables = <config extends StoreConfig, extraTableDefs 
         },
       },
     );
-  }) as ContractTables<AllTableDefs<config, extraTableDefs>>;
+  }) as unknown as ContractTables<AllTableDefs<config, extraTableDefs>>;
 };

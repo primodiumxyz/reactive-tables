@@ -1,14 +1,17 @@
+import { ContractTables } from "@/tables";
+import { ContractTableDefs } from "@/lib";
+
 import { NetworkConfig } from "@test/utils/networkConfig";
 import { OnSyncCallbacks, Sync as SyncType } from "@test/utils/sync/types";
 import { SyncSourceType, SyncStep, createLocalSyncTables } from "@test/utils/sync/tables";
 
-export const hydrateFromIndexer = (
-  components: ReturnType<typeof createLocalSyncTables>,
+export const hydrateFromIndexer = <tableDefs extends ContractTableDefs>(
+  tables: ContractTables<tableDefs> & ReturnType<typeof createLocalSyncTables>,
   networkConfig: NetworkConfig,
   sync: SyncType,
   onSync: OnSyncCallbacks,
 ) => {
-  const { SyncSource, SyncStatus } = components;
+  const { SyncSource, SyncStatus } = tables;
   const { progress: onProgress, complete: onComplete, error: onError } = onSync ?? {};
 
   let startBlock = networkConfig.initialBlockNumber;
@@ -33,11 +36,11 @@ export const hydrateFromIndexer = (
 };
 
 export const hydrateFromRpc = (
-  components: ReturnType<typeof createLocalSyncTables>,
+  tables: ReturnType<typeof createLocalSyncTables>,
   sync: SyncType,
   onSync: OnSyncCallbacks,
 ) => {
-  const { SyncStatus, SyncSource } = components;
+  const { SyncStatus, SyncSource } = tables;
   const { progress: onProgress, complete: onComplete, error: onError } = onSync ?? {};
 
   sync.start(
@@ -75,8 +78,8 @@ export const hydrateFromRpc = (
   );
 };
 
-export const subToRpc = (components: ReturnType<typeof createLocalSyncTables>, sync: SyncType) => {
-  const { SyncStatus } = components;
+export const subToRpc = (tables: ReturnType<typeof createLocalSyncTables>, sync: SyncType) => {
+  const { SyncStatus } = tables;
   sync.start(
     (_, blockNumber) => {
       SyncStatus.set({

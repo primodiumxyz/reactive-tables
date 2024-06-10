@@ -17,7 +17,8 @@ import {
 } from "@latticexyz/schema-type/internal";
 import { type Hex } from "viem";
 
-import type { AbiPropertiesSchema, SchemaToPrimitives } from "@/lib";
+import { Properties } from "@/tables";
+import type { AbiPropertiesSchema, AbiToSchema } from "@/lib";
 
 // Modified from https://github.com/latticexyz/mud/blob/ade94a7fa761070719bcd4b4dac6cb8cc7783c3b/packages/protocol-parser/src/decodePropertiesArgs.ts#L8
 
@@ -36,7 +37,7 @@ import type { AbiPropertiesSchema, SchemaToPrimitives } from "@/lib";
 export function decodePropertiesArgs<TSchema extends AbiPropertiesSchema>(
   propertiesSchema: TSchema,
   args: ValueArgs,
-): SchemaToPrimitives<TSchema> {
+): Properties<AbiToSchema<TSchema>> {
   const { staticData, encodedLengths, dynamicData } = args;
   return decodeProperties(
     propertiesSchema,
@@ -66,14 +67,14 @@ export function decodePropertiesArgs<TSchema extends AbiPropertiesSchema>(
 export function decodeProperties<TSchema extends AbiPropertiesSchema>(
   propertiesSchema: TSchema,
   data: Hex,
-): SchemaToPrimitives<TSchema> {
+): Properties<AbiToSchema<TSchema>> {
   const staticFields = Object.values(propertiesSchema).filter(isStaticAbiType);
   const dynamicFields = Object.values(propertiesSchema).filter(isDynamicAbiType);
 
   const valueTuple = decodeRecord({ staticFields, dynamicFields }, data);
-  return Object.fromEntries(
-    Object.keys(propertiesSchema).map((name, i) => [name, valueTuple[i]]),
-  ) as SchemaToPrimitives<TSchema>;
+  return Object.fromEntries(Object.keys(propertiesSchema).map((name, i) => [name, valueTuple[i]])) as Properties<
+    AbiToSchema<TSchema>
+  >;
 }
 
 /**

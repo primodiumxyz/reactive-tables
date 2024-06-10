@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { query, type QueryOptions, type TableWatcherCallbacks, type TableUpdate } from "@/queries";
+import {
+  query,
+  type QueryOptions,
+  type TableWatcherCallbacks,
+  type TableUpdate,
+  type TableWatcherParams,
+} from "@/queries";
 import { queries, type $Record } from "@/lib";
+const { defineQuery, With, WithProperties, Without, WithoutProperties } = queries();
 
 /**
  * React hook to query all records matching multiple conditions across tables.
@@ -16,6 +23,7 @@ import { queries, type $Record } from "@/lib";
  * @param options The {@link QueryOptions} object containing the conditions to match.
  * @param callbacks (optional) The {@link TableWatcherCallbacks} to trigger on changes. Including: onChange, onEnter, onExit, onUpdate.
  * These will trigger a {@link TableUpdate} object with the id of the updated table, the record, the previous and new properties of the record and the type of update.
+ * @param params (optional) Additional {@link TableWatcherParams} for the query. Currently only supports `runOnInit` to trigger the callbacks for all matching records on initialization.
  * @returns An array of {@link $Record} matching all conditions.
  * @example
  * This example queries all records that have a score of 10 in the "Score" table and are not inside the "GameOver" table.
@@ -43,7 +51,11 @@ import { queries, type $Record } from "@/lib";
  * ```
  * @category Queries
  */
-export const useQuery = (options: QueryOptions, callbacks?: TableWatcherCallbacks): $Record[] => {
+export const useQuery = (
+  options: QueryOptions,
+  callbacks?: TableWatcherCallbacks,
+  params: TableWatcherParams = { runOnInit: true },
+): $Record[] => {
   // Not available in a non-browser environment
   if (typeof window === "undefined") throw new Error("useQuery is only available in a browser environment");
   const { with: inside, without: notInside, withProperties, withoutProperties } = options;
@@ -53,20 +65,20 @@ export const useQuery = (options: QueryOptions, callbacks?: TableWatcherCallback
 
   const queryFragments = useMemo(
     () => [
-      ...(inside?.map((fragment) => queries.With(fragment)) ?? []),
-      ...(withProperties?.map((matching) => queries.WithProperties(matching.table, { ...matching.properties })) ?? []),
-      ...(notInside?.map((table) => queries.Without(table)) ?? []),
-      ...(withoutProperties?.map((matching) => queries.WithoutProperties(matching.table, { ...matching.properties })) ??
-        []),
+      ...(inside?.map((fragment) => With(fragment)) ?? []),
+      ...(withProperties?.map((matching) => WithProperties(matching.table, { ...matching.properties })) ?? []),
+      ...(notInside?.map((table) => Without(table)) ?? []),
+      ...(withoutProperties?.map((matching) => WithoutProperties(matching.table, { ...matching.properties })) ?? []),
     ],
     [options],
   );
 
   useEffect(() => {
     setRecords(query(options, queryFragments)); // will throw if no positive fragment
+    console.log("useQuery", query(options, queryFragments));
 
     // fix: if pre-populated with state, useComponentValue doesn’t update when there’s a component that has been removed.
-    const queryResult = queries.defineQuery(queryFragments, { runOnInit: true });
+    const queryResult = defineQuery(queryFragments, params);
     const subscription = queryResult.update$.subscribe((_update) => {
       const update = _update as TableUpdate<
         (typeof _update)["table"]["propertiesSchema"],
@@ -88,5 +100,5 @@ export const useQuery = (options: QueryOptions, callbacks?: TableWatcherCallback
     return () => subscription.unsubscribe();
   }, [options, queryFragments]);
 
-  return records;
+  return [...new Set(records)];
 };

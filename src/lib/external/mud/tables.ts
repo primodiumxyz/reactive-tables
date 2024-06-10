@@ -1,4 +1,5 @@
 import { map, pipe } from "rxjs";
+import isEqual from "fast-deep-equal";
 
 import type { BaseTableMetadata, IndexedBaseTable, Properties, BaseTable } from "@/tables";
 import type { TableUpdate } from "@/queries";
@@ -19,7 +20,7 @@ function getTableName(table: BaseTable<any, any, any>) {
   );
 }
 
-export const tableOperations = {
+export const tableOperations = () => {
   /**
    * Set the properties for a given record in a given table.
    *
@@ -34,14 +35,14 @@ export const tableOperations = {
    * tables.set$Record(Position, $record, { x: 1, y: 2 });
    * ```
    */
-  set$Record<PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
+  const set$Record = <PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
     table: BaseTable<PS, M, T>,
     $record: $Record,
     properties: Properties<PS, T>,
     options: TableMutationOptions = {},
-  ) {
+  ) => {
     const $recordSymbol = get$RecordSymbol($record);
-    const prevProperties = this.get$RecordProperties(table, $record);
+    const prevProperties = get$RecordProperties(table, $record);
 
     for (const [key, val] of Object.entries(properties)) {
       if (table.properties[key]) {
@@ -73,10 +74,10 @@ export const tableOperations = {
         $record,
         properties: { current: properties, prev: prevProperties },
         table,
-        type: prevProperties ? "change" : "enter",
+        type: prevProperties ? (prevProperties === properties ? "noop" : "change") : "enter",
       });
     }
-  },
+  };
 
   /**
    * Update the properties for a given $record in a given table while keeping the old properties of keys not included in the update.
@@ -96,24 +97,24 @@ export const tableOperations = {
    * tables.update$Record(Position, $record, { x: 1 });
    * ```
    */
-  update$Record<PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
+  const update$Record = <PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
     table: BaseTable<PS, M, T>,
     $record: $Record,
     properties: Partial<Properties<PS, T>>,
     initialProperties?: Properties<PS, T>,
     options: TableMutationOptions = {},
-  ) {
-    const currentProperties = this.get$RecordProperties(table, $record);
+  ) => {
+    const currentProperties = get$RecordProperties(table, $record);
     if (currentProperties === undefined) {
       if (initialProperties === undefined) {
         throw new Error(`Can't update table ${getTableName(table)} without current or initial properties`);
       }
 
-      this.set$Record(table, $record, { ...initialProperties, ...properties }, options);
+      set$Record(table, $record, { ...initialProperties, ...properties }, options);
     } else {
-      this.set$Record(table, $record, { ...currentProperties, ...properties }, options);
+      set$Record(table, $record, { ...currentProperties, ...properties }, options);
     }
-  },
+  };
 
   /**
    * Remove a given $record from a given table.
@@ -123,13 +124,13 @@ export const tableOperations = {
    * @param table {@link createTable BaseTable} to be updated.
    * @param $record {@link $Record} whose properties should be removed from this table.
    */
-  remove$Record<PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
+  const remove$Record = <PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
     table: BaseTable<PS, M, T>,
     $record: $Record,
     options: TableMutationOptions = {},
-  ) {
+  ) => {
     const $recordSymbol = get$RecordSymbol($record);
-    const prevProperties = this.get$RecordProperties(table, $record);
+    const prevProperties = get$RecordProperties(table, $record);
 
     for (const key of Object.keys(table.properties)) {
       table.properties[key].delete($recordSymbol);
@@ -143,7 +144,7 @@ export const tableOperations = {
         type: prevProperties ? "exit" : "noop",
       });
     }
-  },
+  };
 
   /**
    * Check whether a table contains properties for a given $record.
@@ -154,14 +155,14 @@ export const tableOperations = {
    * @param $record {@link $Record} to check whether it has properties in the given table.
    * @returns true if the table contains properties for the given $record, else false.
    */
-  has$Record<PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
+  const has$Record = <PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
     table: BaseTable<PS, M, T>,
     $record: $Record,
-  ): boolean {
+  ): boolean => {
     const $recordSymbol = get$RecordSymbol($record);
     const map = Object.values(table.properties)[0];
     return map.has($recordSymbol);
-  },
+  };
 
   /**
    * Get the properties of a given $record in the given table.
@@ -173,10 +174,10 @@ export const tableOperations = {
    * @param $record {@link $Record} to get the properties for from the given table.
    * @returns Properties of the given $record in the given table or undefined if no properties exists.
    */
-  get$RecordProperties<PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
+  const get$RecordProperties = <PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
     table: BaseTable<PS, M, T>,
     $record: $Record,
-  ): Properties<PS, T> | undefined {
+  ): Properties<PS, T> | undefined => {
     const properties: Record<string, unknown> = {};
     const $recordSymbol = get$RecordSymbol($record);
 
@@ -189,7 +190,7 @@ export const tableOperations = {
     }
 
     return properties as Properties<PS, T>;
-  },
+  };
 
   /**
    * Get the properties of a given $record in the given table.
@@ -204,14 +205,14 @@ export const tableOperations = {
    * @remarks
    * Throws an error if no properties exists in the table for the given $record.
    */
-  get$RecordPropertiesStrict<PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
+  const get$RecordPropertiesStrict = <PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
     table: BaseTable<PS, M, T>,
     $record: $Record,
-  ): Properties<PS, T> {
-    const properties = this.get$RecordProperties(table, $record);
+  ): Properties<PS, T> => {
+    const properties = get$RecordProperties(table, $record);
     if (!properties) throw new Error(`No properties for table ${getTableName(table)} on $record ${$record}`);
     return properties;
-  },
+  };
 
   /**
    * Compare two {@link Properties}s.
@@ -229,18 +230,21 @@ export const tableOperations = {
    * $recordPropertiesEqual({ x: 1 }, { x: 1, y: 3 }) // returns true because x is equal and y is not present in a
    * ```
    */
-  $recordPropertiesEqual<S extends Schema, T = unknown>(a?: Partial<Properties<S, T>>, b?: Properties<S, T>): boolean {
+  const $recordPropertiesEqual = <S extends Schema, T = unknown>(
+    a?: Partial<Properties<S, T>>,
+    b?: Properties<S, T>,
+  ): boolean => {
     if (!a && !b) return true;
     if (!a || !b) return false;
 
     let equals = true;
     for (const key of Object.keys(a)) {
-      equals = a[key] === b[key];
+      equals = isEqual(a[key], b[key]);
       if (!equals) return false;
     }
 
     return equals;
-  },
+  };
 
   /**
    * Util to create a tuple of a table and properties with matching schema.
@@ -252,12 +256,12 @@ export const tableOperations = {
    * @param properties {@link Properties} with {@link Schema} `S`
    * @returns Tuple `[table, properties]`
    */
-  withProperties<S extends Schema, T = unknown>(
+  const withProperties = <S extends Schema, T = unknown>(
     table: BaseTable<S, BaseTableMetadata, T>,
     properties: Properties<S, T>,
-  ): [BaseTable<S, BaseTableMetadata, T>, Properties<S, T>] {
+  ): [BaseTable<S, BaseTableMetadata, T>, Properties<S, T>] => {
     return [table, properties];
-  },
+  };
 
   /**
    * Get a set of entities that have the given table properties in the given table.
@@ -268,26 +272,26 @@ export const tableOperations = {
    * @param properties look for $records with these {@link Properties}.
    * @returns Set with {@link $Record Records} with the given table properties.
    */
-  get$RecordsWithProperties<S extends Schema, T = unknown>(
+  const get$RecordsWithProperties = <S extends Schema, T = unknown>(
     table: BaseTable<S, BaseTableMetadata, T> | IndexedBaseTable<S, BaseTableMetadata, T>,
     properties: Partial<Properties<S, T>>,
-  ): Set<$Record> {
+  ): Set<$Record> => {
     // Shortcut for indexers
-    if (this.isIndexed(table) && this.isFullTableProperties(table, properties)) {
+    if (isIndexed(table) && isFullTableProperties(table, properties)) {
       return table.get$RecordsWithProperties(properties);
     }
 
     // Trivial implementation for regular tables
     const $records = new Set<$Record>();
-    for (const $record of this.getTable$Records(table)) {
-      const recProperties = this.get$RecordProperties(table, $record);
-      if (this.$recordPropertiesEqual(properties, recProperties)) {
+    for (const $record of getTable$Records(table)) {
+      const recProperties = get$RecordProperties(table, $record);
+      if ($recordPropertiesEqual(properties, recProperties)) {
         $records.add($record);
       }
     }
 
     return $records;
-  },
+  };
 
   /**
    * Get a set of all $records of the given table.
@@ -297,11 +301,11 @@ export const tableOperations = {
    * @param table {@link createTable BaseTable} to get all $records from
    * @returns Set of all $records in the given table.
    */
-  getTable$Records<S extends Schema, T = unknown>(
+  const getTable$Records = <S extends Schema, T = unknown>(
     table: BaseTable<S, BaseTableMetadata, T>,
-  ): IterableIterator<$Record> {
+  ): IterableIterator<$Record> => {
     return table.$records();
-  },
+  };
 
   /**
    * Helper function to create a table update for the current table properties of a given $record.
@@ -312,8 +316,8 @@ export const tableOperations = {
    * @param table BaseTable to create the table update for.
    * @returns TableUpdate {@link TableUpdate} corresponding to the given $record, the given table and the $record's current properties.
    */
-  toUpdate<S extends Schema>($record: $Record, table: BaseTable<S>): TableUpdate<S> {
-    const properties = this.get$RecordProperties(table, $record);
+  const toUpdate = <S extends Schema>($record: $Record, table: BaseTable<S>): TableUpdate<S> => {
+    const properties = get$RecordProperties(table, $record);
 
     return {
       $record,
@@ -321,7 +325,7 @@ export const tableOperations = {
       properties: { current: properties, prev: undefined },
       type: properties ? "enter" : "noop",
     };
-  },
+  };
 
   /**
    * Helper function to turn a stream of {@link $Record $Records} into a stream of table updates of the given table.
@@ -331,9 +335,9 @@ export const tableOperations = {
    * @param table BaseTable to create update stream for.
    * @returns Unary function to be used with RxJS that turns stream of {@link $Record $Records} into stream of table updates.
    */
-  toUpdateStream<S extends Schema>(table: BaseTable<S>) {
-    return pipe(map(($record: $Record) => this.toUpdate($record, table)));
-  },
+  const toUpdateStream = <S extends Schema>(table: BaseTable<S>) => {
+    return pipe(map(($record: $Record) => toUpdate($record, table)));
+  };
 
   /**
    * Helper function to check whether a given table is indexed.
@@ -343,9 +347,9 @@ export const tableOperations = {
    * @param c
    * @returns Whether the given table is indexed.
    */
-  isIndexed<S extends Schema>(table: BaseTable<S> | IndexedBaseTable<S>): table is IndexedBaseTable<S> {
+  const isIndexed = <S extends Schema>(table: BaseTable<S> | IndexedBaseTable<S>): table is IndexedBaseTable<S> => {
     return "get$RecordsWithProperties" in table;
-  },
+  };
 
   /**
    * Helper function to check whether given table properties are partial or full.
@@ -356,12 +360,12 @@ export const tableOperations = {
    * @param properties
    * @returns Whether the given table properties are full.
    */
-  isFullTableProperties<S extends Schema, T = unknown>(
+  const isFullTableProperties = <S extends Schema, T = unknown>(
     table: BaseTable<S, BaseTableMetadata, T>,
     properties: Partial<Properties<S, T>>,
-  ): properties is Properties<S, T> {
+  ): properties is Properties<S, T> => {
     return Object.keys(table.propertiesSchema).every((key) => key in properties);
-  },
+  };
 
   /**
    * Type guard to infer the TypeScript type of a given table update
@@ -370,10 +374,28 @@ export const tableOperations = {
    * @param table {@link createTable BaseTable} to check whether the given update corresponds to it.
    * @returns True (+ infered type for `update`) if `update` belongs to `table`. Else false.
    */
-  isTableUpdate<S extends Schema, T = unknown>(
+  const isTableUpdate = <S extends Schema, T = unknown>(
     update: TableUpdate<S, BaseTableMetadata, T>,
     table: BaseTable<S, BaseTableMetadata, T>,
-  ): update is TableUpdate<S, BaseTableMetadata, T> {
+  ): update is TableUpdate<S, BaseTableMetadata, T> => {
     return update.table.id === table.id;
-  },
+  };
+
+  return {
+    set$Record,
+    update$Record,
+    remove$Record,
+    has$Record,
+    get$RecordProperties,
+    get$RecordPropertiesStrict,
+    $recordPropertiesEqual,
+    withProperties,
+    get$RecordsWithProperties,
+    getTable$Records,
+    toUpdate,
+    toUpdateStream,
+    isIndexed,
+    isFullTableProperties,
+    isTableUpdate,
+  };
 };

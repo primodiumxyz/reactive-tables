@@ -12,7 +12,7 @@ import {
   hexKeyTupleTo$Record,
   resourceToLabel,
 } from "@/lib";
-import type { ContractTable, ContractTables } from "@/tables";
+import type { ContractTable, ContractTables, Properties } from "@/tables";
 
 export const createStorageAdapter = <config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined>({
   tables,
@@ -73,13 +73,13 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
       const { $record, table } = processed;
 
       const previousProperties = table.get($record);
-      const previousStaticData = (previousProperties?.__staticData as Hex) ?? "0x";
+      const previousStaticData = previousProperties?.__staticData ?? ("0x" as Hex);
       const newStaticData = spliceHex(previousStaticData, log.args.start, size(log.args.data), log.args.data);
       const newProperties = decodeArgs(table.metadata.abiPropertiesSchema, {
         staticData: newStaticData,
-        encodedLengths: (previousProperties?.__encodedLengths as Hex) ?? "0x",
-        dynamicData: (previousProperties?.__dynamicData as Hex) ?? "0x",
-      });
+        encodedLengths: previousProperties?.__encodedLengths ?? ("0x" as Hex),
+        dynamicData: previousProperties?.__dynamicData ?? ("0x" as Hex),
+      }) as Properties<typeof table.propertiesSchema>;
 
       debug("setting properties via splice static", {
         namespace: table.metadata.namespace,
@@ -91,7 +91,7 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
         newProperties,
       });
 
-      table.update(
+      table.set(
         {
           ...newProperties,
           __staticData: newStaticData,
@@ -108,13 +108,13 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
       const { $record, table } = processed;
 
       const previousProperties = table.get($record);
-      const previousDynamicData = (previousProperties?.__dynamicData as Hex) ?? "0x";
+      const previousDynamicData = previousProperties?.__dynamicData ?? ("0x" as Hex);
       const newDynamicData = spliceHex(previousDynamicData, log.args.start, log.args.deleteCount, log.args.data);
       const newProperties = decodeArgs(table.metadata.abiPropertiesSchema, {
-        staticData: (previousProperties?.__staticData as Hex) ?? "0x",
+        staticData: previousProperties?.__staticData ?? ("0x" as Hex),
         encodedLengths: log.args.encodedLengths,
         dynamicData: newDynamicData,
-      });
+      }) as Properties<typeof table.propertiesSchema>;
 
       debug("setting properties via splice dynamic", {
         namespace: table.metadata.namespace,
@@ -126,7 +126,7 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
         newProperties,
       });
 
-      table.update(
+      table.set(
         {
           ...newProperties,
           __encodedLengths: log.args.encodedLengths,

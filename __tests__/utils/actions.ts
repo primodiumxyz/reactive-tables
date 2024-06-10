@@ -19,7 +19,7 @@ export const fuzz = async (iterations: number, tables: ContractTable[]) => {
     // Select random function and find the related table
     const [name, { functionName, args }] = functions[Math.floor(Math.random() * functions.length)];
     const table = tables.find((table) => table.metadata.name === name);
-    const namespace = table?.metadata.globalName.split("__")[0] ?? "";
+    const namespace = table?.metadata.namespace ?? "";
 
     // Encode function call
     const callData = encodeFunctionData<typeof IWorldAbi>({

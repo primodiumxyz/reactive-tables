@@ -23,8 +23,9 @@ export type {
   $Record,
   Schema,
   StoreConfig,
+  World,
 } from "@/lib";
-export { Type } from "@/lib/external/mud/schema";
+export { createWorld, namespaceWorld, Type } from "@/lib";
 
 export type { QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
 export type { StorageAdapter } from "@/adapter";

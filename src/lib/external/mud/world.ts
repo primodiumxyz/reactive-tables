@@ -7,6 +7,7 @@ import {
   type $Record,
   type $RecordSymbol,
 } from "@/lib";
+const { has$Record: tableHas$Record, remove$Record: tableRemove$Record } = tableOperations();
 
 /**
  * Type of World returned by {@link createWorld}.
@@ -73,7 +74,7 @@ export function createWorld() {
 
   function delete$Record($record: $Record) {
     for (const table of tables) {
-      if (tableOperations.has$Record(table, $record)) tableOperations.remove$Record(table, $record);
+      if (tableHas$Record(table, $record)) tableRemove$Record(table, $record);
     }
 
     $recordSymbols.delete(get$RecordSymbol($record));
@@ -119,5 +120,5 @@ export function namespaceWorld(world: World, namespace: string) {
  * @returns Array of tables that have a value for the given $record.
  */
 export function get$RecordTables(world: World, $record: $Record): BaseTable[] {
-  return world.tables.filter((table) => tableOperations.has$Record(table, $record));
+  return world.tables.filter((table) => tableHas$Record(table, $record));
 }

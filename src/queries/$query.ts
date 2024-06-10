@@ -1,5 +1,6 @@
 import type { QueryOptions, TableWatcherCallbacks, TableWatcherParams } from "@/queries";
-import { queries } from "@/lib";
+import { queries, systems, type World } from "@/lib";
+const { With, WithProperties, Without, WithoutProperties } = queries();
 
 /**
  * Listen to all records matching multiple conditions across tables.
@@ -11,6 +12,7 @@ import { queries } from "@/lib";
  *
  * Note: See {@link QueryOptions} for more details on conditions criteria.
  *
+ * @param world The RECS world containing the tables to watch.
  * @param queryOptions The {@link QueryOptions} object containing the conditions to match.
  * @param callbacks The {@link TableWatcherCallbacks} to trigger on changes. Including: onChange, onEnter, onExit, onUpdate.
  * These will trigger a {@link TableUpdate} object inside the id of the updated table, the record, the previous and new properties of the record and the type of update.
@@ -43,6 +45,7 @@ import { queries } from "@/lib";
  * @category Queries
  */
 export const $query = (
+  world: World,
   queryOptions: QueryOptions,
   callbacks: TableWatcherCallbacks,
   params: TableWatcherParams = { runOnInit: true },
@@ -57,14 +60,20 @@ export const $query = (
     throw new Error("At least one `with` or `withProperties` condition needs to be provided");
   }
 
-  queries.defineQuery(
+  systems().defineSystem(
+    world,
     [
-      ...(inside?.map((fragment) => queries.With(fragment)) ?? []),
-      ...(withProperties?.map((matching) => queries.WithProperties(matching.table, { ...matching.properties })) ?? []),
-      ...(notInside?.map((table) => queries.Without(table)) ?? []),
-      ...(withoutProperties?.map((matching) => queries.WithoutProperties(matching.table, { ...matching.properties })) ??
-        []),
+      ...(inside?.map((fragment) => With(fragment)) ?? []),
+      ...(withProperties?.map((matching) => WithProperties(matching.table, { ...matching.properties })) ?? []),
+      ...(notInside?.map((table) => Without(table)) ?? []),
+      ...(withoutProperties?.map((matching) => WithoutProperties(matching.table, { ...matching.properties })) ?? []),
     ],
+    (update) => {
+      onUpdate?.(update);
+      if (update.type === "change") onChange?.(update);
+      if (update.type === "enter") onEnter?.(update);
+      if (update.type === "exit") onExit?.(update);
+    },
     params,
   );
 };

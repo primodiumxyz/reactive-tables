@@ -55,7 +55,7 @@ export const createIndexer = <S extends Schema, M extends BaseTableMetadata, T =
 
   // Initial indexing
   for (const $record of table.$records()) {
-    const properties = tableOperations.get$RecordProperties(table, $record);
+    const properties = tableOperations().get$RecordProperties(table, $record);
     add(get$RecordSymbol($record), properties);
   }
 
