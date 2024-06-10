@@ -1,9 +1,9 @@
 import { Subject, filter, map } from "rxjs";
 import { useEffect, useState } from "react";
 
-import { createTableKeyMethods } from "@/tables";
+import { createTableKeyMethods, createTableWatcher } from "@/tables";
 import type { BaseTable, BaseTableMetadata, Properties, PropertiesSansMetadata, TableMethods } from "@/tables";
-import { createTableWatcher, type TableWatcherOptions, type TableWatcherParams, type TableUpdate } from "@/queries";
+import { type TableWatcherOptions, type TableWatcherParams, type TableUpdate } from "@/queries";
 import {
   defaultEntity,
   queries,

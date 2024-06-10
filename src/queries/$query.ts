@@ -17,7 +17,6 @@ const { With, WithProperties, Without, WithoutProperties } = queries();
  * @param callbacks The {@link TableWatcherCallbacks} to trigger on changes. Including: onChange, onEnter, onExit, onUpdate.
  * These will trigger a {@link TableUpdate} object inside the id of the updated table, the entity, the previous and new properties of the entity and the type of update.
  * @param params (optional) Additional {@link TableWatcherParams} for the query. Currently only supports `runOnInit` to trigger the callbacks for all matching entities on initialization.
- * @returns An object inside an `unsubscribe` method to stop listening to the query.
  * @example
  * This example creates a query that listens to all entities that represent online players notInside a score of 0.
  *
