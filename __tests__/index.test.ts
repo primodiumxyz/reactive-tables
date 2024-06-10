@@ -498,18 +498,16 @@ describe("methods: should set and return intended properties", () => {
     >(
       Position: ContractTable<tableDef>,
       $record: $Record,
+      waitForSync = true,
     ) => {
       const args = getRandomArgs($record);
       const { blockNumber } = await setPositionFor$Record(args);
-      await waitForBlockSynced(blockNumber, Position, $record);
+      if (waitForSync) await waitForBlockSynced(blockNumber, Position, $record);
 
       return {
         args: {
           ...args,
-          __staticData: "0x" as Hex,
-          __encodedLengths: "0x" as Hex,
-          __dynamicData: "0x" as Hex,
-          __lastSyncedAtBlock: BigInt(0),
+          ...emptyData,
         },
       };
     };
@@ -553,10 +551,11 @@ describe("methods: should set and return intended properties", () => {
       expect(result.current).toHaveProperty("y", args.y);
 
       // Pause updates
-      registry.Position.pauseUpdates(player, args);
-
+      registry.Position.pauseUpdates(player, { x: args.x, y: args.y, ...emptyData });
       // Update the position again with different properties
-      await updatePosition(registry.Position, player);
+      await updatePosition(registry.Position, player, false); // it won't sync since we paused updates
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log("after update");
 
       // It should still have the same properties
       expect(result.current).toHaveProperty("x", args.x);
@@ -576,10 +575,11 @@ describe("methods: should set and return intended properties", () => {
       expect(result.current).toHaveProperty("y", args.y);
 
       // Pause updates
-      registry.Position.pauseUpdates(player, args);
+      registry.Position.pauseUpdates(player, { x: args.x, y: args.y, ...emptyData });
 
       // Update the position again with different properties
-      const { args: argsB } = await updatePosition(registry.Position, player);
+      const { args: argsB } = await updatePosition(registry.Position, player, false);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       // It should keep the old properties
       expect(result.current).toHaveProperty("x", args.x);
       expect(result.current).toHaveProperty("y", args.y);
@@ -888,13 +888,16 @@ describe("queries: should emit appropriate update events with the correct data",
     ).toEqual([A]);
   });
 
-  it.only("$query(), useQuery() (useQueryAllMatching)", async () => {
+  it("$query(), useQuery() (useQueryAllMatching)", async () => {
     const { world, registry, $records, onUpdate: onUpdateHook, aggregator: aggregatorHook } = await preTest();
     const [player, A, B, C] = $records;
 
-    // We need another aggregator for the global query
+    // We need more aggregators for the query subscription
     const aggregatorListener: TableUpdate[] = [];
+    const aggregatorListenerRunOnInit: TableUpdate[] = [];
     const onUpdateListener = (update: (typeof aggregatorListener)[number]) => aggregatorListener.push(update);
+    const onUpdateListenerRunOnInit = (update: (typeof aggregatorListenerRunOnInit)[number]) =>
+      aggregatorListenerRunOnInit.push(update);
 
     // Prepare $records
     registry.Position.set({ x: 10, y: 10, ...emptyData }, player);
@@ -925,15 +928,14 @@ describe("queries: should emit appropriate update events with the correct data",
       ),
     );
     $query(world, queryOptions, { onUpdate: onUpdateListener }, { runOnInit: false });
+    $query(world, queryOptions, { onUpdate: onUpdateListenerRunOnInit }, { runOnInit: true });
 
-    expect(result.current.sort()).toEqual([player, A].sort());
-    expect(aggregatorListener).toEqual([]);
-    // The hook aggregator has run on init true by default
-    expect(aggregatorHook.sort()).toEqual([
+    const expectedAggregatorItems = [
       {
-        table: registry.Position, // on init we don't know about specific tables
+        // not as base table since it's emitted directly from the table provided to the query
+        table: registry.Position,
         $record: player,
-        properties: { current: registry.Position.get(player), prev: undefined }, // same for properties
+        properties: { current: registry.Position.get(player), prev: undefined },
         type: "enter",
       },
       {
@@ -942,7 +944,13 @@ describe("queries: should emit appropriate update events with the correct data",
         properties: { current: registry.Position.get(A), prev: undefined },
         type: "enter",
       },
-    ]);
+    ];
+
+    expect(result.current.sort()).toEqual([player, A].sort());
+    expect(aggregatorListener).toEqual([]);
+    // runOnInit: true
+    expect(aggregatorHook.sort()).toEqual(expectedAggregatorItems.sort());
+    expect(aggregatorListenerRunOnInit.sort()).toEqual(expectedAggregatorItems.sort());
 
     // Update the totalWeight of player
     const propsA = registry.Inventory.get(player);
@@ -950,49 +958,53 @@ describe("queries: should emit appropriate update events with the correct data",
     const propsB = registry.Inventory.get(player);
 
     expect(result.current).toEqual([A]);
-    const expectedAggregatorItem = {
-      table: registry.Inventory,
+    const expectedAggregatorItemB = {
+      table: toBaseTable(registry.Inventory),
       $record: player,
       properties: { current: propsB, prev: propsA },
       type: "exit", // out of the query
     };
-    expect(aggregatorListener).toEqual([expectedAggregatorItem]);
-    expect(aggregatorListener).toHaveLength(3);
-    // expect(aggregatorListener[2]).toEqual(expectedAggregatorItem);
+    expect(aggregatorHook).toHaveLength(3);
+    expect(aggregatorHook[2]).toEqual(expectedAggregatorItemB);
+    expect(aggregatorListenerRunOnInit).toEqual(aggregatorHook);
+    // did not run on init so couldn't catch this item exiting the query
+    expect(aggregatorListener).toEqual([]);
 
     // Update the totalWeight of A
     const propsC = registry.Inventory.get(A);
     registry.Inventory.update({ totalWeight: BigInt(3) }, A);
     const propsD = registry.Inventory.get(A);
 
-    // expect(result.current).toEqual([]);
-    const expectedAggregatorItemB = {
-      table: registry.Inventory,
+    expect(result.current).toEqual([]);
+    const expectedAggregatorItemC = {
+      table: toBaseTable(registry.Inventory),
       $record: A,
       properties: { current: propsD, prev: propsC },
       type: "exit",
     };
-    expect(aggregatorHook).toHaveLength(2);
-    expect(aggregatorListener).toHaveLength(4);
-    expect(aggregatorHook[1]).toEqual(expectedAggregatorItemB);
-    expect(aggregatorListener[3]).toEqual(expectedAggregatorItemB);
+    expect(aggregatorHook).toHaveLength(4);
+    expect(aggregatorHook[3]).toEqual(expectedAggregatorItemC);
+    expect(aggregatorListenerRunOnInit).toEqual(aggregatorHook);
+    // same as above
+    expect(aggregatorListener).toEqual([]);
 
     // Update the totalWeight of B
     const propsE = registry.Inventory.get(B);
     registry.Inventory.update({ totalWeight: BigInt(6) }, B);
     const propsF = registry.Inventory.get(B);
 
-    // expect(result.current).toEqual([B]);
-    const expectedAggregatorItemC = {
-      table: registry.Inventory,
+    expect(result.current).toEqual([B]);
+    const expectedAggregatorItemD = {
+      table: toBaseTable(registry.Inventory),
       $record: B,
       properties: { current: propsF, prev: propsE },
       type: "enter",
     };
-    expect(aggregatorHook).toHaveLength(3);
-    expect(aggregatorListener).toHaveLength(5);
-    expect(aggregatorHook[2]).toEqual(expectedAggregatorItemC);
-    expect(aggregatorListener[4]).toEqual(expectedAggregatorItemC);
+    expect(aggregatorHook).toHaveLength(5);
+    expect(aggregatorHook[4]).toEqual(expectedAggregatorItemD);
+    expect(aggregatorListenerRunOnInit).toEqual(aggregatorHook);
+    // now it catches B entering the query
+    expect(aggregatorListener).toEqual([expectedAggregatorItemD]);
 
     // Update, then remove B
     const propsG = registry.Position.get(B);
@@ -1001,23 +1013,22 @@ describe("queries: should emit appropriate update events with the correct data",
     registry.Position.remove(B);
 
     expect(result.current).toEqual([]);
-    const expectedAggregatorItemD = {
-      table: registry.Position,
+    const expectedAggregatorItemE = {
+      table: toBaseTable(registry.Position),
       $record: B,
       properties: { current: propsH, prev: propsG },
       type: "change",
     };
-    const expectedAggregatorItemE = {
-      table: registry.Position,
+    const expectedAggregatorItemF = {
+      table: toBaseTable(registry.Position),
       $record: B,
       properties: { current: undefined, prev: propsH },
       type: "exit",
     };
-    expect(aggregatorHook).toHaveLength(5);
-    expect(aggregatorListener).toHaveLength(7);
-    expect(aggregatorHook[3]).toEqual(expectedAggregatorItemD);
-    expect(aggregatorHook[4]).toEqual(expectedAggregatorItemE);
-    expect(aggregatorListener[5]).toEqual(expectedAggregatorItemD);
-    expect(aggregatorListener[6]).toEqual(expectedAggregatorItemE);
+    expect(aggregatorHook).toHaveLength(7);
+    expect(aggregatorHook[5]).toEqual(expectedAggregatorItemE);
+    expect(aggregatorHook[6]).toEqual(expectedAggregatorItemF);
+    expect(aggregatorListenerRunOnInit).toEqual(aggregatorHook);
+    expect(aggregatorListener).toEqual([expectedAggregatorItemD, expectedAggregatorItemE, expectedAggregatorItemF]);
   });
 });

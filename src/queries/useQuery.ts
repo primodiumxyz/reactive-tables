@@ -75,7 +75,6 @@ export const useQuery = (
 
   useEffect(() => {
     setRecords(query(options, queryFragments)); // will throw if no positive fragment
-    console.log("useQuery", query(options, queryFragments));
 
     // fix: if pre-populated with state, useComponentValue doesn’t update when there’s a component that has been removed.
     const queryResult = defineQuery(queryFragments, params);

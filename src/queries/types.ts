@@ -27,7 +27,7 @@ export type UpdateType = "enter" | "exit" | "change" | "noop";
  * @category Queries
  */
 export type TableUpdate<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = {
-  table: BaseTable<PS, M, T>;
+  table: BaseTable<PS, M, T> | Table<PS, M, T>;
   $record: $Record;
   properties: { current: Properties<PS, T> | undefined; prev: Properties<PS, T> | undefined };
   type: UpdateType;
