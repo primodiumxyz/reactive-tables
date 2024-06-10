@@ -26,13 +26,11 @@
 
 The package encompasses a wide range of functionnalities, from creating a tables registry from a MUD config object, including metadata and typed methods for updating, fetching and querying data associated with each entity, to decoding onchain logs into consumable properties, and creating/syncing local tables with minimal effort.
 
-It is meant to be used inside a MUD application, as a replacement for the native RECS framework, meaning both in terms of technical state management and [in terms of conventions and architectural pattern](#conventions).
+It is meant to be used inside a MUD application, encapsulating all of RECS functionnalities, with a more convenient and explicit API, and clearer [conventions and architectural pattern](#conventions).
 
 ### Notable features
 
 - **Fully typed** - The package is fully typed, with strict types for all properties, methods and functions.
-- **Efficient storage and manipulation** - All properties are stored as tabular data using TinyBase, which allows for performant storage, retrieval, and savvy large-scale manipulation.
-- **Powerful queries** - Using multiple query languages, both over a single or multiple tables, including TinyQL (a typed and programmatic API) (TODO: link example), straightforward human-readable queries (TODO: link example), and built-in direct/hook queries.
 - **Dynamic and reactive** - The tables are reactive, meaning that each table (or group of tables) can be watched for changes, either globally or inside a precise query; including callbacks to trigger side effects, with details on the entity and properties that were modified.
 - **Local tables** - Local tables are tailored for client-side state management, can be aggregated with contract tables, and include all the same methods, as well as optional local storage persistence over sessions.
 - **Storage adapter** - A built-in bridge between onchain logs and direct properties consumption on the client-side, which is a perfect fit for indexer/RPC sync using [the sync-stack](https://www.npmjs.com/package/@primodiumxyz/sync-stack), [as demonstrated in the tests](./__tests__/utils/sync/createSync.ts#83).
@@ -53,10 +51,13 @@ The wrapper is rather straightforward to use. Given a MUD config object, contain
 import { createWrapper } from "@primodiumxyz/reactive-tables";
 import mudConfig from "contracts/mud.config";
 
-const { registry, tableDefs, store, storageAdapter } = createWrapper({
+const { tables, tableDefs, storageAdapter } = createWrapper({
+  world,
   mudConfig,
   // (optional) any additional table definitions
   // otherTableDefs: ...,
+  // (optional) function that resolves to whether the update stream should be skipped (not triggered) on table properties update
+  // shouldSkipUpdateStream: () => true/false,
 });
 ```
 
@@ -67,12 +68,12 @@ const { registry, tableDefs, store, storageAdapter } = createWrapper({
 After [creating the wrapper](#quickstart), the registry can then be supplemented with local tables, which are custom-made tables with the same API as contract ones, but with no onchain counterpart.
 
 ```typescript
-import { createLocalTable } from "@primodiumxyz/reactive-tables";
+import { createLocalTable, createLocalNumberTable } from "@primodiumxyz/reactive-tables";
 // ...
 
-const Counter = createLocalNumberTable(store, { id: "Counter" });
+const Counter = createLocalNumberTable(world, { id: "Counter" });
 // or with any properties schema
-const Settings = createLocalTable(store, { language: Type.String, darkMode: Type.Bool }, { id: "Settings" });
+const Settings = createLocalTable(world, { language: Type.String, darkMode: Type.Bool }, { id: "Settings" });
 
 // and then use it as any other table
 Counter.set({ value: 1 });
@@ -80,59 +81,23 @@ const count = Counter.get();
 console.log(count); // -> { value: 1 }
 ```
 
-Local tables can also be synced with local storage, using a persistent store, which will automatically save/load all properties inside opted-in tables from one session to another.
-
-```typescript
-// ...
-
-const { store } = createWrapper({ world, mudConfig });
-
-// Wait for the persistent store to be ready to use (meaning for the sync to restore previous state)
-// This needs to be done _before_ creating any local component
-await store("PERSIST").ready();
-
-// Create a persisted local table
-const Settings = createLocalTable(
-  store,
-  { language: Type.String, darkMode: Type.Bool },
-  { id: "Settings" },
-  { persist: true },
-);
-
-// Dispose of the autosave/autoload on unmount
-store("PERSIST").dispose();
-```
-
 ### Querying tables
 
-The package provides a wide range of querying methods, i.e. in [a TinyQL format](https://tinybase.org/guides/making-queries/tinyql/) or a more straightforward custom syntax, with direct retrieval or hooks optionally supplied with callbacks.
+The package provides the same range of querying methods as RECS, in a more explicit syntax, with direct retrieval or hooks optionally supplied with callbacks.
 
 ```typescript
 // ...
 
-registry.Player.set({ id: "player1", name: "Alice", score: 15, level: 3 }, aliceRecord);
-registry.Player.set({ id: "player2", name: "Bob", score: 10, level: 1 }, bobRecord);
-registry.Player.set({ id: "player3", name: "Charlie", score: 0, level: 1 }, charlieRecord);
+tables.Player.set({ id: "player1", name: "Alice", score: 15, level: 3 }, aliceEntity);
+tables.Player.set({ id: "player2", name: "Bob", score: 10, level: 1 }, bobEntity);
+tables.Player.set({ id: "player3", name: "Charlie", score: 0, level: 1 }, charlieEntity);
 
 // Retrieve players at the first level, with a non-zero score
-const players = query(store, {
-  withProperties: [{ table: registry.Player, properties: { level: 1 } }],
-  withoutProperties: [{ table: registry.Player, properties: { score: 0 } }],
+const players = query({
+  withProperties: [{ table: tables.Player, properties: { level: 1 } }],
+  withoutProperties: [{ table: tables.Player, properties: { score: 0 } }],
 });
-console.log(players); // -> [bobRecord]
-```
-
-Since we're querying over a single table, we can benefit from the TinyQL syntax to run a more precise and powerful query, with the method attached to the table:
-
-```typescript
-// ...
-
-// Retrieve players at a level strictly below 3, with a score above 5
-const players = registry.Player.query(({ where }) => {
-  where((getCell) => (getCell("level") as number) < 3);
-  where((getCell) => (getCell("score") as number) > 5);
-});
-console.log(players); // -> [bobRecord]
+console.log(players); // -> [bobEntity]
 ```
 
 Or keep an updated result using a hook, if you're in a React environment.
@@ -140,39 +105,16 @@ Or keep an updated result using a hook, if you're in a React environment.
 ```typescript
 // ...
 
-const players = useQuery(store, {
-  withProperties: [{ table: registry.Player, properties: { level: 1 } }],
-  withoutProperties: [{ table: registry.Player, properties: { score: 0 } }],
+const players = useQuery({
+  withProperties: [{ table: tables.Player, properties: { level: 1 } }],
+  withoutProperties: [{ table: tables.Player, properties: { score: 0 } }],
 });
-console.log(players); // -> [bobRecord]
+console.log(players); // -> [bobEntity]
 
 // Increase the score of Charlie, which will have them enter the query condition
-registry.Player.update({ score: 1 }, charlieRecord);
-console.log(players); // -> [bobRecord, charlieRecord]
+tables.Player.update({ score: 1 }, charlieEntity);
+console.log(players); // -> [bobEntity, charlieEntity]
 ```
-
-A direct low-level TinyBase queries API is available using the store returned from the wrapper.
-
-```typescript
-// ...
-
-// Retrieve the queries object associated with the non-persistent store (containing contract table properties)
-const queries = store().getQueries();
-
-// Define the query
-queries.setQueryDefinition("playersWithScoreAbove10", registry.Player.id, ({ select, where }) => {
-  // Select the key of a cell (single property) for its row to be included in the result
-  select("score");
-  // Filter the rows based on a condition
-  where((getCell) => (getCell("score") as number) > 10);
-});
-
-// Retrieve the matching entities
-const matchingRecords = queries.getResultRowIds("playersWithScoreAbove10");
-console.log(matchingRecords); // -> [aliceRecord]
-```
-
-This can be useful to craft a query spanning multiple tables, if you need it for some reason. However, if the purpose is to query a single table, as in the above example, it is much easier to use the abstracted method provided by the table object, as demonstrated a few examples above.
 
 ### Watching tables for changes
 
@@ -181,92 +123,56 @@ An API with a similar syntax to the queries shown above is available, with addit
 ```typescript
 // ...
 
-registry.Player.set({ id: "player1", name: "Alice", score: 15, level: 3 }, aliceRecord);
-registry.Player.set({ id: "player2", name: "Bob", score: 10, level: 1 }, bobRecord);
-registry.Player.set({ id: "player3", name: "Charlie", score: 0, level: 1 }, charlieRecord);
+tables.Player.set({ id: "player1", name: "Alice", score: 15, level: 3 }, aliceEntity);
+tables.Player.set({ id: "player2", name: "Bob", score: 10, level: 1 }, bobEntity);
+tables.Player.set({ id: "player3", name: "Charlie", score: 0, level: 1 }, charlieEntity);
 
 // Watch for players at the first level, with a non-zero score
-const { unsubscribe } = $query(
-  store,
+$query(
+  world,
   {
-    withProperties: [{ table: registry.Player, properties: { level: 1 } }],
-    withoutProperties: [{ table: registry.Player, properties: { score: 0 } }],
+    withProperties: [{ table: tables.Player, properties: { level: 1 } }],
+    withoutProperties: [{ table: tables.Player, properties: { score: 0 } }],
   },
   {
     onEnter: (update) => console.log(update),
-    onUpdate: (update) => console.log(update),
+    onChange: (update) => console.log(update),
     onExit: (update) => console.log(update),
-    // or `onChange`, which encapsulates all the above
+    // or `onUpdate`, which encapsulates all the above
   },
   { runOnInit: true },
 ); // this is the default behavior
 // `runOnInit` can be set to false to avoid triggering the callbacks on the initial state
-// -> { table: undefined, entity: bobRecord, current: undefined, prev: undefined, type: "enter" }
+// -> { table: tables.Player, entity: bobEntity, current: { id: "player2", name: "Bob", score: 10, level: 1 }, prev: undefined, type: "enter" }
 
 // Increase the score of Charlie, which will have them enter the query condition
-registry.Player.update({ score: 1 }, charlieRecord);
-// -> { table: registry.Player, entity: charlieRecord, current: { id: "player3", name: "Charlie", score: 1, level: 1 }, prev: undefined, type: "enter" }
+tables.Player.update({ score: 1 }, charlieEntity);
+// -> { table: tables.Player, entity: charlieEntity, current: { id: "player3", name: "Charlie", score: 1, level: 1 }, prev: undefined, type: "enter" }
 
 // Update their score again, within the query condition
-registry.Player.update({ score: 5 }, charlieRecord);
-// -> { table: registry.Player, entity: charlieRecord, current: { id: "player3", name: "Charlie", score: 5, level: 1 }, prev: { id: "player3", name: "Charlie", score: 1, level: 1 }, type: "update" }
+tables.Player.update({ score: 5 }, charlieEntity);
+// -> { table: tables.Player, entity: charlieEntity, current: { id: "player3", name: "Charlie", score: 5, level: 1 }, prev: { id: "player3", name: "Charlie", score: 1, level: 1 }, type: "update" }
 
 // Increase the level of Bob, which will have them exit the query condition
-registry.Player.update({ level: 2, score: 0 }, bobRecord);
-// -> { table: registry.Player, entity: bobRecord, current: undefined, prev: { id: "player2", name: "Bob", score: 10, level: 1 }, type: "exit" }
-
-// Unsubscribe from the query (when done or on unmount)
-unsubscribe();
+tables.Player.update({ level: 2, score: 0 }, bobEntity);
+// -> { table: tables.Player, entity: bobEntity, current: undefined, prev: { id: "player2", name: "Bob", score: 10, level: 1 }, type: "exit" }
 ```
 
-Apart from the built-in methods (e.g. `table.useAll()`, `table.useAllWith(<properties>)`), you can listen for any change inside a table, either inside the entire table or inside a specific TinyQL query.
-
-Listen to the entire table:
+Apart from the built-in methods (e.g. `table.useAll()`, `table.useAllWith(<properties>)`), you can listen for any change inside a table.
 
 ```typescript
 // ...
 
 // Watch for any change inside the table
-const { unsubscribe } = registry.Player.watch(
+tables.Player.watch(
   {
     onChange: (update) => console.log(update),
   },
   { runOnInit: false },
 );
 
-registry.Player.update({ score: 20 }, aliceRecord);
-// -> { table: registry.Player, entity: aliceRecord, current: { id: "player1", name: "Alice", score: 20, level: 3 }, prev: { id: "player1", name: "Alice", score: 15, level: 3 }, type: "update" }
-
-unsubscribe();
-```
-
-Listen to a specific query:
-
-```typescript
-// ...
-
-// Watch for any change inside the query
-const { unsubscribe } = registry.Player.watch(
-  {
-    onChange: (update) => console.log(update),
-    // Exactly the same as above, but whenever a `query` is specified it will only consider changes inside the query
-    query: ({ where }) => {
-      where((getCell) => (getCell("level") as number) < 3);
-      where((getCell) => (getCell("score") as number) > 5);
-    },
-  },
-  { runOnInit: false },
-);
-
-// Update Alice's score, within the query condition
-registry.Player.update({ score: 20 }, aliceRecord);
-// -> { table: registry.Player, entity: aliceRecord, current: { id: "player1", name: "Alice", score: 20, level: 3 }, prev: { id: "player1", name: "Alice", score: 15, level: 3 }, type: "update" }
-
-// Update Bob's score, outside the query condition
-registry.Player.update({ level: 2, score: 0 }, bobRecord);
-// -> { table: registry.Player, entity: bobRecord, current: undefined, prev: { id: "player2", name: "Bob", score: 10, level: 1 }, type: "update" }
-
-unsubscribe();
+tables.Player.update({ score: 20 }, aliceEntity);
+// -> { table: tables.Player, entity: aliceEntity, current: { id: "player1", name: "Alice", score: 20, level: 3 }, prev: { id: "player1", name: "Alice", score: 15, level: 3 }, type: "update" }
 ```
 
 ### Testing
@@ -291,6 +197,12 @@ pnpm dev
 pnpm test
 # or write the logs into a file for debugging
 pnpm test:verbose
+```
+
+Or directly run the benchmarks (measuring the usage of the previous TinyBase implementation against RECS and other popular state management libraries).
+
+```bash
+pnpm test:benchmarks
 ```
 
 ### Building
@@ -318,37 +230,34 @@ dist - "Compiled files for distribution"
 ├── index - "Main module"
 └── utils - "Utilities for encoding/decoding"
 src - "Source files"
-├── adapter - "Storage adapter (decode properties from logs), TinyBase adapter (encode/decode to/from TinyBase storable format)"
+├── adapter - "Storage adapter (decode properties from logs)"
 ├── lib - "Internal and external types, constants, and functions"
-│   ├── external - "Any external utilities, e.g. non-modified MUD types"
-│   └── tinybase - "Functionalities strictly specific to TinyBase, e.g. storage/retrieval utilities, store creation, cell change parsing"
+│   ├── external - "Any external utilities, e.g. non-modified or adapted MUD types and functions"
 ├── queries - "Table queries and listeners"
-│   └── templates - "Templates for common queries (direct and hooks)"
-├── tables - "Generic table creation; definition -> table object with metadata and methods"
-│   ├── contract - "Registry creation, contract-specific metadata and methods"
-│   └── local - "Local table creation, including templates"
+├── tables - "Table creation from contract definition or local properties to generic table object with metadata and methods"
 ├── createWrapper.ts - "Main entity point for the package, creates a tables registry from a MUD config object"
 ├── index.ts - "Main module, exports all relevant functions and constants"
 └── utils.ts - "Utilities for encoding/decoding"
 __tests__ - "Tests related to the library"
+├── benchmarks - "Benchmarks for measuring the performance of the library"
 ├── contracts - "MUD contracts for testing various tables and systems"
 └── utils - "Utilities for testing (sync, function calls, network config)"
 ```
 
 ### Conventions
 
-This package follows new naming conventions, which are meant to be more explicit than RECS, and fit better with the new architecture, i.e. tabular data, similar to TinyBase storage. Hence, it follows an architectural pattern that could be described as "reactive tables", which would encompass entities, components and systems (ECS) in a more explicit and relational way.
+This package follows new naming conventions, which are meant to be more explicit than RECS, and fit better with the new architecture, i.e. tabular data. Hence, it follows an architectural pattern that could be described as "reactive tables", which would encompass entities, components and systems (ECS) in a more explicit and relational way.
 
 See the table below for details on the differences with RECS.
 
-| Reference          | RECS reference | Details                                                                                      | Notes (TODO: only for internal review)                                                                                                                             |
-| ------------------ | -------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Table definition` | `Table`        | A contract table issued from the MUD config object, or provided directly to the wrapper      | Could be `specs` as well                                                                                                                                           |
-| `Registry`         | `Components`   | A collection of tables                                                                       | (I find it practical but not that much attached to it)                                                                                                             |
-| `Table`            | `Component`    | Either a contract or local table, including its metadata and methods                         |                                                                                                                                                                    |
-| `Record`           | `Entity`       | The key of a row inside a table, the content of the row being its properties (see below)     | This one is really explicit 95% of the time, but there is still that 5% where it is a bit confusing; could be identifier, id, tag (key is a bit confusing as well) |
-| `Properties`       | `Value`        | The content of a row associated with an entity, which is made of multiple cells = properties |                                                                                                                                                                    |
-| `Property`         | ?              | A single cell, as a key-value pair                                                           |                                                                                                                                                                    |
+| Reference          | RECS reference | Details                                                                                      | Notes (TODO: only for internal review) |
+| ------------------ | -------------- | -------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `Table definition` | `Table`        | A contract table issued from the MUD config object, or provided directly to the wrapper      | Could be `specs` as well               |
+| `Tables`           | `Components`   | A collection of tables                                                                       | Sometimes mentioned as `registry`      |
+| `Table`            | `Component`    | Either a contract or local table, including its metadata and methods                         |                                        |
+| `Entity`           | `Entity`       | The key of a row inside a table, the content of the row being its properties (see below)     | (Unchanged)                            |
+| `Properties`       | `Value`        | The content of a row associated with an entity, which is made of multiple cells = properties |                                        |
+| `Property`         | ?              | A single cell, as a key-value pair                                                           |                                        |
 
 It's worth noting that _systems_, which are not mentioned above, are included as table watchers (or listeners) directly tied to each table, and global watchers and queries.
 
