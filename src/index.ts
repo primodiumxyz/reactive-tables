@@ -41,4 +41,5 @@ export type {
   PropertiesSansMetadata,
   Table,
   Tables,
+  TableOptions,
 } from "@/tables";
