@@ -7,11 +7,11 @@ import type {
   TableBaseMethods,
   TableWithKeysMethods,
 } from "@/tables";
-import { decodeRecord, encodeRecord, defaultRecord, type Record, type Schema } from "@/lib";
+import { decodeEntity, encodeEntity, defaultEntity, type Entity, type Schema } from "@/lib";
 
 /**
  * Create a set of methods to interact with a table using values for its keys properties,
- * that get encoded into a Record.
+ * that get encoded into a Entity.
  *
  * Note: See {@link TableWithKeyMethods} for more information about each method.
  *
@@ -31,7 +31,7 @@ export const createTableKeyMethods = <PS extends Schema, M extends BaseTableMeta
   } = table;
   const { get, has, use, set } = methods;
 
-  // Get the properties of a record using its keys
+  // Get the properties of an entity using its keys
   function getWithKeys(): Properties<PS, T> | undefined;
   function getWithKeys(keys?: Keys<M["abiKeySchema"], T>): Properties<PS, T> | undefined;
   function getWithKeys(
@@ -39,31 +39,31 @@ export const createTableKeyMethods = <PS extends Schema, M extends BaseTableMeta
     defaultProperties?: PropertiesSansMetadata<PS, T>,
   ): Properties<PS, T>;
   function getWithKeys(keys?: Keys<M["abiKeySchema"], T>, defaultProperties?: PropertiesSansMetadata<PS, T>) {
-    const record = keys ? encodeRecord(abiKeySchema, keys) : defaultRecord;
-    return get(record, defaultProperties);
+    const entity = keys ? encodeEntity(abiKeySchema, keys) : defaultEntity;
+    return get(entity, defaultProperties);
   }
 
-  // Check if a record exists inside the table using its keys
+  // Check if an entity exists inside the table using its keys
   const hasWithKeys = (keys?: Keys<M["abiKeySchema"], T>) => {
-    const record = keys ? encodeRecord(abiKeySchema, keys) : defaultRecord;
-    return has(record);
+    const entity = keys ? encodeEntity(abiKeySchema, keys) : defaultEntity;
+    return has(entity);
   };
 
-  // Use (hook) the properties of a record using its keys
+  // Use (hook) the properties of an entity using its keys
   const useWithKeys = (keys?: Keys<M["abiKeySchema"], T>, defaultProperties?: PropertiesSansMetadata<PS, T>) => {
-    const record = keys ? encodeRecord(abiKeySchema, keys) : defaultRecord;
-    return use(record, defaultProperties);
+    const entity = keys ? encodeEntity(abiKeySchema, keys) : defaultEntity;
+    return use(entity, defaultProperties);
   };
 
-  // Set the properties of a record using its keys
+  // Set the properties of an entity using its keys
   const setWithKeys = (properties: Properties<PS, T>, keys: Keys<M["abiKeySchema"], T>) => {
-    const record = keys ? encodeRecord(abiKeySchema, keys) : defaultRecord;
-    return set(properties, record);
+    const entity = keys ? encodeEntity(abiKeySchema, keys) : defaultEntity;
+    return set(properties, entity);
   };
 
-  // Get the keys properties of a record using its record
-  const getRecordKeys = (record: Record) => {
-    return decodeRecord(abiKeySchema, record) as unknown as Keys<M["abiKeySchema"], T>;
+  // Get the keys properties of an entity using its entity
+  const getEntityKeys = (entity: Entity) => {
+    return decodeEntity(abiKeySchema, entity) as unknown as Keys<M["abiKeySchema"], T>;
   };
 
   return {
@@ -77,6 +77,6 @@ export const createTableKeyMethods = <PS extends Schema, M extends BaseTableMeta
             throw new Error("The method useWithKeys is only available in the browser");
           },
     setWithKeys,
-    getRecordKeys,
+    getEntityKeys,
   };
 };

@@ -1,11 +1,11 @@
 export {
-  // Decoding/encoding keys from/into a record
-  decodeRecord,
-  encodeRecord,
-  // Concat a tuple of hex keys into a single record
-  hexKeyTupleToRecord,
-  // Convert a record into a tuple of hex keys
-  recordToHexKeyTuple,
+  // Decoding/encoding keys from/into an entity
+  decodeEntity,
+  encodeEntity,
+  // Concat a tuple of hex keys into a single entity
+  hexKeyTupleToEntity,
+  // Convert an entity into a tuple of hex keys
+  entityToHexKeyTuple,
   // Convert ABI types to TypeScript understandable types
   schemaAbiTypeToRecsType,
   // uuid

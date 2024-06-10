@@ -1,10 +1,10 @@
 import type { SchemaAbiTypeToPrimitiveType } from "@latticexyz/schema-type/internal";
 import type { Hex } from "viem";
 
-import type { Record } from "@/lib";
+import type { Entity } from "@/lib";
 
 /**
- * Defines the schema of a properties record inside a {@link Table} or {@link BaseTable}.
+ * Defines the schema of a properties entity inside a {@link Table} or {@link BaseTable}.
  *
  * It uses a {@link Type} enum to be able to infer the TypeScript type of each property.
  *
@@ -50,10 +50,10 @@ export enum Type {
   OptionalHex,
   HexArray,
   OptionalHexArray,
-  Record,
-  OptionalRecord,
-  RecordArray,
-  OptionalRecordArray,
+  Entity,
+  OptionalEntity,
+  EntityArray,
+  OptionalEntityArray,
   T,
   OptionalT,
 }
@@ -69,22 +69,22 @@ export type MappedType<T = unknown> = {
   [Type.BigInt]: bigint;
   [Type.String]: string;
   [Type.Hex]: Hex;
-  [Type.Record]: Record;
+  [Type.Entity]: Entity;
   [Type.NumberArray]: number[];
   [Type.BigIntArray]: bigint[];
   [Type.StringArray]: string[];
   [Type.HexArray]: Hex[];
-  [Type.RecordArray]: Record[];
+  [Type.EntityArray]: Entity[];
   [Type.OptionalNumber]: number | undefined;
   [Type.OptionalBigInt]: bigint | undefined;
   [Type.OptionalString]: string | undefined;
   [Type.OptionalHex]: Hex | undefined;
-  [Type.OptionalRecord]: Record | undefined;
+  [Type.OptionalEntity]: Entity | undefined;
   [Type.OptionalNumberArray]: number[] | undefined;
   [Type.OptionalBigIntArray]: bigint[] | undefined;
   [Type.OptionalStringArray]: string[] | undefined;
   [Type.OptionalHexArray]: Hex[] | undefined;
-  [Type.OptionalRecordArray]: Record[] | undefined;
+  [Type.OptionalEntityArray]: Entity[] | undefined;
   [Type.T]: T;
   [Type.OptionalT]: T | undefined;
 };
@@ -93,8 +93,8 @@ export type MappedType<T = unknown> = {
  * Helper constant with all optional {@link Type}s.
  */
 export const OptionalTypes = [
-  Type.OptionalRecord,
-  Type.OptionalRecordArray,
+  Type.OptionalEntity,
+  Type.OptionalEntityArray,
   Type.OptionalNumber,
   Type.OptionalNumberArray,
   Type.OptionalBigInt,

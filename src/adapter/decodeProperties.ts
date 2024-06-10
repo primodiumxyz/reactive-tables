@@ -23,7 +23,7 @@ import type { AbiPropertiesSchema, AbiToSchema } from "@/lib";
 // Modified from https://github.com/latticexyz/mud/blob/ade94a7fa761070719bcd4b4dac6cb8cc7783c3b/packages/protocol-parser/src/decodePropertiesArgs.ts#L8
 
 /**
- * Decode the properties of a record from the data inside a log.
+ * Decode the properties of an entity from the data inside a log.
  *
  * This is an unmodified version of the original MUD function.
  *
@@ -50,7 +50,7 @@ export function decodePropertiesArgs<TSchema extends AbiPropertiesSchema>(
 }
 
 /**
- * Decode the properties of a record from its hex metadata.
+ * Decode the properties of an entity from its hex metadata.
  *
  * This is an slightly modified version of the original MUD function.
  * The only difference is that the data is encoded to fit a TinyBase table when set inside the storage adapter.
@@ -78,7 +78,7 @@ export function decodeProperties<TSchema extends AbiPropertiesSchema>(
 }
 
 /**
- * Decode the static and dynamic properties of a record from its hex data and type (dynamic or static).
+ * Decode the static and dynamic properties of an entity from its hex data and type (dynamic or static).
  *
  * This is an unmodified version of the original MUD function.
  *

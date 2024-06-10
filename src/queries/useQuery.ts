@@ -7,26 +7,26 @@ import {
   type TableUpdate,
   type TableWatcherParams,
 } from "@/queries";
-import { queries, type Record } from "@/lib";
+import { queries, type Entity } from "@/lib";
 const { defineQuery, With, WithProperties, Without, WithoutProperties } = queries();
 
 /**
- * React hook to query all records matching multiple conditions across tables.
+ * React hook to query all entities matching multiple conditions across tables.
  *
- * This will return an array of Record objects matching all conditions, and will trigger the provided callbacks on changes.
+ * This will return an array of Entity objects matching all conditions, and will trigger the provided callbacks on changes.
  *
  * Note: See {@link QueryOptions} for more details on conditions criteria.
  *
- * Note: This hook will only trigger on changes after it's mounted, not on creation for all initial matching records.
+ * Note: This hook will only trigger on changes after it's mounted, not on creation for all initial matching entities.
  *
  * @param store The TinyBase store containing the properties associated with contract tables.
  * @param options The {@link QueryOptions} object containing the conditions to match.
  * @param callbacks (optional) The {@link TableWatcherCallbacks} to trigger on changes. Including: onChange, onEnter, onExit, onUpdate.
- * These will trigger a {@link TableUpdate} object with the id of the updated table, the record, the previous and new properties of the record and the type of update.
- * @param params (optional) Additional {@link TableWatcherParams} for the query. Currently only supports `runOnInit` to trigger the callbacks for all matching records on initialization.
- * @returns An array of {@link Record} matching all conditions.
+ * These will trigger a {@link TableUpdate} object with the id of the updated table, the entity, the previous and new properties of the entity and the type of update.
+ * @param params (optional) Additional {@link TableWatcherParams} for the query. Currently only supports `runOnInit` to trigger the callbacks for all matching entities on initialization.
+ * @returns An array of {@link Entity} matching all conditions.
  * @example
- * This example queries all records that have a score of 10 in the "Score" table and are not inside the "GameOver" table.
+ * This example queries all entities that have a score of 10 in the "Score" table and are not inside the "GameOver" table.
  *
  * ```ts
  * const { registry, store } = createWrapper({ world, mudConfig });
@@ -35,18 +35,18 @@ const { defineQuery, With, WithProperties, Without, WithoutProperties } = querie
  * registry.Score.set({ points: 3 }, recordC);
  * registry.GameOver.set({ value: true }, recordB);
  *
- * const records = useQuery(store, {
+ * const entities = useQuery(store, {
  *   withProperties: [ { table: registry.Score, properties: { points: 10 } } ],
  *   without: [ registry.GameOver ],
  * }, {
  *   onChange: (update) => console.log(update),
  * });
- * console.log(records);
+ * console.log(entities);
  * // -> [ recordA ]
  *
  * registry.Score.update({ points: 10 }, recordC);
- * // -> { table: registry.Score, record: recordC, current: { points: 10 }, prev: { points: 3 }, type: "change" }
- * console.log(records);
+ * // -> { table: registry.Score, entity: recordC, current: { points: 10 }, prev: { points: 3 }, type: "change" }
+ * console.log(entities);
  * // -> [ recordA, recordC ]
  * ```
  * @category Queries
@@ -55,13 +55,13 @@ export const useQuery = (
   options: QueryOptions,
   callbacks?: TableWatcherCallbacks,
   params: TableWatcherParams = { runOnInit: true },
-): Record[] => {
+): Entity[] => {
   // Not available in a non-browser environment
   if (typeof window === "undefined") throw new Error("useQuery is only available in a browser environment");
   const { with: inside, without: notInside, withProperties, withoutProperties } = options;
   const { onChange, onEnter, onExit, onUpdate } = callbacks ?? {};
 
-  const [records, setRecords] = useState<Record[]>([]);
+  const [entities, setRecords] = useState<Entity[]>([]);
 
   const queryFragments = useMemo(
     () => [
@@ -85,13 +85,13 @@ export const useQuery = (
       >; // TODO: test if weird type casting useful
       onUpdate?.(update);
       if (update.type === "change") {
-        // record is changed within the query so no need to update records
+        // entity is changed within the query so no need to update entities
         onChange?.(update);
       } else if (update.type === "enter") {
-        setRecords((prev) => [...prev, update.record]);
+        setRecords((prev) => [...prev, update.entity]);
         onEnter?.(update);
       } else if (update.type === "exit") {
-        setRecords((prev) => prev.filter((record) => record !== update.record));
+        setRecords((prev) => prev.filter((entity) => entity !== update.entity));
         onExit?.(update);
       }
     });
@@ -99,5 +99,5 @@ export const useQuery = (
     return () => subscription.unsubscribe();
   }, [options, queryFragments]);
 
-  return [...new Set(records)];
+  return [...new Set(entities)];
 };

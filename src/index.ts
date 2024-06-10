@@ -1,15 +1,15 @@
 /* -------------------------------- FUNCTIONS ------------------------------- */
-// Wrapper (main entry point) for the library
+// Wrapper (main entity point) for the library
 export * from "@/createWrapper";
 
 // Local tables (with custom schema and templates)
 export * from "@/tables/createLocalTable";
 
-// Queries: global (filtering keys and callbacks), query (direct query returning Record[]), useQuery (React hook returning Record[] with callbacks)
+// Queries: global (filtering keys and callbacks), query (direct query returning Entity[]), useQuery (React hook returning Entity[] with callbacks)
 export { $query, query, useQuery } from "@/queries";
 
 /* -------------------------------- CONSTANTS ------------------------------- */
-export { defaultRecord, localProperties, metadataProperties } from "@/lib";
+export { defaultEntity, localProperties, metadataProperties } from "@/lib";
 
 /* --------------------------------- TYPES --------------------------------- */
 export type {
@@ -20,7 +20,7 @@ export type {
   ContractTableDef,
   ContractTableDefs,
   Metadata,
-  Record,
+  Entity,
   Schema,
   StoreConfig,
   World,

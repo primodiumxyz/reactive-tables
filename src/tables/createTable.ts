@@ -5,13 +5,13 @@ import { createTableMethods } from "./createTableMethods";
 import type { BaseTable, BaseTableMetadata, Table } from "./types";
 import {
   createIndexer,
-  getRecordHex,
+  getEntityHex,
   mapObject,
   transformIterator,
   uuid,
   type Schema,
   type World,
-  type RecordSymbol,
+  type EntitySymbol,
 } from "@/lib";
 
 /**
@@ -31,9 +31,9 @@ export type TableOptions<M extends BaseTableMetadata> = {
 };
 
 /**
- * Tables contain state indexed by records.
+ * Tables contain state indexed by entities.
  * Besides containing the state, components expose an rxjs update$ stream, that emits an event any time the value
- * of an record in this table is updated.
+ * of an entity in this table is updated.
  *
  * Note: This is modified from RECS.
  *
@@ -58,9 +58,9 @@ export function createTable<PS extends Schema, M extends BaseTableMetadata, T = 
   if (Object.keys(propertiesSchema).length === 0) throw new Error("Table properties schema must have at least one key");
   const hasKeySchema = options?.metadata?.abiKeySchema && Object.keys(options.metadata.abiKeySchema).length > 0;
 
-  // Native RECS records iterator
-  const records = () =>
-    transformIterator((Object.values(properties)[0] as Map<RecordSymbol, unknown>).keys(), getRecordHex);
+  // Native RECS entities iterator
+  const entities = () =>
+    transformIterator((Object.values(properties)[0] as Map<EntitySymbol, unknown>).keys(), getEntityHex);
 
   // Metadata
   const id = options?.id ?? uuid();
@@ -71,7 +71,7 @@ export function createTable<PS extends Schema, M extends BaseTableMetadata, T = 
     // generate abi types for the key schema in case none is provided
     // this will help having a unified API for all tables, including local tables created with RECS types
     // so we can use key methods on these as well
-    abiKeySchema: hasKeySchema ? options.metadata!.abiKeySchema! : ({ record: "bytes32" } as const),
+    abiKeySchema: hasKeySchema ? options.metadata!.abiKeySchema! : ({ entity: "bytes32" } as const),
   } as const satisfies BaseTableMetadata;
 
   const properties = mapObject(propertiesSchema, () => new Map()) as BaseTable<PS, typeof metadata, T>["properties"];
@@ -81,11 +81,11 @@ export function createTable<PS extends Schema, M extends BaseTableMetadata, T = 
     id,
     properties,
     propertiesSchema,
-    // if there is no key schema, we can use a default `record` key for uniformity with other tables
-    // keySchema: hasKeySchema ? keySchema : { record: Type.Record as const },
+    // if there is no key schema, we can use a default `entity` key for uniformity with other tables
+    // keySchema: hasKeySchema ? keySchema : { entity: Type.Entity as const },
     metadata,
     world,
-    records,
+    entities,
     update$,
   };
 

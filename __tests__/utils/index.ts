@@ -15,7 +15,7 @@ export const toBaseTable = <PS extends Schema = Schema, M extends BaseTableMetad
     propertiesSchema: table.propertiesSchema,
     metadata: table.metadata,
     world: table.world,
-    records: table.records,
+    entities: table.entities,
     update$: table.update$,
   };
 };

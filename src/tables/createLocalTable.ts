@@ -49,7 +49,7 @@ export const createLocalTable = <PS extends Schema, M extends BaseTableMetadata,
     namespace: baseMetadata?.namespace ?? ("local" as const),
     globalName:
       baseMetadata?.globalName ?? baseMetadata?.namespace ? `${baseMetadata.namespace}__${id}` : `local__${id}`,
-    abiKeySchema: { record: "bytes32" } as const,
+    abiKeySchema: { entity: "bytes32" } as const,
   } as const satisfies BaseTableMetadata;
 
   return createTable(world, propertiesSchema, { ...options, id, metadata }) as unknown as Table<PS, typeof metadata, T>;
@@ -146,19 +146,19 @@ export const createLocalBoolTable = <M extends BaseTableMetadata>(
 };
 
 /**
- * Defines a local table with a single record property.
+ * Defines a local table with a single entity property.
  */
-export type LocalRecordTable = ReturnType<typeof createLocalRecordTable>;
+export type LocalEntityTable = ReturnType<typeof createLocalEntityTable>;
 /**
  * Creates a local table with the specified properties schema, options and default properties.
  *
- * This is a shorthand for creating a local table with a single record property.
+ * This is a shorthand for creating a local table with a single entity property.
  * @see {@link createLocalTable}
  */
-export const createLocalRecordTable = <M extends BaseTableMetadata>(
+export const createLocalEntityTable = <M extends BaseTableMetadata>(
   world: World,
   options?: TableOptions<M>,
-  // defaultProperties?: Properties<{ value: Type.Record }>,
+  // defaultProperties?: Properties<{ value: Type.Entity }>,
 ) => {
-  return createLocalTable(world, { value: Type.Record }, options);
+  return createLocalTable(world, { value: Type.Entity }, options);
 };

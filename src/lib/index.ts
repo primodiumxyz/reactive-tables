@@ -14,4 +14,4 @@ export * from "@/lib/external/mud/world";
 export * from "@/lib/constants";
 export * from "@/lib/debug";
 export * from "@/lib/definitions";
-export * from "@/lib/record";
+export * from "@/lib/entity";

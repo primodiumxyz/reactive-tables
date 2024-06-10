@@ -1,17 +1,17 @@
 import type { QueryOptions } from "@/queries";
-import { queries, type QueryFragment, type Record } from "@/lib";
+import { queries, type QueryFragment, type Entity } from "@/lib";
 const { runQuery, With, WithProperties, Without, WithoutProperties } = queries();
 
 /**
- * Queries all records matching multiple provided conditions across tables.
+ * Queries all entities matching multiple provided conditions across tables.
  *
  * Note: See {@link QueryOptions} for more details on conditions criteria.
  *
  * @param options The {@link QueryOptions} object containing the conditions to match.
  * @param fragments (optional) Query fragments to bypass the options conversion and directly provide the resulting fragments.
- * @returns An array of {@link Record} objects matching all conditions.
+ * @returns An array of {@link Entity} objects matching all conditions.
  * @example
- * This example queries all records that have a score of 10 in the "Score" table and are not inside the "GameOver" table.
+ * This example queries all entities that have a score of 10 in the "Score" table and are not inside the "GameOver" table.
  *
  * ```ts
  * const { tables } = createWrapper({ world, mudConfig });
@@ -20,16 +20,16 @@ const { runQuery, With, WithProperties, Without, WithoutProperties } = queries()
  * registry.Score.set({ points: 3 }, recordC);
  * registry.GameOver.set({ value: true }, recordB);
  *
- * const records = query({
+ * const entities = query({
  *   withProperties: [{ table: registry.Score, properties: { points: 10 } }],
  *   without: [registry.GameOver],
  * });
- * console.log(records);
+ * console.log(entities);
  * // -> [ recordA ]
  * ```
  * @category Queries
  */
-export const query = (options: QueryOptions, fragments?: QueryFragment[]): Record[] => {
+export const query = (options: QueryOptions, fragments?: QueryFragment[]): Entity[] => {
   const { with: inside, without: notInside, withProperties, withoutProperties } = options;
   if (!fragments && !inside && !withProperties) {
     throw new Error("At least one `with` or `withProperties` condition needs to be provided");

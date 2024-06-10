@@ -21,7 +21,7 @@ import { createLocalTable } from "@/tables";
  *
  * @template config The type of the configuration object specifying tables definitions for contracts codegen.
  * @template extraTableDefs The types of any additional custom definitions to generate tables for.
- * @param world The RECS world object, used for creating tables and records.
+ * @param world The RECS world object, used for creating tables and entities.
  * @param mudConfig The actual MUD configuration, usually retrieved for the contracts package.
  * @param otherTableDefs (optional) Custom definitions to generate tables for as well.
  * @param skipUpdateStream (optional) Whether to skip the initial update stream (most likely to trigger it afterwards).
@@ -36,14 +36,14 @@ export type WrapperOptions<config extends StoreConfig, extraTableDefs extends Co
 /**
  * The result of going through the TinyBase wrapper creation process.
  *
- * The registry is the main entry point to all kind of data retrieval and manipulation.
+ * The registry is the main entity point to all kind of data retrieval and manipulation.
  *
  * @template config The type of the configuration object specifying tables definitions for contracts codegen.
  * @template tableDefs The types of the definitions used for generating tables.
  * @param tables The tables generated from all definitions (see {@link createContractTables}).
  * @param tableDefs The full definitions object, including provided MUD config and custom definitions, as well as store and world config tables.
  * @param storageAdapter The storage adapter for formatting onchain logs into TinyBase tabular data (see {@link createStorageAdapter}).
- * @param triggerUpdateStream A function to trigger the update stream on all tables and records (e.g. after completing sync).
+ * @param triggerUpdateStream A function to trigger the update stream on all tables and entities (e.g. after completing sync).
  */
 export type WrapperResult<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
   tables: ContractTables<AllTableDefs<config, extraTableDefs>>;
@@ -55,13 +55,13 @@ export type WrapperResult<config extends StoreConfig, extraTableDefs extends Con
 /**
  * This function creates a wrapper for transforming MUD tables and custom tables definitions into consumable
  * objects, while abstracting the infrastructure for communicating from onchain data (logs) to
- * easily manipulable and strictly typed tables & records. More specifically:
+ * easily manipulable and strictly typed tables & entities. More specifically:
  * - encoding/decoding MUD and custom definitions into tabular data for TinyBase;
- * - encoding data from onchain logs into tabular data records for TinyBase;
+ * - encoding data from onchain logs into tabular datan entities for TinyBase;
  * - decoding data into TypeScript-friendly objects, and offering typed methods for access and manipulation;
  * - creating and reacting to queries, both in TinyBase queries and RECS-like formats.
  *
- * This is the main entry point into the library.
+ * This is the main entity point into the library.
  *
  * Note: if the wrapper is used in a browser environment, and you intend to use persistent tables, you MUST wait for the
  * sync with local storage to be started; otherwise, there will be inconsistencies with properties from the last and current sessions.
@@ -70,7 +70,7 @@ export type WrapperResult<config extends StoreConfig, extraTableDefs extends Con
  * @param options The {@link WrapperOptions} object specifying the MUD configuration and custom definitions.
  * @returns A {@link WrapperResult} object containing the tables, definitions, store, queries instance, and storage adapter.
  * @example
- * This example creates a wrapper from MUD config and sets the properties for a specific record in the "Counter" table.
+ * This example creates a wrapper from MUD config and sets the properties for a specific entity in the "Counter" table.
  *
  * ```ts
  * const mudConfig = defineWorld({
@@ -113,7 +113,7 @@ export const createWrapper = <config extends StoreConfig, extraTableDefs extends
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create storage adapter (custom writer, see @primodiumxyz/sync-stack)
-  // as well as a function to trigger update stream on all records for all tables (e.g. after completing sync)
+  // as well as a function to trigger update stream on all entities for all tables (e.g. after completing sync)
   const { storageAdapter, triggerUpdateStream } = createStorageAdapter({ tables, shouldSkipUpdateStream });
 
   return { tables, tableDefs, storageAdapter, triggerUpdateStream };

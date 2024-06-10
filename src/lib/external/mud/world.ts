@@ -1,27 +1,27 @@
 import type { BaseTable } from "@/tables";
 import {
-  getRecordHex,
-  getRecordSymbol,
+  getEntityHex,
+  getEntitySymbol,
   tableOperations,
   transformIterator,
-  type Record,
-  type RecordSymbol,
+  type Entity,
+  type EntitySymbol,
 } from "@/lib";
-const { hasRecord: tableHasRecord, removeRecord: tableRemoveRecord } = tableOperations();
+const { hasEntity: tableHasEntity, removeEntity: tableRemoveEntity } = tableOperations();
 
 /**
  * Type of World returned by {@link createWorld}.
  */
 export type World = {
-  registerRecord: (options?: { id?: string; idSuffix?: string }) => Record;
+  registerEntity: (options?: { id?: string; idSuffix?: string }) => Entity;
   registerTable: (table: BaseTable) => void;
   tables: BaseTable[];
-  getRecords: () => IterableIterator<Record>;
+  getEntitys: () => IterableIterator<Entity>;
   dispose: (namespace?: string) => void;
   registerDisposer: (disposer: () => void, namespace?: string) => void;
-  hasRecord: (record: Record) => boolean;
-  deleteRecord: (record: Record) => void;
-  recordSymbols: Set<RecordSymbol>;
+  hasEntity: (entity: Entity) => boolean;
+  deleteEntity: (entity: Entity) => void;
+  entitySymbols: Set<EntitySymbol>;
 };
 
 /**
@@ -29,27 +29,27 @@ export type World = {
  *
  * @remarks
  * A World is the central object of an ECS application, where all {@link createTable Tables (prev Components)},
- * {@link registerRecord Records (prev Entities)} and {@link createTableWatcher watchers/listeners (prev Systems)} are registerd.
+ * {@link registerEntity Records (prev Entities)} and {@link createTableWatcher watchers/listeners (prev Systems)} are registerd.
  *
  * @returns A new World
  */
 export function createWorld() {
-  const recordSymbols = new Set<RecordSymbol>();
+  const entitySymbols = new Set<EntitySymbol>();
   const tables: BaseTable[] = [];
   let disposers: [string, () => void][] = [];
 
-  function registerRecord({ id, idSuffix }: { id?: string; idSuffix?: string } = {}) {
-    const record = (id || recordSymbols.size + (idSuffix ? "-" + idSuffix : "")) as Record;
-    const recordSymbol = getRecordSymbol(record);
+  function registerEntity({ id, idSuffix }: { id?: string; idSuffix?: string } = {}) {
+    const entity = (id || entitySymbols.size + (idSuffix ? "-" + idSuffix : "")) as Entity;
+    const entitySymbol = getEntitySymbol(entity);
 
-    // Register record
-    recordSymbols.add(recordSymbol);
+    // Register entity
+    entitySymbols.add(entitySymbol);
 
-    return record;
+    return entity;
   }
 
-  function getRecords() {
-    return transformIterator(recordSymbols.values(), getRecordHex);
+  function getEntitys() {
+    return transformIterator(entitySymbols.values(), getEntityHex);
   }
 
   function registerTable(table: BaseTable) {
@@ -68,28 +68,28 @@ export function createWorld() {
     disposers.push([namespace, disposer]);
   }
 
-  function hasRecord(record: Record): boolean {
-    return recordSymbols.has(getRecordSymbol(record));
+  function hasEntity(entity: Entity): boolean {
+    return entitySymbols.has(getEntitySymbol(entity));
   }
 
-  function deleteRecord(record: Record) {
+  function deleteEntity(entity: Entity) {
     for (const table of tables) {
-      if (tableHasRecord(table, record)) tableRemoveRecord(table, record);
+      if (tableHasEntity(table, entity)) tableRemoveEntity(table, entity);
     }
 
-    recordSymbols.delete(getRecordSymbol(record));
+    entitySymbols.delete(getEntitySymbol(entity));
   }
 
   return {
-    registerRecord,
+    registerEntity,
     tables,
     registerTable,
     dispose,
     registerDisposer,
-    hasRecord,
-    getRecords,
-    recordSymbols,
-    deleteRecord,
+    hasEntity,
+    getEntitys,
+    entitySymbols,
+    deleteEntity,
   } satisfies World;
 }
 
@@ -110,15 +110,15 @@ export function namespaceWorld(world: World, namespace: string) {
 }
 
 /**
- * Get all tables that have a value for the given record.
+ * Get all tables that have a value for the given entity.
  *
- * @dev (MUD) Design decision: don't store a list of tables for each record but compute it dynamically when needed
- * because there are less tables than records and maintaining a list of tables per record is a large overhead.
+ * @dev (MUD) Design decision: don't store a list of tables for each entity but compute it dynamically when needed
+ * because there are less tables than entities and maintaining a list of tables per entity is a large overhead.
  *
- * @param world World object the given record is registered on.
- * @param record {@link Record} to get the list of tables for.
- * @returns Array of tables that have a value for the given record.
+ * @param world World object the given entity is registered on.
+ * @param entity {@link Entity} to get the list of tables for.
+ * @returns Array of tables that have a value for the given entity.
  */
-export function getRecordTables(world: World, record: Record): BaseTable[] {
-  return world.tables.filter((table) => tableHasRecord(table, record));
+export function getEntityTables(world: World, entity: Entity): BaseTable[] {
+  return world.tables.filter((table) => tableHasEntity(table, entity));
 }

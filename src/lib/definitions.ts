@@ -16,8 +16,8 @@ export type StoreConfig = MUDStoreConfig;
  * @param tableId The id of the table.
  * @param namespace The namespace of the table inside the global scope.
  * @param name The name of the table.
- * @param keySchema The schema of the keys to differenciate records.
- * @param valueSchema The schema of the properties associated with each record.
+ * @param keySchema The schema of the keys to differenciate entities.
+ * @param valueSchema The schema of the properties associated with each entity.
  * @category Tables
  */
 export type ContractTableDef = MUDTableDef;

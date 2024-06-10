@@ -6,8 +6,8 @@ import type {
   ContractTableDef,
   MappedType,
   Metadata,
-  Record,
-  RecordSymbol,
+  Entity,
+  EntitySymbol,
   ResourceLabel,
   Schema,
   SchemaAbiType,
@@ -21,12 +21,12 @@ import type { TableUpdate, TableWatcherOptions, TableWatcherParams } from "@/que
 
 export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> {
   id: string;
-  properties: { [key in keyof PS]: Map<RecordSymbol, MappedType<T>[PS[key]]> };
+  properties: { [key in keyof PS]: Map<EntitySymbol, MappedType<T>[PS[key]]> };
   propertiesSchema: PS;
-  // keySchema: KS | { record: Type.Record }; // default key schema for tables without keys
+  // keySchema: KS | { entity: Type.Entity }; // default key schema for tables without keys
   metadata: M;
   world: World;
-  records: () => IterableIterator<Record>;
+  entities: () => IterableIterator<Entity>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   update$: Subject<TableUpdate<PS, M, T>> & { observers: any };
 }
@@ -36,14 +36,14 @@ export type IndexedBaseTable<
   M extends BaseTableMetadata = BaseTableMetadata,
   T = unknown,
 > = BaseTable<PS, M, T> & {
-  getRecordsWithProperties: (properties: Properties<PS, T>) => Set<Record>;
+  getEntitysWithProperties: (properties: Properties<PS, T>) => Set<Entity>;
 };
 
 export type BaseTableMetadata<M extends Metadata = Metadata> = M & {
   name: string;
   globalName: string;
   namespace?: string;
-  abiKeySchema: { [name: string]: StaticAbiType }; // local tables are given a default key schema as well for encoding/decoding records
+  abiKeySchema: { [name: string]: StaticAbiType }; // local tables are given a default key schema as well for encoding/decoding entities
 };
 
 export type Tables = { [name: string]: Table };
@@ -121,11 +121,11 @@ export type TableMethods<PS extends Schema, M extends BaseTableMetadata, T = unk
  */
 export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = {
   /**
-   * Get the current properties of a record, or the table as a whole if it doesn't require any keys.
+   * Get the current properties of an entity, or the table as a whole if it doesn't require any keys.
    *
-   * @param record (optional) The record to get the properties for.
-   * @param defaultProperties (optional) The default properties to return if the record doesn't exist.
-   * @returns The current properties of the record.
+   * @param entity (optional) The entity to get the properties for.
+   * @param defaultProperties (optional) The default properties to return if the entity doesn't exist.
+   * @returns The current properties of the entity.
    * @example
    * This example retrieves the current properties of the "Counter" table, which has only a single `value` property.
    *
@@ -137,14 +137,14 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * @category Methods
    */
   get(): Properties<PS, T> | undefined;
-  get(record: Record | undefined): Properties<PS, T> | undefined;
-  get(record?: Record | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
+  get(entity: Entity | undefined): Properties<PS, T> | undefined;
+  get(entity?: Entity | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   /**
-   * Set the properties of a record.
+   * Set the properties of an entity.
    *
    * @param properties The properties to set.
-   * @param record (optional) The record to set the properties for.
+   * @param entity (optional) The entity to set the properties for.
    * @param options (optional) Additional {@link TableMutationOptions} for the mutation.
    * @example
    * This example sets the properties of the "Counter" table, which has only a single `value` property.
@@ -157,14 +157,14 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  set: (properties: Properties<PS, T>, record?: Record, options?: TableMutationOptions) => void;
+  set: (properties: Properties<PS, T>, entity?: Entity, options?: TableMutationOptions) => void;
 
   /**
-   * Get all records in the table.
+   * Get all entities in the table.
    *
-   * @returns All records currently inside the table (having properties registered)
+   * @returns All entities currently inside the table (having properties registered)
    * @example
-   * This example retrieves all records in the "Player" table.
+   * This example retrieves all entities in the "Player" table.
    *
    * ```ts
    * registry.Player.set({ name: "Alice" }, recordA);
@@ -176,15 +176,15 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  getAll: () => Record[];
+  getAll: () => Entity[];
 
   /**
-   * Get all records in the table with specific properties.
+   * Get all entities in the table with specific properties.
    *
    * @param properties The properties to match.
-   * @returns All records currently inside the table with the specified properties.
+   * @returns All entities currently inside the table with the specified properties.
    * @example
-   * This example retrieves all records in the "Player" table with a score of 100.
+   * This example retrieves all entities in the "Player" table with a score of 100.
    *
    * ```ts
    * registry.Player.set({ name: "Alice", score: 30 }, recordA);
@@ -196,15 +196,15 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  getAllWith: (properties: Partial<Properties<PS, T>>) => Record[];
+  getAllWith: (properties: Partial<Properties<PS, T>>) => Entity[];
 
   /**
-   * Get all records in the table without specific properties.
+   * Get all entities in the table without specific properties.
    *
    * @param properties The properties to exclude.
-   * @returns All records currently inside the table without the specified properties.
+   * @returns All entities currently inside the table without the specified properties.
    * @example
-   * This example retrieves all records in the "Player" table without a score of 0.
+   * This example retrieves all entities in the "Player" table without a score of 0.
    *
    * ```ts
    * registry.Player.set({ name: "Alice", score: 30 }, recordA);
@@ -216,15 +216,15 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  getAllWithout: (properties: Partial<Properties<PS, T>>) => Record[];
+  getAllWithout: (properties: Partial<Properties<PS, T>>) => Entity[];
 
   /**
-   * Get all records in the table with a React hook.
+   * Get all entities in the table with a React hook.
    *
-   * @returns All records currently inside the table (having properties registered), updated whenever data changes
+   * @returns All entities currently inside the table (having properties registered), updated whenever data changes
    * within the table.
    * @example
-   * This example retrieves all records in the "Player" table.
+   * This example retrieves all entities in the "Player" table.
    *
    * ```ts
    * const players = registry.Player.useAll();
@@ -237,16 +237,16 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  useAll: () => Record[];
+  useAll: () => Entity[];
 
   /**
-   * Get all records in the table with specific properties with a React hook.
+   * Get all entities in the table with specific properties with a React hook.
    *
    * @param properties The properties to match.
-   * @returns All records currently inside the table with the specified properties, updated whenever data changes
+   * @returns All entities currently inside the table with the specified properties, updated whenever data changes
    * within the table.
    * @example
-   * This example retrieves all records in the "Player" table with a score of 100.
+   * This example retrieves all entities in the "Player" table with a score of 100.
    *
    * ```ts
    * const players = registry.Player.useAllWith({ score: 100 });
@@ -263,16 +263,16 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  useAllWith: (properties: Partial<Properties<PS, T>>) => Record[];
+  useAllWith: (properties: Partial<Properties<PS, T>>) => Entity[];
 
   /**
-   * Get all records in the table without specific properties with a React hook.
+   * Get all entities in the table without specific properties with a React hook.
    *
    * @param properties The properties to exclude.
-   * @returns All records currently inside the table without the specified properties, updated whenever data changes
+   * @returns All entities currently inside the table without the specified properties, updated whenever data changes
    * within the table.
    * @example
-   * This example retrieves all records in the "Player" table without a score of 0.
+   * This example retrieves all entities in the "Player" table without a score of 0.
    *
    * ```ts
    * const players = registry.Player.useAllWithout({ score: 0 });
@@ -289,14 +289,14 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  useAllWithout: (properties: Partial<Properties<PS, T>>) => Record[];
+  useAllWithout: (properties: Partial<Properties<PS, T>>) => Entity[];
 
   /**
-   * Remove a record from the table.
+   * Remove an entity from the table.
    *
-   * @param record (optional) The record to remove.
+   * @param entity (optional) The entity to remove.
    * @example
-   * This example removes a record from the "Player" table.
+   * This example removes an entity from the "Player" table.
    *
    * ```ts
    * registry.Player.set({ name: "Alice" }, recordA);
@@ -312,10 +312,10 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  remove: (record?: Record) => void;
+  remove: (entity?: Entity) => void;
 
   /**
-   * Clear the table, removing all records.
+   * Clear the table, removing all entities.
    *
    * @example
    * This example clears the "Player" table.
@@ -331,12 +331,12 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
   clear: () => void;
 
   /**
-   * Update the properties of a record.
+   * Update the properties of an entity.
    *
-   * Note: This will throw an error if the record doesn't exist in the table (if it was never set).
+   * Note: This will throw an error if the entity doesn't exist in the table (if it was never set).
    *
    * @param properties The properties to update (meaning not necessarily all properties need to be provided)
-   * @param record (optional) The record to update the properties for.
+   * @param entity (optional) The entity to update the properties for.
    * @param options (optional) Additional {@link TableMutationOptions} for the mutation.
    * @example
    * This example updates the score of a player in the "Player" table.
@@ -345,22 +345,22 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * const { recordA } = getRecord(); // for the sake of the example
    * registry.Player.set({ name: "Alice", score: 30 }, recordA);
    *
-   * registry.Player.update({ score: 100 }, record);
+   * registry.Player.update({ score: 100 }, entity);
    * const player = registry.Player.get(recordA);
    * console.log(player);
    * // -> { name: "Alice", score: 100 }
    * ```
    * @category Methods
    */
-  update: (properties: Partial<Properties<PS, T>>, record?: Record, options?: TableMutationOptions) => void;
+  update: (properties: Partial<Properties<PS, T>>, entity?: Entity, options?: TableMutationOptions) => void;
 
   /**
-   * Check if a record exists in the table.
+   * Check if an entity exists in the table.
    *
-   * @param record (optional) The record to check.
-   * @returns Whether the record exists in the table.
+   * @param entity (optional) The entity to check.
+   * @returns Whether the entity exists in the table.
    * @example
-   * This example checks if a record exists in the "Player" table.
+   * This example checks if an entity exists in the "Player" table.
    *
    * ```ts
    * const { recordA } = getRecord(); // for the sake of the example
@@ -375,16 +375,16 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  has: (record?: Record) => boolean;
+  has: (entity?: Entity) => boolean;
 
   /**
-   * Get the current properties of a record with a React hook.
+   * Get the current properties of an entity with a React hook.
    *
-   * @param record (optional) The record to get the properties for.
-   * @param defaultProperties (optional) The default properties to return if the record doesn't exist.
-   * @returns The current properties of the record, updated whenever the data changes.
+   * @param entity (optional) The entity to get the properties for.
+   * @param defaultProperties (optional) The default properties to return if the entity doesn't exist.
+   * @returns The current properties of the entity, updated whenever the data changes.
    * @example
-   * This example retrieves the properties of a record in the "Player" table.
+   * This example retrieves the properties of an entity in the "Player" table.
    *
    * ```ts
    * const { recordA } = getRecord(); // for the sake of the example
@@ -399,21 +399,21 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  use(record?: Record | undefined): Properties<PS, T> | undefined;
-  use(record: Record | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
+  use(entity?: Entity | undefined): Properties<PS, T> | undefined;
+  use(entity: Entity | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   // TODO: document
-  blockUpdates: (record?: Record) => void;
-  unblockUpdates: (record?: Record) => void;
+  blockUpdates: (entity?: Entity) => void;
+  unblockUpdates: (entity?: Entity) => void;
 
   /**
-   * Pause updates for a record or the table as a whole, meaning it won't react to changes in the store anymore.
+   * Pause updates for an entity or the table as a whole, meaning it won't react to changes in the store anymore.
    *
-   * @param record (optional) The record to pause updates for.
+   * @param entity (optional) The entity to pause updates for.
    * @param properties (optional) The properties to set when pausing updates.
    * @param options (optional) Additional {@link TableMutationOptions} for the mutation.
    * @example
-   * This example pauses updates for a record in the "Player" table.
+   * This example pauses updates for an entity in the "Player" table.
    *
    * ```ts
    * const { recordA } = getRecord(); // for the sake of the example
@@ -429,15 +429,15 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  pauseUpdates: (record?: Record, properties?: Properties<PS, T>, options?: TableMutationOptions) => void;
+  pauseUpdates: (entity?: Entity, properties?: Properties<PS, T>, options?: TableMutationOptions) => void;
 
   /**
-   * Enable updates for a record or the table as a whole, meaning it will react to changes in the store again.
+   * Enable updates for an entity or the table as a whole, meaning it will react to changes in the store again.
    *
-   * @param record (optional) The record to enable updates for.
+   * @param entity (optional) The entity to enable updates for.
    * @param options (optional) Additional {@link TableMutationOptions} for the mutation.
    * @example
-   * This example enables updates for a record in the "Player" table after it's been paused.
+   * This example enables updates for an entity in the "Player" table after it's been paused.
    *
    * ```ts
    * const { recordA } = getRecord(); // for the sake of the example
@@ -457,7 +457,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  resumeUpdates: (record?: Record, options?: TableMutationOptions) => void;
+  resumeUpdates: (entity?: Entity, options?: TableMutationOptions) => void;
 
   /**
    * Create a watcher for the table, either globally (on all changes) or within a TinyQL query.
@@ -465,15 +465,15 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * See {@link createTableWatcher} for detailed information on the configuration and behavior of the watcher.
    *
    * @param options The options for the watcher.
-   * - `query` - (optional) A TinyQL query to filter the records. If not provided, it will watch all records in the table without discrimination.
+   * - `query` - (optional) A TinyQL query to filter the entities. If not provided, it will watch all entities in the table without discrimination.
    * - `onChange` - Callback triggered on any change in the table/query (encompassing enter, exit, and update).
-   * - `onEnter` - Callback triggered when a record enters the table/query (`properties.prev` will be undefined).
-   * - `onExit` - Callback triggered when a record exits the table/query (`properties.current` will be undefined).
-   * - `onUpdate` - Callback triggered when the properties of a record are updated (within the query if provided).
+   * - `onEnter` - Callback triggered when an entity enters the table/query (`properties.prev` will be undefined).
+   * - `onExit` - Callback triggered when an entity exits the table/query (`properties.current` will be undefined).
+   * - `onUpdate` - Callback triggered when the properties of an entity are updated (within the query if provided).
    * @param params Optional parameters for the watcher.
-   * - `runOnInit` - Whether to trigger the callbacks for all records on initialization (default: `true`).
+   * - `runOnInit` - Whether to trigger the callbacks for all entities on initialization (default: `true`).
    * @returns An object with an `unsubscribe` method to stop listening to the table.
-   * This example creates a watcher for all records within the "Player" table.
+   * This example creates a watcher for all entities within the "Player" table.
    *
    * ```ts
    * registry.Player.set({ health: 100 }, recordA);
@@ -481,16 +481,16 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * registry.Player.watch({
    *   onChange: (update) => console.log(update),
    * });
-   * // -> { table: undefined, record: recordA, current: undefined, prev: undefined, type: "enter" }
+   * // -> { table: undefined, entity: recordA, current: undefined, prev: undefined, type: "enter" }
    *
    * registry.Player.update({ health: 90 }, recordA);
-   * // -> { table: registry.Player, record: recordA, current: { health: 90 }, prev: { health: 100 }, type: "change" }
+   * // -> { table: registry.Player, entity: recordA, current: { health: 90 }, prev: { health: 100 }, type: "change" }
    *
    * registry.Player.remove(recordA);
-   * // -> { table: registry.Player, record: recordA, current: undefined, prev: { health: 90 }, type: "exit" }
+   * // -> { table: registry.Player, entity: recordA, current: undefined, prev: { health: 90 }, type: "exit" }
    * ```
    *
-   * This example creates a watcher for all records with more than 10 points in the "Score" table.
+   * This example creates a watcher for all entities with more than 10 points in the "Score" table.
    *
    * ```ts
    * registry.Score.set({ points: 0 }, recordA);
@@ -507,10 +507,10 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * // -> no output
    *
    * registry.Score.update({ points: 15 }, recordA);
-   * // -> { table: registry.Score, record: recordA, current: { points: 15 }, prev: { points: 0 }, type: "enter" }
+   * // -> { table: registry.Score, entity: recordA, current: { points: 15 }, prev: { points: 0 }, type: "enter" }
    *
    * registry.Score.update({ points: 0 }, recordB);
-   * // -> { table: registry.Score, record: recordB, current: undefined, prev: { points: 20 }, type: "exit" }
+   * // -> { table: registry.Score, entity: recordB, current: undefined, prev: { points: 20 }, type: "exit" }
    * ```
    * @category Methods
    */
@@ -518,23 +518,23 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
 };
 
 /**
- * Defines the methods available strictly for contract tables, using keys as an alternative to the record.
+ * Defines the methods available strictly for contract tables, using keys as an alternative to the entity.
  *
  * @category Table
  * @internal
  */
 export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = {
   /**
-   * Get the current properties of a record using its keys instead of the record itself.
+   * Get the current properties of an entity using its keys instead of the entity itself.
    *
    * @param keys (optional) The keys to get the properties for.
-   * @param defaultProperties (optional) The default properties to return if the record doesn't exist.
-   * @returns The current properties of the record.
+   * @param defaultProperties (optional) The default properties to return if the entity doesn't exist.
+   * @returns The current properties of the entity.
    * @example
-   * This example retrieves the current properties of a record in the "Player" table, on a specific server.
+   * This example retrieves the current properties of an entity in the "Player" table, on a specific server.
    *
    * ```ts
-   * // The keys that get encoded as a record are: { server: "serverA", id: "playerA" }
+   * // The keys that get encoded as an entity are: { server: "serverA", id: "playerA" }
    * registry.Player.setWithKeys({ name: "Alice" }, { server: "serverA", id: "playerA" });
    *
    * const player = registry.Player.getWithKeys({ server: "serverA", id: "playerA" });
@@ -548,15 +548,15 @@ export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata 
   getWithKeys(keys?: Keys<M["abiKeySchema"], T>, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   /**
-   * Check if a record exists inside the table using its keys.
+   * Check if an entity exists inside the table using its keys.
    *
-   * @param keys (optional) The keys to use for encoding the record.
-   * @returns Whether the record exists in the table.
+   * @param keys (optional) The keys to use for encoding the entity.
+   * @returns Whether the entity exists in the table.
    * @example
-   * This example checks if a record exists in the "Player" table, on a specific server.
+   * This example checks if an entity exists in the "Player" table, on a specific server.
    *
    * ```ts
-   * // The keys that get encoded as a record are: { server: "serverA", id: "playerA" }
+   * // The keys that get encoded as an entity are: { server: "serverA", id: "playerA" }
    * registry.Player.setWithKeys({ name: "Alice" }, { server: "serverA", id: "playerA" });
    *
    * const exists = registry.Player.hasWithKeys({ server: "serverA", id: "playerA" });
@@ -572,16 +572,16 @@ export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata 
   hasWithKeys: (keys?: Keys<M["abiKeySchema"], T>) => boolean;
 
   /**
-   * Get the real-time properties of a record by providing its keys instead of the record itself.
+   * Get the real-time properties of an entity by providing its keys instead of the entity itself.
    *
-   * @param keys (optional) The keys to use for encoding the record.
-   * @param defaultProperties (optional) The default properties to return if the record doesn't exist.
-   * @returns The current updated properties of the record.
+   * @param keys (optional) The keys to use for encoding the entity.
+   * @param defaultProperties (optional) The default properties to return if the entity doesn't exist.
+   * @returns The current updated properties of the entity.
    * @example
-   * This example retrieves the current properties of a record in the "Player" table, on a specific server.
+   * This example retrieves the current properties of an entity in the "Player" table, on a specific server.
    *
    * ```ts
-   * // The keys that get encoded as a record are: { server: "serverA", id: "playerA" }
+   * // The keys that get encoded as an entity are: { server: "serverA", id: "playerA" }
    * registry.Player.setWithKeys({ name: "Alice", score: 0 }, { server: "serverA", id: "playerA" });
    *
    * const player = registry.Player.useWithKeys({ server: "serverA", id: "playerA" });
@@ -598,15 +598,15 @@ export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata 
   useWithKeys(keys?: Keys<M["abiKeySchema"], T>, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS>;
 
   /**
-   * Set the properties of a record using its keys instead of the record itself.
+   * Set the properties of an entity using its keys instead of the entity itself.
    *
    * @param properties The properties to set.
-   * @param keys The keys to use for encoding the record.
+   * @param keys The keys to use for encoding the entity.
    * @example
-   * This example sets the properties of a record in the "Player" table, on a specific server.
+   * This example sets the properties of an entity in the "Player" table, on a specific server.
    *
    * ```ts
-   * // The keys that get encoded as a record are: { server: "serverA", id: "playerA" }
+   * // The keys that get encoded as an entity are: { server: "serverA", id: "playerA" }
    * registry.Player.setWithKeys({ name: "Alice", score: 10 }, { server: "serverA", id: "playerA" });
    * const player = registry.Player.getWithKeys({ server: "serverA", id: "playerA" });
    * console.log(player);
@@ -617,23 +617,23 @@ export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata 
   setWithKeys(properties: Properties<PS, T>, keys?: Keys<M["abiKeySchema"], T>): void;
 
   /**
-   * Get the keys properties of a record using its hex string representation.
+   * Get the keys properties of an entity using its hex string representation.
    *
-   * @param record The record to get the keys for.
-   * @returns The keys properties of the record.
+   * @param entity The entity to get the keys for.
+   * @returns The keys properties of the entity.
    * @example
-   * This example retrieves the keys properties of a record in the "Player" table.
+   * This example retrieves the keys properties of an entity in the "Player" table.
    *
    * ```ts
    * // `recordA` is a hex string representation of the keys properties: { server: "serverA", id: "playerA" }
    * const { recordA } = getRecord(); // for the sake of the example
    * registry.Player.set({ name: "Alice", score: 0 }, recordA);
    *
-   * const keys = registry.Player.getRecordKeys(recordA);
+   * const keys = registry.Player.getEntityKeys(recordA);
    * console.log(keys);
    * // -> { server: "serverA", id: "playerA" }
    * ```
    * @category Methods
    */
-  getRecordKeys: (record: Record) => Keys<M["abiKeySchema"], T>;
+  getEntityKeys: (entity: Entity) => Keys<M["abiKeySchema"], T>;
 };

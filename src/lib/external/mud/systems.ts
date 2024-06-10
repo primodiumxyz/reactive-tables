@@ -2,8 +2,8 @@ import { concat, EMPTY, from, Observable } from "rxjs";
 
 import type { BaseTable, Properties } from "@/tables";
 import type { TableUpdate, TableWatcherParams } from "@/queries";
-import { tableOperations, queries, type World, type QueryFragment, type Schema, type Record } from "@/lib";
-const { getTableRecords, setRecord, removeRecord, toUpdateStream } = tableOperations();
+import { tableOperations, queries, type World, type QueryFragment, type Schema, type Entity } from "@/lib";
+const { getTableEntitys, setEntity, removeEntity, toUpdateStream } = tableOperations();
 const { defineChangeQuery, defineEnterQuery, defineExitQuery, defineQuery } = queries();
 
 // All of the following code is taken and modified from MUD to fit new types and naming conventions.
@@ -32,7 +32,7 @@ export const systems = () => {
    * @param query Update query to react to.
    * @param system System function to run when the result of the given update query changes.
    * @param options Optional: {
-   * runOnInit: if true, run this system for all records matching the query when the system is created.
+   * runOnInit: if true, run this system for all entities matching the query when the system is created.
    * Else only run on updates after the system is created. Default true.
    * }
    */
@@ -52,7 +52,7 @@ export const systems = () => {
    * @param query Enter query to react to.
    * @param system System function to run when the result of the given enter query changes.
    * @param options Optional: {
-   * runOnInit: if true, run this system for all records matching the query when the system is created.
+   * runOnInit: if true, run this system for all entities matching the query when the system is created.
    * Else only run on updates after the system is created. Default true.
    * }
    */
@@ -72,7 +72,7 @@ export const systems = () => {
    * @param query Exit query to react to.
    * @param system System function to run when the result of the given exit query changes.
    * @param options Optional: {
-   * runOnInit: if true, run this system for all records matching the query when the system is created.
+   * runOnInit: if true, run this system for all entities matching the query when the system is created.
    * Else only run on updates after the system is created. Default true.
    * }
    */
@@ -92,7 +92,7 @@ export const systems = () => {
    * @param query Query to react to.
    * @param system System function to run when the result of the given query changes.
    * @param options Optional: {
-   * runOnInit: if true, run this system for all records matching the query when the system is created.
+   * runOnInit: if true, run this system for all entities matching the query when the system is created.
    * Else only run on updates after the system is created. Default true.
    * }
    */
@@ -112,7 +112,7 @@ export const systems = () => {
    * @param component Component to whose updates to react.
    * @param system System function to run when the given table is updated.
    * @param options Optional: {
-   * runOnInit: if true, run this system for all records in the table when the system is created.
+   * runOnInit: if true, run this system for all entities in the table when the system is created.
    * Else only run on updates after the system is created. Default true.
    * }
    */
@@ -122,7 +122,7 @@ export const systems = () => {
     system: (update: TableUpdate<S>) => void,
     options: TableWatcherParams = { runOnInit: true },
   ) => {
-    const initial$ = options?.runOnInit ? from(getTableRecords(table)).pipe(toUpdateStream(table)) : EMPTY;
+    const initial$ = options?.runOnInit ? from(getTableEntitys(table)).pipe(toUpdateStream(table)) : EMPTY;
     defineRxSystem(world, concat(initial$, table.update$), system);
   };
 
@@ -130,24 +130,24 @@ export const systems = () => {
    * Create a system to synchronize updates to one table with another table.
    *
    * @param world {@link World} object this system should be registered in.
-   * @param query Result of `table` is added to all records matching this query.
-   * @param component Function returning the table to be added to all records matching the given query.
-   * @param value Function returning the table properties to be added to all records matching the given query.
+   * @param query Result of `table` is added to all entities matching this query.
+   * @param component Function returning the table to be added to all entities matching the given query.
+   * @param value Function returning the table properties to be added to all entities matching the given query.
    */
   const defineSyncSystem = <S extends Schema>(
     world: World,
     query: QueryFragment[],
-    table: (record: Record) => BaseTable<S>,
-    properties: (record: Record) => Properties<S>,
+    table: (entity: Entity) => BaseTable<S>,
+    properties: (entity: Entity) => Properties<S>,
     options: TableWatcherParams & { update?: boolean } = { runOnInit: true, update: false },
   ) => {
     defineSystem(
       world,
       query,
-      ({ record, type }) => {
-        if (type === "enter") setRecord(table(record), record, properties(record));
-        if (type === "exit") removeRecord(table(record), record);
-        if (options?.update && type === "change") setRecord(table(record), record, properties(record));
+      ({ entity, type }) => {
+        if (type === "enter") setEntity(table(entity), entity, properties(entity));
+        if (type === "exit") removeEntity(table(entity), entity);
+        if (options?.update && type === "change") setEntity(table(entity), entity, properties(entity));
       },
       options,
     );

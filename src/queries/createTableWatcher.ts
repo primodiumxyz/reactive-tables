@@ -4,7 +4,7 @@ import { systems, type Schema } from "@/lib";
 
 /**
  * Create a watcher/listener for a table, on all changes or selective ones (enter, exit, change, any update).
- * This will listen to changes in the table and trigger callbacks when records enter, exit, or change.
+ * This will listen to changes in the table and trigger callbacks when entities enter, exit, or change.
  *
  * Note: This function is directly provided as a table method, when using `table.watch()`.
  *
@@ -12,13 +12,13 @@ import { systems, type Schema } from "@/lib";
  * - `world` The RECS world containing the table to watch (abstracted).
  * - `table` The table to watch for changes (abstracted).
  * - `onChange` Callback triggered on any change in the table/query (encompassing enter, exit, and update).
- * - `onEnter` Callback triggered when a record enters the table/query (`properties.prev` will be undefined).
- * - `onExit` Callback triggered when a record exits the table/query (`properties.current` will be undefined).
- * - `onUpdate` Callback triggered when the properties of a record are updated (within the query if provided).
+ * - `onEnter` Callback triggered when an entity enters the table/query (`properties.prev` will be undefined).
+ * - `onExit` Callback triggered when an entity exits the table/query (`properties.current` will be undefined).
+ * - `onUpdate` Callback triggered when the properties of an entity are updated (within the query if provided).
  * @param params Additional {@link TableWatcherParams} for the watcher.
- * - `runOnInit` Whether to trigger the callbacks for all records on initialization (default: `true`).
+ * - `runOnInit` Whether to trigger the callbacks for all entities on initialization (default: `true`).
  * @example
- * This example creates a watcher for all records within (with properties inside) the "Player" table.
+ * This example creates a watcher for all entities within (with properties inside) the "Player" table.
  *
  * ```ts
  * const { tables, store } = createWrapper({ world, mudConfig });
@@ -33,10 +33,10 @@ import { systems, type Schema } from "@/lib";
  * // no output
  *
  * registry.Player.update({ health: 90 }, playerRecord);
- * // -> { table: registry.Player, record: playerRecord, current: { health: 90 }, prev: { health: 100 }, type: "change" }
+ * // -> { table: registry.Player, entity: playerRecord, current: { health: 90 }, prev: { health: 100 }, type: "change" }
  *
  * registry.Player.remove(playerRecord);
- * // -> { table: registry.Player, record: playerRecord, current: undefined, prev: { health: 90 }, type: "exit" }
+ * // -> { table: registry.Player, entity: playerRecord, current: undefined, prev: { health: 90 }, type: "exit" }
  *
  * // Unsubscribe from the watcher once you're done or when disposing of the component
  * // This will be done automatically when disposing of the world
