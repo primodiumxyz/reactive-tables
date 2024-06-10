@@ -1,270 +1,241 @@
+import { Subject, filter, map } from "rxjs";
 import { useEffect, useState } from "react";
 
-import { type Primitive, TinyBaseAdapter, type TinyBaseFormattedType } from "@/adapter";
-import { createTableKeyMethods, type ContractTableMetadata } from "@/tables/contract";
-import type { LocalTableMetadata } from "@/tables/local";
-import type { Properties, PropertiesSansMetadata, CreateTableMethodsOptions } from "@/tables";
+import { createTableKeyMethods } from "@/tables";
+import type { BaseTable, BaseTableMetadata, Properties, PropertiesSansMetadata, TableMethods } from "@/tables";
+import { createTableWatcher, type TableWatcherOptions, type TableWatcherParams, type TableUpdate } from "@/queries";
 import {
-  type CreateTableWatcherOptions,
-  createTableWatcher,
-  queryAllWithProperties,
-  queryAllWithoutProperties,
-  type TableWatcherParams,
-  type TinyQLQueryKeywords,
-  useAllWithProperties,
-  useAllWithoutProperties,
-} from "@/queries";
-import {
-  arrayToIterator,
-  createTableMethodsUtils,
-  default$Record,
-  type Metadata,
-  type $Record,
-  type Schema,
-  uuid,
-} from "@/lib";
-
-const inContractTableMetadata = <S extends Schema, M extends Metadata>(
-  metadata: LocalTableMetadata<S, M> | ContractTableMetadata<S, M>,
-): metadata is ContractTableMetadata<S, M> => "keySchema" in metadata;
-
-export const createTableMethods = <
-  S extends Schema,
-  M extends Metadata,
-  metadata extends LocalTableMetadata<S, M> | ContractTableMetadata<S, M>,
-  T = unknown,
->({
-  store,
+  defaultEntity,
   queries,
-  metadata,
-}: CreateTableMethodsOptions<S, M, metadata>) => {
-  const { tableId, schema } = metadata;
-  const { paused } = createTableMethodsUtils(store, tableId);
+  tableOperations,
+  type Entity,
+  type Schema,
+  type TableMutationOptions,
+  type World,
+} from "@/lib";
+const { runQuery, defineQuery, useEntityQuery, With, WithProperties, WithoutProperties } = queries();
+const {
+  setEntity,
+  removeEntity,
+  updateEntity,
+  getEntityProperties,
+  hasEntity,
+  isTableUpdate: _isTableUpdate,
+} = tableOperations();
 
-  // Native RECS $records iterator
-  const $records = () => arrayToIterator(store.getRowIds(tableId) as $Record[]);
+/* -------------------------------------------------------------------------- */
+/*                               ATTACH METHODS                               */
+/* -------------------------------------------------------------------------- */
+
+export const createTableMethods = <PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
+  world: World,
+  table: BaseTable<PS, M, T>,
+): TableMethods<PS, M, T> => {
+  const paused: Map<Entity, boolean> = new Map();
+  const blocked: Map<Entity, boolean> = new Map();
+  const pendingUpdate: Map<Entity, TableUpdate<PS, M, T>> = new Map();
+
+  // Update event stream that takes into account overridden entity values
+  const update$ = new Subject<TableUpdate<PS, M, T>>();
 
   /* --------------------------------- STREAMS -------------------------------- */
-  // Pause updates for a record (don't react to changes in hooks, e.g. useProperties)
-  const pauseUpdates = ($record?: $Record, properties?: Properties<S, T>) => {
-    $record = $record ?? default$Record;
+  // Pause updates for an entity (don't react to changes in hooks, e.g. useProperties)
+  const pauseUpdates = (
+    entity?: Entity,
+    properties?: Properties<PS, T>,
+    options: TableMutationOptions = { skipUpdateStream: false },
+  ) => {
+    entity = entity ?? defaultEntity;
 
-    paused.set($record, true);
-    if (properties) set(properties, $record);
+    paused.set(entity, true);
+    if (properties) setEntity(table, entity, properties, options);
   };
 
-  // Enable updates for a record (react again to changes in the store, e.g. useProperties)
+  // Enable updates for an entity (react again to changes in the store, e.g. useProperties)
   // If any update happened during the pause, the state will be updated to the latest properties
-  const resumeUpdates = ($record?: $Record) => {
-    $record = $record ?? default$Record;
+  const resumeUpdates = (entity?: Entity, options: TableMutationOptions = { skipUpdateStream: false }) => {
+    entity = entity ?? defaultEntity;
 
-    if (!paused.get($record)) return;
-    paused.set($record, false);
+    if (!paused.get(entity)) return;
+    paused.set(entity, false);
+
+    const update = pendingUpdate.get(entity);
+    if (!update) return;
+
+    if (update.properties.prev) setEntity(table, entity, update.properties.prev, { skipUpdateStream: true });
+    if (update.properties.current) setEntity(table, entity, update.properties.current, options);
+    else removeEntity(table, entity);
+
+    pendingUpdate.delete(entity);
   };
+
+  // Block updates for an entity
+  const blockUpdates = (entity?: Entity) => {
+    blocked.set(entity ?? defaultEntity, true);
+  };
+
+  // Unblock updates for an entity
+  const unblockUpdates = (entity?: Entity) => {
+    blocked.set(entity ?? defaultEntity, false);
+  };
+
+  // Channel through update events from the original component if there are no overrides
+  table.update$
+    .pipe(
+      filter((e) => !paused.get(e.entity)),
+      map((update) => ({ ...update, table })),
+    )
+    .subscribe(update$);
+
+  table.update$
+    .pipe(
+      filter((e) => !!paused.get(e.entity)),
+      map((update) => {
+        pendingUpdate.set(update.entity, update);
+      }),
+    )
+    .subscribe();
 
   /* ----------------------------------- SET ---------------------------------- */
-  // Set the properties for a record
-  const set = (properties: Properties<S, T>, $record?: $Record) => {
-    $record = $record ?? default$Record;
+  // Set the properties for an entity
+  const set = (properties: Properties<PS, T>, entity?: Entity, options?: TableMutationOptions) => {
+    entity = entity ?? defaultEntity;
 
-    // Encode the properties and set them in the store
-    const formattedProperties = TinyBaseAdapter.encode(properties as Record<string, Primitive>);
-    store.setRow(tableId, $record, formattedProperties);
-  };
-
-  // Utility function to save on computation when we want to set the formatted data directly
-  const setRaw = (properties: TinyBaseFormattedType, $record: $Record) => {
-    $record = $record ?? default$Record;
-    store.setRow(tableId, $record, properties);
+    if (blocked.get(entity)) return;
+    if (paused.get(entity)) {
+      const prevProperties = pendingUpdate.get(entity)?.properties.current ?? getEntityProperties(table, entity);
+      pendingUpdate.set(entity, {
+        entity,
+        properties: { current: properties, prev: prevProperties },
+        table,
+        type: prevProperties ? "change" : "enter",
+      });
+    } else {
+      setEntity(table, entity, properties, options);
+    }
   };
 
   /* ----------------------------------- GET ---------------------------------- */
-  // Get the properties for a record
-  function get(): Properties<S, T> | undefined;
-  function get($record: $Record | undefined): Properties<S, T> | undefined;
-  function get($record?: $Record | undefined, defaultProperties?: PropertiesSansMetadata<S, T>): Properties<S, T>;
-  function get($record?: $Record, defaultProperties?: PropertiesSansMetadata<S, T>) {
-    $record = $record ?? default$Record;
-    const row = store.getRow(tableId, $record);
-
-    const decoded = Object.entries(row).length > 0 ? TinyBaseAdapter.decode(row) : undefined; // empty object should be undefined
-    return (decoded ?? defaultProperties) as Properties<S, T>;
+  // Get the properties for an entity
+  function get(): Properties<PS, T> | undefined;
+  function get(entity: Entity | undefined): Properties<PS, T> | undefined;
+  function get(entity?: Entity | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
+  function get(entity?: Entity, defaultProperties?: PropertiesSansMetadata<PS, T>) {
+    entity = entity ?? defaultEntity;
+    return getEntityProperties(table, entity) ?? defaultProperties;
   }
 
-  // Utility function to save on computation when we're only interested in the raw data (to set again directly)
-  const getRaw = ($record: $Record) => {
-    const row = store.getRow(tableId, $record);
-    return Object.entries(row).length > 0 ? row : undefined;
-  };
-
   /* --------------------------------- QUERIES -------------------------------- */
-  // Get all records inside the table
+  // Get all entities inside the table
   const getAll = () => {
-    return store.getRowIds(tableId) as $Record[];
+    const entities = runQuery([With(table)]);
+    return [...entities];
   };
 
-  // Get all records with specific properties
-  const getAllWith = (properties: Partial<Properties<S, T>>) => {
-    return queryAllWithProperties({ queries, tableId, properties }).$records;
+  // Get all entities with specific properties
+  const getAllWith = (properties: Partial<Properties<PS, T>>) => {
+    const entities = runQuery([WithProperties(table, properties)]);
+    return [...entities];
   };
 
-  // Get all records without specific properties
-  const getAllWithout = (properties: Partial<Properties<S, T>>) => {
-    return queryAllWithoutProperties({ queries, tableId, properties }).$records;
+  // Get all entities without specific properties
+  const getAllWithout = (properties: Partial<Properties<PS, T>>) => {
+    const entities = runQuery([With(table), WithoutProperties(table, properties)]);
+    return [...entities];
   };
 
   /* ---------------------------------- HOOKS --------------------------------- */
-  // Hook to get all records inside the table
+  // Hook to get all entities inside the table
   function useAll() {
-    const [$records, set$Records] = useState<$Record[]>(getAll());
-
-    useEffect(() => {
-      // Whenever a record is added or removed (row ids changed), update the state
-      const subId = store.addRowIdsListener(tableId, () => {
-        set$Records(getAll());
-      });
-
-      return () => {
-        store.delListener(subId);
-      };
-    }, []);
-
-    return $records;
+    const entities = useEntityQuery([With(table)]);
+    return [...entities];
   }
 
-  // Hook to get all records with specific properties
-  const useAllWith = (properties: Partial<Properties<S, T>>) => {
-    return useAllWithProperties(queries, tableId, properties);
+  // Hook to get all entities with specific properties
+  const useAllWith = (properties: Partial<Properties<PS, T>>) => {
+    const entities = useEntityQuery([WithProperties(table, properties)]);
+    return [...entities];
   };
 
-  // Hook to get all records without specific properties
-  const useAllWithout = (properties: Partial<Properties<S, T>>) => {
-    return useAllWithoutProperties(queries, tableId, properties);
-  };
-
-  /* ---------------------------------- CLEAR --------------------------------- */
-  // Clear the table (remove all records)
-  const clear = () => {
-    store.delTable(tableId);
+  // Hook to get all entities without specific properties
+  const useAllWithout = (properties: Partial<Properties<PS, T>>) => {
+    const entities = useEntityQuery([With(table), WithoutProperties(table, properties)]);
+    return [...entities];
   };
 
   /* --------------------------------- REMOVE --------------------------------- */
-  // Remove a record from the table (delete its properties)
-  const remove = ($record?: $Record) => {
-    $record = $record ?? default$Record;
-    store.delRow(tableId, $record);
+  // Remove an entity from the table (delete its properties)
+  const remove = (entity?: Entity) => {
+    entity = entity ?? defaultEntity;
+    removeEntity(table, entity);
+  };
+
+  /* ---------------------------------- CLEAR --------------------------------- */
+  // Clear the table (remove all entities)
+  const clear = () => {
+    for (const entity of runQuery([With(table)])) {
+      removeEntity(table, entity);
+    }
   };
 
   /* --------------------------------- UPDATE --------------------------------- */
-  // Update the properties for a record, possibly with partial properties
-  const update = (properties: Partial<Properties<S, T>>, $record?: $Record) => {
-    $record = $record ?? default$Record;
-    const currentProperties = getRaw($record);
-    if (!currentProperties) throw new Error(`$Record ${$record} does not exist in table ${tableId}`);
-
-    const newProperties = TinyBaseAdapter.encode(properties as Record<string, Primitive>);
-    setRaw({ ...currentProperties, ...newProperties }, $record);
+  // Update the properties for an entity, possibly with partial properties
+  const update = (properties: Partial<Properties<PS, T>>, entity?: Entity, options?: TableMutationOptions) => {
+    entity = entity ?? defaultEntity;
+    updateEntity(table, entity, properties, undefined, options);
   };
 
   /* ----------------------------------- HAS ---------------------------------- */
-  // Check if a record exists in the table
-  const has = ($record?: $Record) => {
-    if (!$record) return false;
-    return store.hasRow(tableId, $record);
+  // Check if an entity exists in the table
+  const has = (entity?: Entity) => {
+    if (!entity) return false;
+    return hasEntity(table, entity);
+  };
+
+  const isTableUpdate = (update: TableUpdate<PS, M, T>): update is TableUpdate<PS, M, T> => {
+    return _isTableUpdate(update, table);
   };
 
   /* ----------------------------- USE PROPERTIES ----------------------------- */
-  // Hook to get the properties for a record in real-time
-  function useProperties($record?: $Record | undefined): Properties<S, T> | undefined;
+  // Hook to get the properties for an entity in real-time
+  function useProperties(entity?: Entity | undefined): Properties<PS, T> | undefined;
   function useProperties(
-    $record: $Record | undefined,
-    defaultProperties?: PropertiesSansMetadata<S, T>,
-  ): Properties<S, T>;
-  function useProperties($record?: $Record, defaultProperties?: PropertiesSansMetadata<S, T>) {
-    $record = $record ?? default$Record;
-    const [properties, setProperties] = useState(get($record));
+    entity: Entity | undefined,
+    defaultProperties?: PropertiesSansMetadata<PS, T>,
+  ): Properties<PS, T>;
+  function useProperties(entity?: Entity, defaultProperties?: PropertiesSansMetadata<PS, T>) {
+    entity = entity ?? defaultEntity;
+    const [properties, setProperties] = useState<Properties<PS, T> | PropertiesSansMetadata<PS, T> | undefined>(
+      defaultProperties,
+    );
 
     useEffect(() => {
-      // properties just changed for this record, update state to latest properties
-      // (just make sure this one is not paused)
-      if (!paused.get($record)) {
-        setProperties(get($record));
-      }
+      setProperties(getEntityProperties(table, entity));
 
-      // Update state when the properties for this $record changes
-      const propertiesSubId = store.addRowListener(tableId, $record, () => {
-        // only if it's not paused
-        if (!paused.get($record)) {
-          setProperties(get($record));
+      // fix: if pre-populated with state, useComponentValue doesn’t update when there’s a component that has been removed.
+      const queryResult = defineQuery([With(table)], { runOnInit: true });
+      const subscription = queryResult.update$.subscribe((_update) => {
+        const update = _update as TableUpdate<PS, M, T>;
+        if (isTableUpdate(update) && update.entity === entity) {
+          const { current: nextProperties } = update.properties;
+          setProperties(nextProperties);
         }
       });
 
-      // Update state when updates are unpaused
-      const pausedSubId = store.addValueListener(`paused__${tableId}__${$record}`, (_, __, newPaused) => {
-        // Meaning updates are being resumed
-        if (!newPaused) {
-          setProperties(get($record));
-        }
-      });
-
-      return () => {
-        store.delListener(propertiesSubId);
-        store.delListener(pausedSubId);
-      };
-    }, [$record, paused]);
+      return () => subscription.unsubscribe();
+    }, [table, entity]);
 
     return properties ?? defaultProperties;
   }
 
-  /* ---------------------------------- QUERY --------------------------------- */
-  // Query the table using TinyQL syntax
-  const query = (definition: (keywords: TinyQLQueryKeywords) => void) => {
-    // Add a `select` on top of the query to abstract selecting at least a cell from the properties => selecting all $records
-    // This is required with TinyQL to at least select a cell so it considers all rows
-    const abstractedQuery = (keywords: TinyQLQueryKeywords) => {
-      keywords.select(Object.keys(schema)[0]);
-      definition(keywords);
-    };
-
-    // Define and run the query
-    const queryId = uuid();
-    queries.setQueryDefinition(queryId, tableId, abstractedQuery);
-    const result = queries.getResultRowIds(queryId);
-
-    queries.delQueryDefinition(queryId);
-    return result as $Record[];
-  };
-
   /* ---------------------------------- WATCH --------------------------------- */
   // Create a query tied to this table, with callbacks on change, enter & exit from the query conditions
   // or if no query, on any change in the table
-  const watch = (
-    options: Omit<CreateTableWatcherOptions<S, T>, "queries" | "tableId" | "schema">,
-    params?: TableWatcherParams,
-  ) => {
-    // Same abstraction as in `query` to select all $records
-    const query: CreateTableWatcherOptions<S, T>["query"] = options.query
-      ? (keywords) => {
-          keywords.select(Object.keys(schema)[0]);
-          options.query!(keywords);
-        }
-      : undefined;
-
-    return createTableWatcher(
-      {
-        queries,
-        tableId,
-        schema,
-        ...options,
-        query,
-      },
-      params,
-    );
-  };
+  const watch = (options: Omit<TableWatcherOptions<PS, M, T>, "world" | "table">, params?: TableWatcherParams) =>
+    createTableWatcher({ world, table, ...options }, params);
 
   // Base methods available to all tables
   const baseMethods = {
-    $records,
     get,
     set,
     getAll,
@@ -276,7 +247,8 @@ export const createTableMethods = <
     has,
     pauseUpdates,
     resumeUpdates,
-    query,
+    blockUpdates,
+    unblockUpdates,
     watch,
   };
 
@@ -294,11 +266,9 @@ export const createTableMethods = <
     ...baseMethods,
     ...hookMethods,
   };
-  // If it's a local table, no need for contract methods
-  if (!inContractTableMetadata(metadata)) return methods;
 
   return {
     ...methods,
-    ...createTableKeyMethods({ ...methods, keySchema: metadata.keySchema }),
+    ...createTableKeyMethods({ ...methods, table }),
   };
 };

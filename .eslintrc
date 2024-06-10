@@ -11,5 +11,5 @@
     "@typescript-eslint/no-non-null-asserted-optional-chain": "off",
     "@typescript-eslint/ban-ts-comment": "warn",
     "@typescript-eslint/no-namespace": "off"
-  }
+  },
 }

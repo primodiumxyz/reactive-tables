@@ -1,7 +1,7 @@
 import { waitForTransactionReceipt } from "viem/actions";
 import { ContractFunctionArgs, ContractFunctionName, Hex, encodeFunctionData } from "viem";
 
-import { $Record, ContractTable } from "@/index";
+import { Entity, ContractTable } from "@/index";
 
 import { networkConfig } from "@test/utils/networkConfig";
 import { resourceToHex } from "@latticexyz/common";
@@ -19,7 +19,7 @@ export const fuzz = async (iterations: number, tables: ContractTable[]) => {
     // Select random function and find the related table
     const [name, { functionName, args }] = functions[Math.floor(Math.random() * functions.length)];
     const table = tables.find((table) => table.metadata.name === name);
-    const namespace = table?.metadata.globalName.split("__")[0] ?? "";
+    const namespace = table?.metadata.namespace ?? "";
 
     // Encode function call
     const callData = encodeFunctionData<typeof IWorldAbi>({
@@ -53,7 +53,7 @@ export const getRandomBigInts = (length?: number, min?: number, max?: number) =>
 
 // Test functions (name & args)
 export const mockFunctions = {
-  // Update a record's position
+  // Update an entity's position
   Position: { functionName: "move", args: [random(-1000000000), random(-1000000000)] },
   // Increment counter
   Counter: { functionName: "increment", args: [] },
@@ -71,10 +71,10 @@ export const setItems = async (args: { items: number[]; weights: number[]; total
   return await waitForTransactionReceipt(networkConfig.publicClient, { hash });
 };
 
-// Set the position of a record
-export const setPositionFor$Record = async (args: { $record: $Record; x: number; y: number }) => {
-  const { $record, x, y } = args;
-  const hash = await networkConfig.worldContract.write.moveWithArbitraryKey([$record as Hex, x, y], {
+// Set the position of an entity
+export const setPositionForEntity = async (args: { entity: Entity; x: number; y: number }) => {
+  const { entity, x, y } = args;
+  const hash = await networkConfig.worldContract.write.moveWithArbitraryKey([entity as Hex, x, y], {
     chain: networkConfig.chain,
     account: networkConfig.burnerAccount.address,
   });

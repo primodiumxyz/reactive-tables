@@ -1,5 +1,3 @@
-// Modified from https://github.com/latticexyz/mud/blob/ade94a7fa761070719bcd4b4dac6cb8cc7783c3b/packages/protocol-parser/src/decodeValueArgs.ts#L8
-
 import { concatHex } from "viem";
 import { isDynamicAbiType, isStaticAbiType } from "@latticexyz/schema-type/internal";
 import {
@@ -7,7 +5,6 @@ import {
   decodeStaticField,
   hexToEncodedLengths,
   type Schema,
-  type SchemaToPrimitives,
   staticDataLength,
   type ValueArgs,
 } from "@latticexyz/protocol-parser/internal";
@@ -20,11 +17,13 @@ import {
 } from "@latticexyz/schema-type/internal";
 import { type Hex } from "viem";
 
-import { encodePropertiesToTinyBase } from "@/adapter/encodePropertiesToTinyBase";
-import { type PropertiesSchema } from "@/tables/contract";
+import { Properties } from "@/tables";
+import type { AbiPropertiesSchema, AbiToSchema } from "@/lib";
+
+// Modified from https://github.com/latticexyz/mud/blob/ade94a7fa761070719bcd4b4dac6cb8cc7783c3b/packages/protocol-parser/src/decodePropertiesArgs.ts#L8
 
 /**
- * Decode the properties of a record from the data inside a log.
+ * Decode the properties of an entity from the data inside a log.
  *
  * This is an unmodified version of the original MUD function.
  *
@@ -35,12 +34,12 @@ import { type PropertiesSchema } from "@/tables/contract";
  * @see [@]latticexyz/protocol-parser/internal/decodeValueArgs.ts
  * @category Adapter
  */
-export function decodeValueArgs<TSchema extends PropertiesSchema>(
+export function decodePropertiesArgs<TSchema extends AbiPropertiesSchema>(
   propertiesSchema: TSchema,
   args: ValueArgs,
-): SchemaToPrimitives<TSchema> {
+): Properties<AbiToSchema<TSchema>> {
   const { staticData, encodedLengths, dynamicData } = args;
-  return decodeValue(
+  return decodeProperties(
     propertiesSchema,
     concatHex([
       readHex(staticData, 0, staticDataLength(Object.values(propertiesSchema).filter(isStaticAbiType))),
@@ -51,38 +50,32 @@ export function decodeValueArgs<TSchema extends PropertiesSchema>(
 }
 
 /**
- * Decode the properties of a record from its hex metadata.
+ * Decode the properties of an entity from its hex metadata.
  *
- * This is an slightly modified version of the original MUD function.
- * The only difference is that the data is encoded to fit a TinyBase table when set inside the storage adapter.
- *
- * The properties will be appended with their types (e.g. `type__count` for `count`; or { count: 1 } will produce { type__count: "number" }).
+ * This is an unmodified version of the original MUD function.
  *
  * @template TSchema The schema of the properties to decode.
  * @param propertiesSchema The schema of the properties to decode.
  * @param data The encoded hex data to decode the properties from.
  * @returns The decoded properties in a TinyBase-friendly format.
  * @see [@]latticexyz/protocol-parser/internal/decodeValue.ts
- * @see {@link encodePropertiesToTinyBase}
  * @category Adapter
  */
-export function decodeValue<TSchema extends PropertiesSchema>(
+export function decodeProperties<TSchema extends AbiPropertiesSchema>(
   propertiesSchema: TSchema,
   data: Hex,
-): SchemaToPrimitives<TSchema> {
+): Properties<AbiToSchema<TSchema>> {
   const staticFields = Object.values(propertiesSchema).filter(isStaticAbiType);
   const dynamicFields = Object.values(propertiesSchema).filter(isDynamicAbiType);
 
   const valueTuple = decodeRecord({ staticFields, dynamicFields }, data);
-  // Modified: encode for TinyBase
-  // This will include formatted values + their types (e.g. `type__name` for `name`)
-  return encodePropertiesToTinyBase(
-    Object.fromEntries(Object.keys(propertiesSchema).map((key, i) => [key, valueTuple[i]])),
-  ) as SchemaToPrimitives<TSchema>;
+  return Object.fromEntries(Object.keys(propertiesSchema).map((name, i) => [name, valueTuple[i]])) as Properties<
+    AbiToSchema<TSchema>
+  >;
 }
 
 /**
- * Decode the static and dynamic properties of a record from its hex data and type (dynamic or static).
+ * Decode the static and dynamic properties of an entity from its hex data and type (dynamic or static).
  *
  * This is an unmodified version of the original MUD function.
  *

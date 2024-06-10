@@ -1,74 +1,72 @@
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { resolveConfig } from "@latticexyz/store/internal";
 
-import { type StorageAdapter, createStorageAdapter } from "@/adapter";
-import { type ContractTables, createRegistry } from "@/tables/contract";
+import { createContractTables, type ContractTables } from "@/tables";
+import { createStorageAdapter, type StorageAdapter } from "@/adapter";
 import {
-  type AllTableDefs,
-  createStore,
-  type ContractTableDefs,
-  type Store,
-  type StoreConfig,
   storeTableDefs,
   worldTableDefs,
+  type AllTableDefs,
+  type ContractTableDefs,
+  type StoreConfig,
+  type World,
 } from "@/lib";
 
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { createLocalTable } from "@/tables/local";
+import { createLocalTable } from "@/tables";
 
 /**
  * Defines the options for creating a TinyBase wrapper.
  *
  * @template config The type of the configuration object specifying tables definitions for contracts codegen.
  * @template extraTableDefs The types of any additional custom definitions to generate tables for.
+ * @param world The RECS world object, used for creating tables and entities.
  * @param mudConfig The actual MUD configuration, usually retrieved for the contracts package.
  * @param otherTableDefs (optional) Custom definitions to generate tables for as well.
+ * @param shouldSkipUpdateStream (optional) Whether to skip the initial update stream (most likely to trigger it afterwards).
  */
 export type WrapperOptions<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
+  world: World;
   mudConfig: config;
   otherTableDefs?: extraTableDefs;
+  shouldSkipUpdateStream?: () => boolean;
 };
 
 /**
  * The result of going through the TinyBase wrapper creation process.
  *
- * The registry is the main entry point to all kind of data retrieval and manipulation.
+ * Tables are the main entry point to all kind of data retrieval and manipulation.
  *
  * @template config The type of the configuration object specifying tables definitions for contracts codegen.
  * @template tableDefs The types of the definitions used for generating tables.
- * @param registry The tables generated from all definitions (see {@link createRegistry}).
+ * @param tables The tables generated from all definitions (see {@link createContractTables}).
  * @param tableDefs The full definitions object, including provided MUD config and custom definitions, as well as store and world config tables.
- * @param store A wrapper around the TinyBase store, addressing either the "regular" or persistent store depending on the provided key,
- * as well as the queries instance (see {@link createStore}).
  * @param storageAdapter The storage adapter for formatting onchain logs into TinyBase tabular data (see {@link createStorageAdapter}).
+ * @param triggerUpdateStream A function to trigger the update stream on all tables and entities (e.g. after completing sync).
  */
 export type WrapperResult<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
-  registry: ContractTables<AllTableDefs<config, extraTableDefs>>;
+  tables: ContractTables<AllTableDefs<config, extraTableDefs>>;
   tableDefs: AllTableDefs<config, extraTableDefs>;
-  store: Store;
   storageAdapter: StorageAdapter;
+  triggerUpdateStream: () => void;
 };
 
 /**
  * This function creates a wrapper for transforming MUD tables and custom tables definitions into consumable
  * objects, while abstracting the infrastructure for communicating from onchain data (logs) to
- * easily manipulable and strictly typed tables & records. More specifically:
- * - encoding/decoding MUD and custom definitions into tabular data for TinyBase;
- * - encoding data from onchain logs into tabular data records for TinyBase;
+ * easily manipulable and strictly typed tables & entities. More specifically:
+ * - encoding/decoding MUD and custom definitions into tabular data;
+ * - encoding data from onchain logs into this specific data format;
  * - decoding data into TypeScript-friendly objects, and offering typed methods for access and manipulation;
- * - creating and reacting to queries, both in TinyBase queries and RECS-like formats.
+ * - creating and reacting to queries, with the same logic as RECS but more convenient functions and types;
  *
  * This is the main entry point into the library.
- *
- * Note: if the wrapper is used in a browser environment, and you intend to use persistent tables, you MUST wait for the
- * sync with local storage to be started; otherwise, there will be inconsistencies with properties from the last and current sessions.
- * See the example in the {@link createLocalTable} function for more information.
  *
  * @param options The {@link WrapperOptions} object specifying the MUD configuration and custom definitions.
  * @returns A {@link WrapperResult} object containing the tables, definitions, store, queries instance, and storage adapter.
  * @example
- * This example creates a wrapper from MUD config and sets the properties for a specific record in the "Counter" table.
+ * This example creates a wrapper from MUD config and sets the properties for a specific entity in the "Counter" table.
  *
  * ```ts
  * const mudConfig = defineWorld({
@@ -82,17 +80,45 @@ export type WrapperResult<config extends StoreConfig, extraTableDefs extends Con
  *   },
  * });
  *
- * const { registry } = createWrapper({ mudConfig });
- * registry.Counter.set({ value: 13 }); // fully typed
- * const properties = registry.Counter.get();
+ * const { tables } = createWrapper({ world, mudConfig });
+ *
+ * tables.Counter.set({ value: 13 }); // fully typed
+ * const properties = tables.Counter.get();
  * console.log(properties);
  * // -> { value: 13 }
+ * ```
+ *
+ * @example
+ * This example waits for the sync with the indexer to be done before reacting to updates on tables.
+ *
+ * ```ts
+ * const SyncProgress = createLocalTable(world, { progress: Type.Number, status: Type.Number }, { id: "SyncProgress" });
+ * const { tables, storageAdapter, triggerUpdateStream } = createWrapper({
+ *   world,
+ *   mudConfig,
+ *   shouldSkipUpdateStream: () => SyncProgress.get().status !== SyncStatus.Live,
+ * });
+ *
+ * // Handle sync
+ * const sync = createSync({
+ *   ...
+ *   onSyncLive: {
+ *     SyncProgress.set({ progress: 100, status: SyncStatus.Live });
+ *     // Trigger update stream now that all tables are synced
+ *     triggerUpdateStream();
+ *   },
+ * });
+ *
+ * sync.start();
+ * world.registerDisposer(sync.unsubscribe);
  * ```
  * @category Creation
  */
 export const createWrapper = <config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined>({
+  world,
   mudConfig,
   otherTableDefs,
+  shouldSkipUpdateStream,
 }: WrapperOptions<config, extraTableDefs>): WrapperResult<config, extraTableDefs> => {
   /* ------------------------------- DEFINITIONS ------------------------------ */
   // Resolve tables definitions
@@ -104,14 +130,13 @@ export const createWrapper = <config extends StoreConfig, extraTableDefs extends
   } as unknown as AllTableDefs<config, extraTableDefs>;
 
   /* --------------------------------- TABLES --------------------------------- */
-  // Create the TinyBase store wrapper and queries instance
-  const store = createStore();
-  // Create tables registry from the definitions (format metadata, access/modify data using the store, perform queries)
-  const registry = createRegistry({ tableDefs, store: store(), queries: store().getQueries() });
+  // Create contract tables from the definitions (define metadata, create read/write methods, queries, and listeners APIs)
+  const tables = createContractTables({ world, tableDefs });
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create storage adapter (custom writer, see @primodiumxyz/sync-stack)
-  const storageAdapter = createStorageAdapter({ store });
+  // as well as a function to trigger update stream on all entities for all tables (e.g. after completing sync)
+  const { storageAdapter, triggerUpdateStream } = createStorageAdapter({ tables, shouldSkipUpdateStream });
 
-  return { registry, tableDefs, store, storageAdapter };
+  return { tables, tableDefs, storageAdapter, triggerUpdateStream };
 };

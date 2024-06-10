@@ -1,6 +1,7 @@
 import { Read, Sync } from "@primodiumxyz/sync-stack";
 
-import { createStorageAdapter } from "@/adapter";
+import { StorageAdapter, createStorageAdapter } from "@/adapter";
+import { ContractTableDefs } from "@/lib";
 
 import {
   CreateSyncOptions,
@@ -10,53 +11,64 @@ import {
   Sync as SyncType,
 } from "@test/utils/sync/types";
 import { hydrateFromIndexer, hydrateFromRpc, subToRpc } from "@test/utils/sync/handleSync";
+import { SyncStep } from "@test/utils/sync/tables";
 
 /* -------------------------------------------------------------------------- */
 /*                                   GLOBAL                                   */
 /* -------------------------------------------------------------------------- */
 
-export const createSync = ({
-  registry,
-  store,
+export const createSync = <tableDefs extends ContractTableDefs>({
+  contractTables,
+  localTables,
   tableDefs,
   networkConfig,
   onSync,
-}: CreateSyncOptions): CreateSyncResult => {
+}: CreateSyncOptions<tableDefs>): CreateSyncResult => {
   const { complete: onComplete, error: onError } = onSync ?? {};
   const { publicClient, indexerUrl, initialBlockNumber } = networkConfig;
 
   const logFilters = Object.values(tableDefs).map((table) => ({ tableId: table.tableId as string }));
+  const tables = { ...contractTables, ...localTables };
+
+  const { storageAdapter, triggerUpdateStream } = createStorageAdapter({
+    tables: contractTables,
+    shouldSkipUpdateStream: () => localTables.SyncStatus.get()?.step !== SyncStep.Live,
+  });
 
   const unsubs: (() => void)[] = [];
   const startSync = () => {
     // If an indexer url is provided, start by syncing from the indexer
     if (indexerUrl) {
-      const sync = createIndexerSync({ store, networkConfig, logFilters });
+      const sync = createIndexerSync({ storageAdapter, networkConfig, logFilters });
       unsubs.push(sync.unsubscribe);
 
-      hydrateFromIndexer(registry, networkConfig, sync, {
+      hydrateFromIndexer(tables, networkConfig, sync, {
         ...onSync,
         // When it's complete, sync remaining blocks from RPC
         // we don't pass the provided onComplete callback here because it will be called at the end of the RPC sync
-        complete: async (lastBlock) => startRpcSync(lastBlock),
+        complete: async (lastBlock) => startRpcSync(lastBlock, storageAdapter, triggerUpdateStream),
         error: (error) => {
           onError?.(error);
           console.warn("Error hydrating from indexer");
           console.error(error);
-          startRpcSync(initialBlockNumber);
+          startRpcSync(initialBlockNumber, storageAdapter, triggerUpdateStream);
         },
       });
     } else {
       // Otherwise, start by syncing from RPC directly
-      startRpcSync(initialBlockNumber);
+      startRpcSync(initialBlockNumber, storageAdapter, triggerUpdateStream);
     }
   };
 
-  const startRpcSync = async (startBlock: bigint | undefined) => {
+  const startRpcSync = async (
+    startBlock: bigint | undefined,
+    storageAdapter: StorageAdapter,
+    triggerUpdateStream: () => void,
+  ) => {
     // Create RPC sync from the latest block synced from the indexer (or initial block) up to the latest block
     const latestBlockNumber = await publicClient.getBlockNumber();
     const rpcSync = createRpcSync({
-      store,
+      storageAdapter,
       networkConfig,
       logFilters,
       startBlock: startBlock ?? initialBlockNumber,
@@ -65,12 +77,13 @@ export const createSync = ({
     unsubs.push(rpcSync.historical.unsubscribe);
     unsubs.push(rpcSync.live.unsubscribe);
 
-    hydrateFromRpc(registry, rpcSync.historical, {
+    hydrateFromRpc(tables, rpcSync.historical, {
       ...onSync,
       // Once historical sync is complete, subscribe to new blocks
       complete: (blockNumber) => {
         onComplete?.(blockNumber);
-        subToRpc(registry, rpcSync.live);
+        subToRpc(tables, rpcSync.live);
+        triggerUpdateStream();
       },
     });
   };
@@ -82,7 +95,11 @@ export const createSync = ({
 /*                                   INDEXER                                  */
 /* -------------------------------------------------------------------------- */
 
-const createIndexerSync = ({ store, networkConfig, logFilters }: CreateIndexerSyncOptions): SyncType => {
+const createIndexerSync = <tableDefs extends ContractTableDefs>({
+  storageAdapter,
+  networkConfig,
+  logFilters,
+}: CreateIndexerSyncOptions<tableDefs>): SyncType => {
   const { worldAddress, indexerUrl } = networkConfig;
 
   return Sync.withCustom({
@@ -90,7 +107,7 @@ const createIndexerSync = ({ store, networkConfig, logFilters }: CreateIndexerSy
       indexerUrl: indexerUrl!,
       filter: { address: worldAddress, filters: logFilters },
     }),
-    writer: createStorageAdapter({ store }),
+    writer: storageAdapter,
   });
 };
 
@@ -98,13 +115,13 @@ const createIndexerSync = ({ store, networkConfig, logFilters }: CreateIndexerSy
 /*                                     RPC                                    */
 /* -------------------------------------------------------------------------- */
 
-const createRpcSync = ({
-  store,
+const createRpcSync = <tableDefs extends ContractTableDefs>({
+  storageAdapter,
   networkConfig,
   logFilters,
   startBlock,
   endBlock,
-}: CreateRpcSyncOptions): { historical: SyncType; live: SyncType } => {
+}: CreateRpcSyncOptions<tableDefs>): { historical: SyncType; live: SyncType } => {
   const { publicClient, worldAddress } = networkConfig;
 
   return {
@@ -116,7 +133,7 @@ const createRpcSync = ({
         fromBlock: startBlock,
         toBlock: endBlock,
       }),
-      writer: createStorageAdapter({ store }),
+      writer: storageAdapter,
     }),
     live: Sync.withCustom({
       reader: Read.fromRPC.subscribe({
@@ -124,7 +141,7 @@ const createRpcSync = ({
         publicClient,
         logFilter: logFilters,
       }),
-      writer: createStorageAdapter({ store }),
+      writer: storageAdapter,
     }),
   };
 };

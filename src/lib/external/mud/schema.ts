@@ -1,16 +1,14 @@
-import type { SchemaAbiType } from "@latticexyz/schema-type/internal";
+import type { SchemaAbiTypeToPrimitiveType } from "@latticexyz/schema-type/internal";
+import type { Hex } from "viem";
 
-import type { $Record } from "@/lib";
+import type { Entity } from "@/lib";
 
-// (jsdocs)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { ContractTable } from "@/tables/contract";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { LocalTable } from "@/tables/local";
-import { Hex } from "viem";
+/* -------------------------------------------------------------------------- */
+/*                                   SCHEMAS                                  */
+/* -------------------------------------------------------------------------- */
 
 /**
- * Defines the schema of a properties record inside a {@link ContractTable} or {@link LocalTable}.
+ * Defines the schema of a properties entity inside a {@link Table} or {@link BaseTable}.
  *
  * It uses a {@link Type} enum to be able to infer the TypeScript type of each property.
  *
@@ -21,7 +19,7 @@ export type Schema = {
 };
 
 /**
- * Defines any additional metadata that can be attached to a {@link ContractTable} or {@link LocalTable}.
+ * Defines any additional metadata that can be attached to a {@link Table} or {@link BaseTable}.
  *
  * @category Tables
  */
@@ -30,6 +28,32 @@ export type Metadata =
       [key: string]: unknown;
     }
   | undefined;
+
+export type UserTypes = Record<string, { internalType: SchemaAbiType }>;
+
+export type AbiKeySchema<userTypes extends UserTypes | undefined = undefined> = Record<
+  string,
+  userTypes extends UserTypes ? StaticAbiType | keyof userTypes : StaticAbiType
+>;
+export type AbiPropertiesSchema<userTypes extends UserTypes | undefined = undefined> = Record<
+  string,
+  userTypes extends UserTypes ? SchemaAbiType | keyof userTypes : SchemaAbiType
+>;
+
+export type UnparsedAbiKeySchema = {
+  readonly [k: string]: {
+    readonly type: StaticAbiType;
+  };
+};
+export type UnparsedAbiPropertiesSchema = {
+  readonly [k: string]: {
+    readonly type: SchemaAbiType;
+  };
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                    TYPES                                   */
+/* -------------------------------------------------------------------------- */
 
 /**
  * Used to specify the types for properties, and infer their TypeScript type.
@@ -56,10 +80,10 @@ export enum Type {
   OptionalHex,
   HexArray,
   OptionalHexArray,
-  $Record,
-  Optional$Record,
-  $RecordArray,
-  Optional$RecordArray,
+  Entity,
+  OptionalEntity,
+  EntityArray,
+  OptionalEntityArray,
   T,
   OptionalT,
 }
@@ -69,31 +93,282 @@ export enum Type {
  *
  * @category Tables
  */
-export type PropertiesType<T = unknown> = {
+export type MappedType<T = unknown> = {
   [Type.Boolean]: boolean;
   [Type.Number]: number;
   [Type.BigInt]: bigint;
   [Type.String]: string;
   [Type.Hex]: Hex;
-  [Type.$Record]: $Record;
+  [Type.Entity]: Entity;
   [Type.NumberArray]: number[];
   [Type.BigIntArray]: bigint[];
   [Type.StringArray]: string[];
   [Type.HexArray]: Hex[];
-  [Type.$RecordArray]: $Record[];
+  [Type.EntityArray]: Entity[];
   [Type.OptionalNumber]: number | undefined;
   [Type.OptionalBigInt]: bigint | undefined;
   [Type.OptionalString]: string | undefined;
   [Type.OptionalHex]: Hex | undefined;
-  [Type.Optional$Record]: $Record | undefined;
+  [Type.OptionalEntity]: Entity | undefined;
   [Type.OptionalNumberArray]: number[] | undefined;
   [Type.OptionalBigIntArray]: bigint[] | undefined;
   [Type.OptionalStringArray]: string[] | undefined;
   [Type.OptionalHexArray]: Hex[] | undefined;
-  [Type.Optional$RecordArray]: $Record[] | undefined;
+  [Type.OptionalEntityArray]: Entity[] | undefined;
   [Type.T]: T;
   [Type.OptionalT]: T | undefined;
 };
+
+/**
+ * Helper constant with all optional {@link Type}s.
+ */
+export const OptionalTypes = [
+  Type.OptionalEntity,
+  Type.OptionalEntityArray,
+  Type.OptionalNumber,
+  Type.OptionalNumberArray,
+  Type.OptionalBigInt,
+  Type.OptionalBigIntArray,
+  Type.OptionalString,
+  Type.OptionalStringArray,
+  Type.OptionalHex,
+  Type.OptionalHexArray,
+  Type.OptionalT,
+];
+
+/**
+ * Defines the Solidity types for later conversion to TypeScript types.
+ *
+ * Note: This is copied from the RECS library.
+ *
+ * @see [@]latticexyz/schema-type/schemaAbiTypes.ts
+ */
+export const schemaAbiTypes = [
+  "uint8",
+  "uint16",
+  "uint24",
+  "uint32",
+  "uint40",
+  "uint48",
+  "uint56",
+  "uint64",
+  "uint72",
+  "uint80",
+  "uint88",
+  "uint96",
+  "uint104",
+  "uint112",
+  "uint120",
+  "uint128",
+  "uint136",
+  "uint144",
+  "uint152",
+  "uint160",
+  "uint168",
+  "uint176",
+  "uint184",
+  "uint192",
+  "uint200",
+  "uint208",
+  "uint216",
+  "uint224",
+  "uint232",
+  "uint240",
+  "uint248",
+  "uint256",
+  "int8",
+  "int16",
+  "int24",
+  "int32",
+  "int40",
+  "int48",
+  "int56",
+  "int64",
+  "int72",
+  "int80",
+  "int88",
+  "int96",
+  "int104",
+  "int112",
+  "int120",
+  "int128",
+  "int136",
+  "int144",
+  "int152",
+  "int160",
+  "int168",
+  "int176",
+  "int184",
+  "int192",
+  "int200",
+  "int208",
+  "int216",
+  "int224",
+  "int232",
+  "int240",
+  "int248",
+  "int256",
+  "bytes1",
+  "bytes2",
+  "bytes3",
+  "bytes4",
+  "bytes5",
+  "bytes6",
+  "bytes7",
+  "bytes8",
+  "bytes9",
+  "bytes10",
+  "bytes11",
+  "bytes12",
+  "bytes13",
+  "bytes14",
+  "bytes15",
+  "bytes16",
+  "bytes17",
+  "bytes18",
+  "bytes19",
+  "bytes20",
+  "bytes21",
+  "bytes22",
+  "bytes23",
+  "bytes24",
+  "bytes25",
+  "bytes26",
+  "bytes27",
+  "bytes28",
+  "bytes29",
+  "bytes30",
+  "bytes31",
+  "bytes32",
+  "bool",
+  "address",
+  "uint8[]",
+  "uint16[]",
+  "uint24[]",
+  "uint32[]",
+  "uint40[]",
+  "uint48[]",
+  "uint56[]",
+  "uint64[]",
+  "uint72[]",
+  "uint80[]",
+  "uint88[]",
+  "uint96[]",
+  "uint104[]",
+  "uint112[]",
+  "uint120[]",
+  "uint128[]",
+  "uint136[]",
+  "uint144[]",
+  "uint152[]",
+  "uint160[]",
+  "uint168[]",
+  "uint176[]",
+  "uint184[]",
+  "uint192[]",
+  "uint200[]",
+  "uint208[]",
+  "uint216[]",
+  "uint224[]",
+  "uint232[]",
+  "uint240[]",
+  "uint248[]",
+  "uint256[]",
+  "int8[]",
+  "int16[]",
+  "int24[]",
+  "int32[]",
+  "int40[]",
+  "int48[]",
+  "int56[]",
+  "int64[]",
+  "int72[]",
+  "int80[]",
+  "int88[]",
+  "int96[]",
+  "int104[]",
+  "int112[]",
+  "int120[]",
+  "int128[]",
+  "int136[]",
+  "int144[]",
+  "int152[]",
+  "int160[]",
+  "int168[]",
+  "int176[]",
+  "int184[]",
+  "int192[]",
+  "int200[]",
+  "int208[]",
+  "int216[]",
+  "int224[]",
+  "int232[]",
+  "int240[]",
+  "int248[]",
+  "int256[]",
+  "bytes1[]",
+  "bytes2[]",
+  "bytes3[]",
+  "bytes4[]",
+  "bytes5[]",
+  "bytes6[]",
+  "bytes7[]",
+  "bytes8[]",
+  "bytes9[]",
+  "bytes10[]",
+  "bytes11[]",
+  "bytes12[]",
+  "bytes13[]",
+  "bytes14[]",
+  "bytes15[]",
+  "bytes16[]",
+  "bytes17[]",
+  "bytes18[]",
+  "bytes19[]",
+  "bytes20[]",
+  "bytes21[]",
+  "bytes22[]",
+  "bytes23[]",
+  "bytes24[]",
+  "bytes25[]",
+  "bytes26[]",
+  "bytes27[]",
+  "bytes28[]",
+  "bytes29[]",
+  "bytes30[]",
+  "bytes31[]",
+  "bytes32[]",
+  "bool[]",
+  "address[]",
+  "bytes",
+  "string",
+] as const;
+
+/**
+ * The below types and constants are copied from RECS as well.
+ */
+export type SchemaAbiType = (typeof schemaAbiTypes)[number];
+
+// These are defined here to keep the index position (98) consolidated, since we use it both in runtime code and type definition
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const staticAbiTypes = schemaAbiTypes.slice(0, 98) as any as TupleSplit<typeof schemaAbiTypes, 98>[0];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const dynamicAbiTypes = schemaAbiTypes.slice(98) as any as TupleSplit<typeof schemaAbiTypes, 98>[1];
+
+export type StaticAbiType = (typeof staticAbiTypes)[number];
+export type DynamicAbiType = (typeof dynamicAbiTypes)[number];
+export type AbiType = StaticAbiType | DynamicAbiType;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TupleSplit<T, N extends number, O extends readonly any[] = readonly []> = O["length"] extends N
+  ? [O, T]
+  : T extends readonly [infer F, ...infer R]
+    ? TupleSplit<readonly [...R], N, readonly [...O, F]>
+    : [O, T];
+
+/* -------------------------------------------------------------------------- */
+/*                                 CONVERSION                                 */
+/* -------------------------------------------------------------------------- */
 
 /**
  * Convert a schema ABI type to an TypeScript understandable type.
@@ -313,3 +588,24 @@ export const schemaAbiTypeToRecsType = {
  * @category RECS
  */
 export type SchemaAbiTypeToRecsType<T extends SchemaAbiType> = (typeof schemaAbiTypeToRecsType)[T];
+
+/** Map a table schema like `{ value: "uint256" }` to its primitive types like `{ value: bigint }` */
+export type SchemaToPrimitives<TSchema extends AbiPropertiesSchema> = {
+  [key in keyof TSchema]: SchemaAbiTypeToPrimitiveType<TSchema[key]>;
+};
+
+/**
+ * Converts an ABI type to its corresponding Typescript-understandable type.
+ *
+ * @category Table
+ */
+export type AbiToSchema<
+  schema extends UnparsedAbiKeySchema | AbiKeySchema | UnparsedAbiPropertiesSchema | AbiPropertiesSchema,
+> = {
+  [fieldName in keyof schema & string]: SchemaAbiTypeToRecsType<
+    SchemaAbiType &
+      (schema extends UnparsedAbiKeySchema | UnparsedAbiPropertiesSchema
+        ? schema[fieldName]["type"]
+        : schema[fieldName])
+  >;
+};

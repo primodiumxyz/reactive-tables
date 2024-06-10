@@ -1,5 +1,5 @@
-import { createLocalTable, createLocalNumberTable } from "@/tables/local";
-import { Store, Type } from "@/lib";
+import { createLocalTable, createLocalNumberTable } from "@/tables";
+import { Type, World } from "@/lib";
 
 export enum SyncSourceType {
   Indexer,
@@ -13,12 +13,12 @@ export enum SyncStep {
   Live,
 }
 
-export const createLocalSyncTables = (store: Store) => ({
-  SyncSource: createLocalNumberTable(store, {
+export const createLocalSyncTables = (world: World) => ({
+  SyncSource: createLocalNumberTable(world, {
     id: "SyncSource",
   }),
   SyncStatus: createLocalTable(
-    store,
+    world,
     {
       step: Type.Number,
       message: Type.String,

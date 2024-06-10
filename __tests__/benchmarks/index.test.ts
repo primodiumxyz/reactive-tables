@@ -4,7 +4,7 @@ import { Bench } from "tinybench";
 
 // libs
 import {
-  Entity,
+  Entity as RecsEntity,
   Has,
   HasValue,
   createWorld,
@@ -20,9 +20,9 @@ import { Hex, padHex, toHex } from "viem";
 // src (version using TinyBase)
 import {
   createWrapper,
-  default$Record,
+  default$Record as defaultEntity,
   query,
-  $Record,
+  $Record as Entity,
   Properties,
   Schema,
   PropType,
@@ -55,7 +55,7 @@ import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 const ITERATIONS = 1_000;
 // The time to run each benchmark for (calculate how many operations could be ran)
 const BENCH_TIME = 5_000;
-// The amount of records to set/get/update
+// The amount of entities to set/get/update
 const RECORDS = 1_000;
 // Tested libraries
 const LIBRARIES = ["RETA", "RECS", "BlinkDB", "Elf", "RxDB"] as const;
@@ -83,7 +83,7 @@ type Inventory = {
 
 interface BlinkDBTable {
   table: string;
-  record: string;
+  entity: string;
   id: string;
   properties: Properties<Schema, unknown>;
 }
@@ -113,34 +113,34 @@ const setup = async (scope = "tables") => {
     scope,
   )({
     primary: "id",
-    //  add indexes: ["record"] https://blinkdb.io/docs/reference/createtable#indexes
+    //  add indexes: ["entity"] https://blinkdb.io/docs/reference/createtable#indexes
     // small overhead on writes; we don't actually need this here
-    // indexes: ["table", "record"],
+    // indexes: ["table", "entity"],
   });
   const blinkRegistry = TABLES.reduce(
     (acc, key) => {
-      const get = async (record: $Record) => {
-        const id = `${key}__${record}`;
+      const get = async (entity: Entity) => {
+        const id = `${key}__${entity}`;
         const data = await first(blinkTable, {
           where: {
             // table: key,
-            // record: record,
+            // entity: entity,
             id,
           },
         });
         return data?.properties;
       };
-      const update = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: $Record) => {
-        const id = `${key}__${record}`;
+      const update = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, entity: Entity) => {
+        const id = `${key}__${entity}`;
         await updateDB(blinkTable, { id, properties });
       };
-      const set = async (properties: Properties<Schema, unknown>, record: $Record) => {
+      const set = async (properties: Properties<Schema, unknown>, entity: Entity) => {
         // cheaper than upsert
-        if (await get(record)) {
-          await update(properties, record);
+        if (await get(entity)) {
+          await update(properties, entity);
         } else {
-          const id = `${key}__${record}`;
-          await insert(blinkTable, { id, table: key, record, properties });
+          const id = `${key}__${entity}`;
+          await insert(blinkTable, { id, table: key, entity, properties });
         }
       };
 
@@ -150,9 +150,9 @@ const setup = async (scope = "tables") => {
     {} as Record<
       string,
       {
-        get: (record: $Record) => Promise<Properties<Schema, unknown> | undefined>;
-        update: (properties: Properties<Schema, unknown>, record: $Record) => Promise<void>;
-        set: (properties: Properties<Schema, unknown>, record: $Record) => Promise<void>;
+        get: (entity: Entity) => Promise<Properties<Schema, unknown> | undefined>;
+        update: (properties: Properties<Schema, unknown>, entity: Entity) => Promise<void>;
+        set: (properties: Properties<Schema, unknown>, entity: Entity) => Promise<void>;
       }
     >,
   );
@@ -163,9 +163,9 @@ const setup = async (scope = "tables") => {
   const { InventoryEntitiesRef, withInventoryEntities } = entitiesPropsFactory("Inventory");
   const elfStore = createElfStore(
     { name: scope },
-    withCounterEntities<Properties<typeof registry.Counter.schema> & { id: $Record }>(),
-    withPositionEntities<Properties<typeof registry.Position.schema> & { id: $Record }>(),
-    withInventoryEntities<Properties<typeof registry.Inventory.schema> & { id: $Record }>(),
+    withCounterEntities<Properties<typeof registry.Counter.schema> & { id: Entity }>(),
+    withPositionEntities<Properties<typeof registry.Position.schema> & { id: Entity }>(),
+    withInventoryEntities<Properties<typeof registry.Inventory.schema> & { id: Entity }>(),
   );
   const elfRefs = {
     Counter: CounterEntitiesRef,
@@ -173,9 +173,9 @@ const setup = async (scope = "tables") => {
     Inventory: InventoryEntitiesRef,
   } as const;
   // same was possible with separate stores but not worth it; same performance but prevents efficiently querying multiple tables
-  // const counterStore = createElfStore({ name: "Counter" }, withEntities<typeof registry.Counter.schema & { id: $Record }>());
-  // const positionStore = createElfStore({ name: "Position" }, withEntities<typeof registry.Position.schema & { id: $Record }>());
-  // const inventoryStore = createElfStore({ name: "Inventory" }, withEntities<typeof registry.Inventory.schema & { id: $Record }>());
+  // const counterStore = createElfStore({ name: "Counter" }, withEntities<typeof registry.Counter.schema & { id: Entity }>());
+  // const positionStore = createElfStore({ name: "Position" }, withEntities<typeof registry.Position.schema & { id: Entity }>());
+  // const inventoryStore = createElfStore({ name: "Inventory" }, withEntities<typeof registry.Inventory.schema & { id: Entity }>());
   // const elfStore = {
   //   Counter: counterStore,
   //   Position: positionStore,
@@ -184,14 +184,14 @@ const setup = async (scope = "tables") => {
 
   const elfRegistry = Object.entries(elfRefs).reduce(
     (acc, [key, ref]) => {
-      const get = async (record: $Record) => {
-        return elfStore.query(getEntity(record, { ref }));
+      const get = async (entity: Entity) => {
+        return elfStore.query(getEntity(entity, { ref }));
       };
-      const update = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: $Record) => {
-        elfStore.update(updateEntities(record, (props) => ({ ...props, ...properties }), { ref }));
+      const update = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, entity: Entity) => {
+        elfStore.update(updateEntities(entity, (props) => ({ ...props, ...properties }), { ref }));
       };
-      const set = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: $Record) => {
-        elfStore.update(upsertEntities({ id: record, ...properties }, { ref }));
+      const set = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, entity: Entity) => {
+        elfStore.update(upsertEntities({ id: entity, ...properties }, { ref }));
       };
 
       acc[key] = { set, get, update } as const;
@@ -200,14 +200,14 @@ const setup = async (scope = "tables") => {
     {} as Record<
       string,
       {
-        get: (record: $Record) => Promise<Properties<(typeof registry)[keyof typeof registry]["schema"]> | undefined>;
+        get: (entity: Entity) => Promise<Properties<(typeof registry)[keyof typeof registry]["schema"]> | undefined>;
         update: (
           properties: Properties<(typeof registry)[keyof typeof registry]["schema"]>,
-          record: $Record,
+          entity: Entity,
         ) => Promise<void>;
         set: (
           properties: Properties<(typeof registry)[keyof typeof registry]["schema"]>,
-          record: $Record,
+          entity: Entity,
         ) => Promise<void>;
       }
     >,
@@ -224,10 +224,10 @@ const setup = async (scope = "tables") => {
     Counter: {
       schema: {
         version: 0,
-        primaryKey: "record",
+        primaryKey: "entity",
         type: "object",
         properties: {
-          record: { type: "string", maxLength: 66 },
+          entity: { type: "string", maxLength: 66 },
           value: { type: "number" },
           __staticData: { type: "string" },
           __dynamicData: { type: "string" },
@@ -239,10 +239,10 @@ const setup = async (scope = "tables") => {
     Position: {
       schema: {
         version: 0,
-        primaryKey: "record",
+        primaryKey: "entity",
         type: "object",
         properties: {
-          record: { type: "string", maxLength: 66 },
+          entity: { type: "string", maxLength: 66 },
           x: { type: "number" },
           y: { type: "number" },
           __staticData: { type: "string" },
@@ -255,10 +255,10 @@ const setup = async (scope = "tables") => {
     Inventory: {
       schema: {
         version: 0,
-        primaryKey: "record",
+        primaryKey: "entity",
         type: "object",
         properties: {
-          record: { type: "string", maxLength: 66 },
+          entity: { type: "string", maxLength: 66 },
           totalWeight: { type: "string" }, // doesn't support bigint...
           items: { type: "array", items: { type: "number" } },
           weights: { type: "array", items: { type: "number" } },
@@ -275,8 +275,8 @@ const setup = async (scope = "tables") => {
     (acc, key) => {
       const collection = rxDb[key];
 
-      const get = async (record: $Record) => {
-        const item = await collection.findOne(record).exec();
+      const get = async (entity: Entity) => {
+        const item = await collection.findOne(entity).exec();
         // this would be handled generically
         if (key === "Inventory") {
           return item ? { ...item, totalWeight: BigInt(item.totalWeight) } : undefined;
@@ -284,18 +284,18 @@ const setup = async (scope = "tables") => {
           return item;
         }
       };
-      const update = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: $Record) => {
-        set(properties, record);
+      const update = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, entity: Entity) => {
+        set(properties, entity);
       };
-      const set = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, record: $Record) => {
+      const set = async (properties: Properties<(typeof registry)[typeof key]["schema"]>, entity: Entity) => {
         if (key === "Inventory" && properties.totalWeight) {
           collection.upsert({
             ...properties,
-            record,
+            entity,
             totalWeight: (properties as Properties<Inventory>).totalWeight.toString(),
           });
         } else {
-          collection.upsert({ ...properties, record });
+          collection.upsert({ ...properties, entity });
         }
       };
 
@@ -305,22 +305,22 @@ const setup = async (scope = "tables") => {
     {} as Record<
       string,
       {
-        get: (record: $Record) => Promise<Properties<(typeof registry)[keyof typeof registry]["schema"]> | undefined>;
+        get: (entity: Entity) => Promise<Properties<(typeof registry)[keyof typeof registry]["schema"]> | undefined>;
         update: (
           properties: Properties<(typeof registry)[keyof typeof registry]["schema"]>,
-          record: $Record,
+          entity: Entity,
         ) => Promise<void>;
         set: (
           properties: Properties<(typeof registry)[keyof typeof registry]["schema"]>,
-          record: $Record,
+          entity: Entity,
         ) => Promise<void>;
       }
     >,
   );
 
   /* -------------------------------- UTILITIES ------------------------------- */
-  // Grab a few records to use across tests
-  const $records = Array.from({ length: RECORDS }, (_, i) => padHex(toHex(`record${i}`))) as $Record[];
+  // Grab a few entities to use across tests
+  const entities = Array.from({ length: RECORDS }, (_, i) => padHex(toHex(`entity${i}`))) as Entity[];
 
   // Create a JS map to compare with (basically RECS but stripped of anything else)
   const jsMap = {
@@ -330,18 +330,18 @@ const setup = async (scope = "tables") => {
   };
 
   // Prepare random values to set registry/components with
-  // Basically sets of { table, record, properties } (or { component, entity, value })
+  // Basically sets of { table, entity, properties } (or { component, entity, value })
   const actions = [
     {
       key: "Counter" as keyof typeof registry,
-      record: Array.from({ length: ITERATIONS }, () => default$Record),
+      entity: Array.from({ length: ITERATIONS }, () => defaultEntity),
       properties: getRandomNumbers(ITERATIONS).map((value) => ({ value, ...emptyMetadata })),
       updates: getRandomNumbers(ITERATIONS).map((value) => ({ value, ...emptyMetadata })),
     },
     {
       key: "Position" as keyof typeof registry,
-      // Choose a record
-      record: Array.from({ length: ITERATIONS }, (_, i) => $records[i % RECORDS]),
+      // Choose an entity
+      entity: Array.from({ length: ITERATIONS }, (_, i) => entities[i % RECORDS]),
       // Get random x and y values for each iteration
       properties: getRandomNumbers(2 * ITERATIONS).reduce(
         (acc, value, i) => {
@@ -362,7 +362,7 @@ const setup = async (scope = "tables") => {
     },
     {
       key: "Inventory" as keyof typeof registry,
-      record: Array.from({ length: ITERATIONS }, (_, i) => $records[i % RECORDS]),
+      entity: Array.from({ length: ITERATIONS }, (_, i) => entities[i % RECORDS]),
       // Get a random total weight for each iteration
       properties: getRandomBigInts(ITERATIONS).reduce(
         (acc, totalWeight, i) => {
@@ -415,67 +415,67 @@ describe("Benchmarks", () => {
 
     bench
       .add("RETA", () => {
-        for (const { key, record, properties, updates } of actions) {
+        for (const { key, entity, properties, updates } of actions) {
           for (let i = 0; i < ITERATIONS; i++) {
             // @ts-expect-error incompatible properties schema
-            registry[key].set(properties[i], record[i]);
-            registry[key].get(record[i]);
+            registry[key].set(properties[i], entity[i]);
+            registry[key].get(entity[i]);
             // @ts-expect-error incompatible properties schema
-            registry[key].update(updates[i], record[i]);
-            registry[key].get(record[i]);
+            registry[key].update(updates[i], entity[i]);
+            registry[key].get(entity[i]);
           }
         }
       })
       .add("RECS", () => {
-        for (const { key, record, properties } of actions) {
+        for (const { key, entity, properties } of actions) {
           for (let i = 0; i < ITERATIONS; i++) {
-            setComponent(components[key], record[i] as unknown as Entity, properties[i]);
-            getComponentValue(components[key], record[i] as unknown as Entity);
-            updateComponent(components[key], record[i] as unknown as Entity, properties[i]);
-            getComponentValue(components[key], record[i] as unknown as Entity);
+            setComponent(components[key], entity[i] as unknown as RecsEntity, properties[i]);
+            getComponentValue(components[key], entity[i] as unknown as RecsEntity);
+            updateComponent(components[key], entity[i] as unknown as RecsEntity, properties[i]);
+            getComponentValue(components[key], entity[i] as unknown as RecsEntity);
           }
         }
       })
       .add("BlinkDB", async () => {
-        for (const { key, record, properties, updates } of actions) {
+        for (const { key, entity, properties, updates } of actions) {
           for (let i = 0; i < ITERATIONS; i++) {
-            await blinkRegistry[key].set(properties[i], record[i]);
-            await blinkRegistry[key].get(record[i]);
-            await blinkRegistry[key].update(updates[i], record[i]);
-            await blinkRegistry[key].get(record[i]);
+            await blinkRegistry[key].set(properties[i], entity[i]);
+            await blinkRegistry[key].get(entity[i]);
+            await blinkRegistry[key].update(updates[i], entity[i]);
+            await blinkRegistry[key].get(entity[i]);
           }
         }
       })
       .add("Elf", async () => {
-        for (const { key, record, properties, updates } of actions) {
+        for (const { key, entity, properties, updates } of actions) {
           for (let i = 0; i < ITERATIONS; i++) {
-            await elfRegistry[key].set(properties[i], record[i]);
-            await elfRegistry[key].get(record[i]);
-            await elfRegistry[key].update(updates[i], record[i]);
-            await elfRegistry[key].get(record[i]);
+            await elfRegistry[key].set(properties[i], entity[i]);
+            await elfRegistry[key].get(entity[i]);
+            await elfRegistry[key].update(updates[i], entity[i]);
+            await elfRegistry[key].get(entity[i]);
           }
         }
       })
       .add("RxDB", async () => {
-        for (const { key, record, properties, updates } of actions) {
+        for (const { key, entity, properties, updates } of actions) {
           for (let i = 0; i < ITERATIONS; i++) {
-            await rxDbRegistry[key].set(properties[i], record[i]);
-            await rxDbRegistry[key].get(record[i]);
-            await rxDbRegistry[key].update(updates[i], record[i]);
-            await rxDbRegistry[key].get(record[i]);
+            await rxDbRegistry[key].set(properties[i], entity[i]);
+            await rxDbRegistry[key].get(entity[i]);
+            await rxDbRegistry[key].update(updates[i], entity[i]);
+            await rxDbRegistry[key].get(entity[i]);
           }
         }
       })
       .add("JS Map", () => {
-        for (const { key, record, properties, updates } of actions) {
+        for (const { key, entity, properties, updates } of actions) {
           const map = jsMap[key as keyof typeof jsMap];
           for (let i = 0; i < ITERATIONS; i++) {
             // @ts-expect-error incompatible properties schema
-            map.set(record[i], properties[i]);
-            map.get(record[i]);
+            map.set(entity[i], properties[i]);
+            map.get(entity[i]);
             // @ts-expect-error incompatible properties schema
-            map.set(record[i], updates[i]);
-            map.get(record[i]);
+            map.set(entity[i], updates[i]);
+            map.get(entity[i]);
           }
         }
       });
@@ -491,7 +491,7 @@ describe("Benchmarks", () => {
     // Make sure results are the same across all implementations
     const results = Object.fromEntries(LIBRARIES.map((lib) => [lib, []])) as unknown as Record<
       (typeof LIBRARIES)[number],
-      $Record[][]
+      Entity[][]
     >;
 
     bench
@@ -509,7 +509,7 @@ describe("Benchmarks", () => {
       .add("RECS", () => {
         for (const { key, properties } of actions) {
           const res = runQuery([Has(components.Counter), HasValue(components[key], properties[0])]);
-          results["RECS"].push(Array.from(res as unknown as Set<$Record>) || []);
+          results["RECS"].push(Array.from(res as unknown as Set<Entity>) || []);
         }
       })
       .add("BlinkDB", async () => {
@@ -520,7 +520,7 @@ describe("Benchmarks", () => {
               ...properties,
             },
           });
-          results["BlinkDB"].push(res.map((r) => r.record as $Record));
+          results["BlinkDB"].push(res.map((r) => r.entity as Entity));
         }
       })
       .add("Elf", () => {
@@ -554,7 +554,7 @@ describe("Benchmarks", () => {
           const B = await rxDb.Counter.find({ selector: {} }).exec();
 
           const res = A.filter((a) => B.includes(a));
-          results["RxDB"].push(res.map((e) => e.record));
+          results["RxDB"].push(res.map((e) => e.entity));
         }
       });
 
@@ -570,7 +570,7 @@ describe("Benchmarks", () => {
 
   /* --------------------------------- SYSTEMS -------------------------------- */
   // Watching for changes on tables
-  // BlinkDB `watch` doesn't include the updated record anyway, and doesn't separate tables so it's not even a contender in its
+  // BlinkDB `watch` doesn't include the updated entity anyway, and doesn't separate tables so it's not even a contender in its
   // native state
   it("Systems", async () => {
     const { registry, components, world, elfRegistry, elfRefs, elfStore, rxDbRegistry, rxDb, actions } =
@@ -589,14 +589,14 @@ describe("Benchmarks", () => {
           unsubs.push(unsubscribe);
         }
 
-        for (const { key, record, properties, updates } of actions) {
+        for (const { key, entity, properties, updates } of actions) {
           for (let i = 0; i < ITERATIONS; i++) {
             // @ts-expect-error incompatible properties schema
-            registry[key].set(properties[i], record[i]);
-            registry[key].get(record[i]);
+            registry[key].set(properties[i], entity[i]);
+            registry[key].get(entity[i]);
             // @ts-expect-error incompatible properties schema
-            registry[key].update(updates[i], record[i]);
-            registry[key].get(record[i]);
+            registry[key].update(updates[i], entity[i]);
+            registry[key].get(entity[i]);
           }
         }
 
@@ -609,12 +609,12 @@ describe("Benchmarks", () => {
           defineComponentSystem(world, components[key], (update) => updates.push(update));
         }
 
-        for (const { key, record, properties } of actions) {
+        for (const { key, entity, properties } of actions) {
           for (let i = 0; i < ITERATIONS; i++) {
-            setComponent(components[key], record[i] as unknown as Entity, properties[i]);
-            getComponentValue(components[key], record[i] as unknown as Entity);
-            updateComponent(components[key], record[i] as unknown as Entity, properties[i]);
-            getComponentValue(components[key], record[i] as unknown as Entity);
+            setComponent(components[key], entity[i] as unknown as RecsEntity, properties[i]);
+            getComponentValue(components[key], entity[i] as unknown as RecsEntity);
+            updateComponent(components[key], entity[i] as unknown as RecsEntity, properties[i]);
+            getComponentValue(components[key], entity[i] as unknown as RecsEntity);
           }
         }
 
@@ -632,12 +632,12 @@ describe("Benchmarks", () => {
           subs.push(subscription);
         }
 
-        for (const { key, record, properties, updates } of actions) {
+        for (const { key, entity, properties, updates } of actions) {
           for (let i = 0; i < ITERATIONS; i++) {
-            await elfRegistry[key].set(properties[i], record[i]);
-            await elfRegistry[key].get(record[i]);
-            await elfRegistry[key].update(updates[i], record[i]);
-            await elfRegistry[key].get(record[i]);
+            await elfRegistry[key].set(properties[i], entity[i]);
+            await elfRegistry[key].get(entity[i]);
+            await elfRegistry[key].update(updates[i], entity[i]);
+            await elfRegistry[key].get(entity[i]);
           }
         }
 
@@ -645,7 +645,7 @@ describe("Benchmarks", () => {
           if (!sub.closed) sub.unsubscribe();
         });
       })
-      // same here as it would need to be adapted to provide the updated entry (document) on change
+      // same here as it would need to be adapted to provide the updated entity (document) on change
       .add("RxDB", async () => {
         const updates = [];
         const subs = [];
@@ -655,12 +655,12 @@ describe("Benchmarks", () => {
           subs.push(subscription);
         }
 
-        for (const { key, record, properties, updates } of actions) {
+        for (const { key, entity, properties, updates } of actions) {
           for (let i = 0; i < ITERATIONS; i++) {
-            await rxDbRegistry[key].set(properties[i], record[i]);
-            await rxDbRegistry[key].get(record[i]);
-            await rxDbRegistry[key].update(updates[i], record[i]);
-            await rxDbRegistry[key].get(record[i]);
+            await rxDbRegistry[key].set(properties[i], entity[i]);
+            await rxDbRegistry[key].get(entity[i]);
+            await rxDbRegistry[key].update(updates[i], entity[i]);
+            await rxDbRegistry[key].get(entity[i]);
           }
         }
 

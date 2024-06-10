@@ -1,133 +1,103 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { query } from "@/queries";
-import type { QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
-import { getPropertiesAndTypeFromRowChange } from "@/lib";
-import type { ContractTableDef, $Record, Schema, Store } from "@/lib";
-
-// TODO: this will clearly need to be optimized; there are probably a few options:
-// - setup a table listener by default on each table, then when setting up a query listener let that table know so it adds this callback to its array
-// - keep a single useQuery listening to all tables, then on change see across all actual useQuery hooks which ones need to be triggered
+import {
+  query,
+  type QueryOptions,
+  type TableWatcherCallbacks,
+  type TableUpdate,
+  type TableWatcherParams,
+} from "@/queries";
+import { queries, type Entity } from "@/lib";
+const { defineQuery, With, WithProperties, Without, WithoutProperties } = queries();
 
 /**
- * React hook to query all records matching multiple conditions across tables.
+ * React hook to query all entities matching multiple conditions across tables.
  *
- * This will return an array of $Record objects matching all conditions, and will trigger the provided callbacks on changes.
+ * This will return an array of Entity objects matching all conditions, and will trigger the provided callbacks on changes.
  *
  * Note: See {@link QueryOptions} for more details on conditions criteria.
  *
- * Note: This hook will only trigger on changes after it's mounted, not on creation for all initial matching records.
+ * Note: This hook will only trigger on changes after it's mounted, not on creation for all initial matching entities.
  *
  * @param store The TinyBase store containing the properties associated with contract tables.
  * @param options The {@link QueryOptions} object containing the conditions to match.
  * @param callbacks (optional) The {@link TableWatcherCallbacks} to trigger on changes. Including: onChange, onEnter, onExit, onUpdate.
- * These will trigger a {@link TableUpdate} object with the id of the updated table, the record, the previous and new properties of the record and the type of update.
- * @returns An array of {@link $Record} matching all conditions.
+ * These will trigger a {@link TableUpdate} object with the id of the updated table, the entity, the previous and new properties of the entity and the type of update.
+ * @param params (optional) Additional {@link TableWatcherParams} for the query. Currently only supports `runOnInit` to trigger the callbacks for all matching entities on initialization.
+ * @returns An array of {@link Entity} matching all conditions.
  * @example
- * This example queries all records that have a score of 10 in the "Score" table and are not inside the "GameOver" table.
+ * This example queries all entities that have a score of 10 in the "Score" table and are not inside the "GameOver" table.
  *
  * ```ts
- * const { registry, store } = createWrapper({ mudConfig });
- * registry.Score.set({ points: 10 }, recordA);
- * registry.Score.set({ points: 10 }, recordB);
- * registry.Score.set({ points: 3 }, recordC);
- * registry.GameOver.set({ value: true }, recordB);
+ * const { tables } = createWrapper({ world, mudConfig });
+ * tables.Score.set({ points: 10 }, recordA);
+ * tables.Score.set({ points: 10 }, recordB);
+ * tables.Score.set({ points: 3 }, recordC);
+ * tables.GameOver.set({ value: true }, recordB);
  *
- * const records = useQuery(store, {
- *   withProperties: [ { table: registry.Score, properties: { points: 10 } } ],
- *   without: [ registry.GameOver ],
+ * const entities = useQuery({
+ *   withProperties: [ { table: tables.Score, properties: { points: 10 } } ],
+ *   without: [ tables.GameOver ],
  * }, {
  *   onChange: (update) => console.log(update),
  * });
- * console.log(records);
+ * console.log(entities);
  * // -> [ recordA ]
  *
- * registry.Score.update({ points: 10 }, recordC);
- * // -> { table: registry.Score, $record: recordC, current: { points: 10 }, prev: { points: 3 }, type: "change" }
- * console.log(records);
+ * tables.Score.update({ points: 10 }, recordC);
+ * // -> { table: tables.Score, entity: recordC, current: { points: 10 }, prev: { points: 3 }, type: "change" }
+ * console.log(entities);
  * // -> [ recordA, recordC ]
  * ```
  * @category Queries
  */
-export const useQuery = <tableDefs extends ContractTableDef[], S extends Schema, T = unknown>(
-  _store: Store,
-  options: QueryOptions<tableDefs, T>,
-  callbacks?: TableWatcherCallbacks<S, T>,
-): $Record[] => {
+export const useQuery = (
+  options: QueryOptions,
+  callbacks?: TableWatcherCallbacks,
+  params: TableWatcherParams = { runOnInit: true },
+): Entity[] => {
   // Not available in a non-browser environment
   if (typeof window === "undefined") throw new Error("useQuery is only available in a browser environment");
+  const { with: inside, without: notInside, withProperties, withoutProperties } = options;
   const { onChange, onEnter, onExit, onUpdate } = callbacks ?? {};
-  const store = _store();
 
-  const [$records, set$Records] = useState<$Record[]>([]);
-  // Create a ref for previous records (to provide the update type in the callback)
-  const prev$Records = useRef<$Record[]>([]);
+  const [entities, setRecords] = useState<Entity[]>([]);
 
-  // Gather ids and schemas of all table we need to listen to
-  // tableId => schema keys
-  const tables = useMemo(() => {
-    const { with: inside, without: notInside, withProperties, withoutProperties } = options;
-    const tables: Record<string, string[]> = {};
-
-    (inside ?? []).concat(notInside ?? []).forEach((table) => {
-      tables[table.id] = Object.keys(table.schema);
-    });
-    (withProperties ?? []).concat(withoutProperties ?? []).forEach(({ table }) => {
-      tables[table.id] = Object.keys(table.schema);
-    });
-
-    return tables;
-  }, [options]);
+  const queryFragments = useMemo(
+    () => [
+      ...(inside?.map((fragment) => With(fragment)) ?? []),
+      ...(withProperties?.map((matching) => WithProperties(matching.table, { ...matching.properties })) ?? []),
+      ...(notInside?.map((table) => Without(table)) ?? []),
+      ...(withoutProperties?.map((matching) => WithoutProperties(matching.table, { ...matching.properties })) ?? []),
+    ],
+    [options],
+  );
 
   useEffect(() => {
-    // Initial query
-    const curr$Records = query(_store, options);
-    set$Records(curr$Records);
-    prev$Records.current = curr$Records;
+    setRecords(query(options, queryFragments)); // will throw if no positive fragment
 
-    // Listen to all tables (at each row)
-    const listenerId = store.addRowListener(null, null, (_, tableId, $recordKey, getCellChange) => {
-      if (!getCellChange) return;
-      const $record = $recordKey as $Record;
-
-      // Refetch matching $records if one of the tables included in the query changes
-      if (Object.keys(tables).includes(tableId)) {
-        const new$Records = query(_store, options);
-
-        // Figure out if it's an enter or an exit
-        let type = "change" as UpdateType;
-        const inPrev = prev$Records.current.includes($record);
-        const inCurrent = new$Records.includes($record);
-
-        // Gather the previous and current properties
-        const args = getPropertiesAndTypeFromRowChange(getCellChange, tables[tableId], tableId, $record) as TableUpdate<
-          S,
-          T
-        >;
-
-        // Run the callbacks
-        if (!inPrev && inCurrent) {
-          type = "enter";
-          onEnter?.({ ...args, type });
-        } else if (inPrev && !inCurrent) {
-          type = "exit";
-          onExit?.({ ...args, type });
-        } else {
-          onUpdate?.({ ...args, type });
-        }
-
-        onChange?.({ ...args, type });
-
-        // Update ref and state
-        set$Records(new$Records);
-        prev$Records.current = new$Records;
+    // fix: if pre-populated with state, useComponentValue doesn’t update when there’s a component that has been removed.
+    const queryResult = defineQuery(queryFragments, params);
+    const subscription = queryResult.update$.subscribe((_update) => {
+      const update = _update as TableUpdate<
+        (typeof _update)["table"]["propertiesSchema"],
+        (typeof _update)["table"]["metadata"]
+      >; // TODO: test if weird type casting useful
+      onUpdate?.(update);
+      if (update.type === "change") {
+        // entity is changed within the query so no need to update entities
+        onChange?.(update);
+      } else if (update.type === "enter") {
+        setRecords((prev) => [...prev, update.entity]);
+        onEnter?.(update);
+      } else if (update.type === "exit") {
+        setRecords((prev) => prev.filter((entity) => entity !== update.entity));
+        onExit?.(update);
       }
     });
 
-    return () => {
-      store.delListener(listenerId);
-    };
-  }, []);
+    return () => subscription.unsubscribe();
+  }, [options, queryFragments]);
 
-  return $records;
+  return [...new Set(entities)];
 };
