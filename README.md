@@ -14,7 +14,7 @@
   - [Querying tables](#querying-tables)
   - [Watching tables for changes](#watching-tables-for-changes)
 - [Details](#details)
-  - [Entry points](#entity-points)
+  - [Entry points](#entry-points)
   - [Structure](#structure)
   - [Conventions](#conventions)
 - [Contributing](#contributing)
