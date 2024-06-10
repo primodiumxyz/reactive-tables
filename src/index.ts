@@ -1,5 +1,5 @@
 /* -------------------------------- FUNCTIONS ------------------------------- */
-// Wrapper (main entity point) for the library
+// Wrapper (main entry point) for the library
 export * from "@/createWrapper";
 
 // Local tables (with custom schema and templates)

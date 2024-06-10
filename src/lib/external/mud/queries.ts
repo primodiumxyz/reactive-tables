@@ -23,8 +23,8 @@ const {
   hasEntity,
   getEntityProperties,
   entityPropertiesEqual,
-  getTableEntitys,
-  getEntitysWithProperties,
+  getTableEntities,
+  getEntitiesWithProperties,
   toUpdateStream,
 } = tableOperations();
 
@@ -374,18 +374,18 @@ export const queries = () => {
    * @param depth Depth up to which the recursion should be applied.
    * @returns Set of entities that are child entities of the given entity via the given table.
    */
-  const getChildEntitys = (
+  const getChildEntities = (
     entity: Entity,
     table: BaseTable<{ properties: Type.Entity }>,
     depth: number,
   ): Set<Entity> => {
     if (depth === 0) return new Set();
 
-    const directChildEntities = getEntitysWithProperties(table, { properties: entity });
+    const directChildEntities = getEntitiesWithProperties(table, { properties: entity });
     if (depth === 1) return directChildEntities;
 
     const indirectChildEntities = [...directChildEntities]
-      .map((childEntity) => [...getChildEntitys(childEntity, table, depth - 1)])
+      .map((childEntity) => [...getChildEntities(childEntity, table, depth - 1)])
       .flat();
 
     return new Set([...directChildEntities, ...indirectChildEntities]);
@@ -428,13 +428,13 @@ export const queries = () => {
         // Create the first interim result
         entities =
           fragment.type === QueryFragmentType.With
-            ? new Set([...getTableEntitys(fragment.table)])
-            : getEntitysWithProperties(fragment.table, fragment.properties);
+            ? new Set([...getTableEntities(fragment.table)])
+            : getEntitiesWithProperties(fragment.table, fragment.properties);
 
         // Add entity's children up to the specified depth if proxy expand is active
         if (proxyExpand && proxyExpand.depth > 0) {
           for (const entity of [...entities]) {
-            for (const childEntity of getChildEntitys(entity, proxyExpand.table, proxyExpand.depth)) {
+            for (const childEntity of getChildEntities(entity, proxyExpand.table, proxyExpand.depth)) {
               entities.add(childEntity);
             }
           }
@@ -455,8 +455,8 @@ export const queries = () => {
 
           // Branch 3: Proxy downwards / run the query fragments on child entities if proxy expand is active
           if (proxyExpand && proxyExpand.depth > 0) {
-            const childEntitys = getChildEntitys(entity, proxyExpand.table, proxyExpand.depth);
-            for (const childEntity of childEntitys) {
+            const childEntities = getChildEntities(entity, proxyExpand.table, proxyExpand.depth);
+            for (const childEntity of childEntities) {
               // Add the child entity if it passes the direct check
               // or if a proxy read is active and it passes the proxy read check
               if (

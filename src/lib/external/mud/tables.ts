@@ -274,18 +274,18 @@ export const tableOperations = () => {
    * @param properties look for entities with these {@link Properties}.
    * @returns Set with {@link Entity Records} with the given table properties.
    */
-  const getEntitysWithProperties = <S extends Schema, T = unknown>(
+  const getEntitiesWithProperties = <S extends Schema, T = unknown>(
     table: BaseTable<S, BaseTableMetadata, T> | IndexedBaseTable<S, BaseTableMetadata, T>,
     properties: Partial<Properties<S, T>>,
   ): Set<Entity> => {
     // Shortcut for indexers
     if (isIndexed(table) && isFullTableProperties(table, properties)) {
-      return table.getEntitysWithProperties(properties);
+      return table.getEntitiesWithProperties(properties);
     }
 
     // Trivial implementation for regular tables
     const entities = new Set<Entity>();
-    for (const entity of getTableEntitys(table)) {
+    for (const entity of getTableEntities(table)) {
       const recProperties = getEntityProperties(table, entity);
       if (entityPropertiesEqual(properties, recProperties)) {
         entities.add(entity);
@@ -303,7 +303,7 @@ export const tableOperations = () => {
    * @param table {@link createTable BaseTable} to get all entities from
    * @returns Set of all entities in the given table.
    */
-  const getTableEntitys = <S extends Schema, T = unknown>(
+  const getTableEntities = <S extends Schema, T = unknown>(
     table: BaseTable<S, BaseTableMetadata, T>,
   ): IterableIterator<Entity> => {
     return table.entities();
@@ -330,12 +330,12 @@ export const tableOperations = () => {
   };
 
   /**
-   * Helper function to turn a stream of {@link Entity Entitys} into a stream of table updates of the given table.
+   * Helper function to turn a stream of {@link Entity Entities} into a stream of table updates of the given table.
    *
    * Note: Modified from RECS.
    *
    * @param table BaseTable to create update stream for.
-   * @returns Unary function to be used with RxJS that turns stream of {@link Entity Entitys} into stream of table updates.
+   * @returns Unary function to be used with RxJS that turns stream of {@link Entity Entities} into stream of table updates.
    */
   const toUpdateStream = <S extends Schema>(table: BaseTable<S>) => {
     return pipe(map((entity: Entity) => toUpdate(entity, table)));
@@ -350,7 +350,7 @@ export const tableOperations = () => {
    * @returns Whether the given table is indexed.
    */
   const isIndexed = <S extends Schema>(table: BaseTable<S> | IndexedBaseTable<S>): table is IndexedBaseTable<S> => {
-    return "getEntitysWithProperties" in table;
+    return "getEntitiesWithProperties" in table;
   };
 
   /**
@@ -392,8 +392,8 @@ export const tableOperations = () => {
     getEntityPropertiesStrict,
     entityPropertiesEqual,
     withProperties,
-    getEntitysWithProperties,
-    getTableEntitys,
+    getEntitiesWithProperties,
+    getTableEntities,
     toUpdate,
     toUpdateStream,
     isIndexed,

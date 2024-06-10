@@ -20,7 +20,7 @@ export type World = {
   registerEntity: (options?: { id?: string; idSuffix?: string }) => Entity;
   registerTable: (table: BaseTable) => void;
   tables: BaseTable[];
-  getEntitys: () => IterableIterator<Entity>;
+  getEntities: () => IterableIterator<Entity>;
   dispose: (namespace?: string) => void;
   registerDisposer: (disposer: () => void, namespace?: string) => void;
   hasEntity: (entity: Entity) => boolean;
@@ -55,7 +55,7 @@ export function createWorld() {
     return entity;
   }
 
-  function getEntitys() {
+  function getEntities() {
     return transformIterator(entitySymbols.values(), getEntityHex);
   }
 
@@ -94,7 +94,7 @@ export function createWorld() {
     dispose,
     registerDisposer,
     hasEntity,
-    getEntitys,
+    getEntities,
     entitySymbols,
     deleteEntity,
   } satisfies World;

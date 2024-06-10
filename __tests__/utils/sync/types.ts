@@ -5,9 +5,12 @@ import { ContractTableDefs } from "@/lib";
 import { createLocalSyncTables } from "@test/utils/sync/tables";
 import { NetworkConfig } from "@test/utils/networkConfig";
 
+export type AllTables<tableDefs extends ContractTableDefs> = ContractTables<tableDefs> & LocalSyncTables;
+export type LocalSyncTables = ReturnType<typeof createLocalSyncTables>;
+
 export type CreateSyncOptions<tableDefs extends ContractTableDefs> = {
   contractTables: ContractTables<tableDefs>;
-  localTables: ReturnType<typeof createLocalSyncTables>;
+  localTables: LocalSyncTables;
   tableDefs: ContractTableDefs;
   networkConfig: NetworkConfig;
   onSync?: OnSyncCallbacks;

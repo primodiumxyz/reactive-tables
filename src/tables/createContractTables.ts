@@ -37,15 +37,6 @@ export const createContractTables = <config extends StoreConfig, extraTableDefs 
       __lastSyncedAtBlock: Type.OptionalBigInt,
     } as const satisfies Schema;
 
-    // const keySchema = {
-    //   ...Object.fromEntries(
-    //     Object.entries(def.keySchema).map(([fieldName, { type: schemaAbiType }]) => [
-    //       fieldName,
-    //       schemaAbiTypeToRecsType[schemaAbiType as SchemaAbiType],
-    //     ]),
-    //   ),
-    // } as const satisfies Schema;
-
     return createTable(
       world,
       propertiesSchema,

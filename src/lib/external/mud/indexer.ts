@@ -21,12 +21,12 @@ import type { BaseTable, BaseTableMetadata, Properties } from "@/tables";
 export const createIndexer = <S extends Schema, M extends BaseTableMetadata, T = unknown>(
   table: BaseTable<S, M, T>,
 ): BaseTable<S, M, T> & {
-  getEntitysWithValue: (properties: Properties<S, T>) => Set<Entity>;
+  getEntitiesWithProperties: (properties: Properties<S, T>) => Set<Entity>;
 } => {
-  const propertiesToEntitys = new Map<string, Set<EntitySymbol>>();
+  const propertiesToEntities = new Map<string, Set<EntitySymbol>>();
 
-  function getEntitysWithValue(properties: Properties<S, T>) {
-    const entities = propertiesToEntitys.get(getPropertiesKey(properties));
+  function getEntitiesWithProperties(properties: Properties<S, T>) {
+    const entities = propertiesToEntities.get(getPropertiesKey(properties));
     return entities ? new Set([...entities].map(getEntityHex)) : new Set<Entity>();
   }
 
@@ -37,20 +37,20 @@ export const createIndexer = <S extends Schema, M extends BaseTableMetadata, T =
   function add(entity: EntitySymbol, properties: Properties<S, T> | undefined) {
     if (!properties) return;
     const propertiesKey = getPropertiesKey(properties);
-    let entitysWithProperties = propertiesToEntitys.get(propertiesKey);
-    if (!entitysWithProperties) {
-      entitysWithProperties = new Set<EntitySymbol>();
-      propertiesToEntitys.set(propertiesKey, entitysWithProperties);
+    let entitiesWithProperties = propertiesToEntities.get(propertiesKey);
+    if (!entitiesWithProperties) {
+      entitiesWithProperties = new Set<EntitySymbol>();
+      propertiesToEntities.set(propertiesKey, entitiesWithProperties);
     }
-    entitysWithProperties.add(entity);
+    entitiesWithProperties.add(entity);
   }
 
   function remove(entity: EntitySymbol, properties: Properties<S, T> | undefined) {
     if (!properties) return;
     const propertiesKey = getPropertiesKey(properties);
-    const entitysWithProperties = propertiesToEntitys.get(propertiesKey);
-    if (!entitysWithProperties) return;
-    entitysWithProperties.delete(entity);
+    const entitiesWithProperties = propertiesToEntities.get(propertiesKey);
+    if (!entitiesWithProperties) return;
+    entitiesWithProperties.delete(entity);
   }
 
   // Initial indexing
@@ -70,5 +70,5 @@ export const createIndexer = <S extends Schema, M extends BaseTableMetadata, T =
 
   table.world.registerDisposer(() => subscription?.unsubscribe());
 
-  return { ...table, getEntitysWithValue };
+  return { ...table, getEntitiesWithProperties };
 };

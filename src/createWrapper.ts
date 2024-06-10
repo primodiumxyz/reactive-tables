@@ -36,7 +36,7 @@ export type WrapperOptions<config extends StoreConfig, extraTableDefs extends Co
 /**
  * The result of going through the TinyBase wrapper creation process.
  *
- * Tables are the main entity point to all kind of data retrieval and manipulation.
+ * Tables are the main entry point to all kind of data retrieval and manipulation.
  *
  * @template config The type of the configuration object specifying tables definitions for contracts codegen.
  * @template tableDefs The types of the definitions used for generating tables.
@@ -56,16 +56,12 @@ export type WrapperResult<config extends StoreConfig, extraTableDefs extends Con
  * This function creates a wrapper for transforming MUD tables and custom tables definitions into consumable
  * objects, while abstracting the infrastructure for communicating from onchain data (logs) to
  * easily manipulable and strictly typed tables & entities. More specifically:
- * - encoding/decoding MUD and custom definitions into tabular data for TinyBase;
- * - encoding data from onchain logs into tabular datan entities for TinyBase;
+ * - encoding/decoding MUD and custom definitions into tabular data;
+ * - encoding data from onchain logs into this specific data format;
  * - decoding data into TypeScript-friendly objects, and offering typed methods for access and manipulation;
- * - creating and reacting to queries, both in TinyBase queries and RECS-like formats.
+ * - creating and reacting to queries, with the same logic as RECS but more convenient functions and types;
  *
- * This is the main entity point into the library.
- *
- * Note: if the wrapper is used in a browser environment, and you intend to use persistent tables, you MUST wait for the
- * sync with local storage to be started; otherwise, there will be inconsistencies with properties from the last and current sessions.
- * See the example in the {@link createLocalTable} function for more information.
+ * This is the main entry point into the library.
  *
  * @param options The {@link WrapperOptions} object specifying the MUD configuration and custom definitions.
  * @returns A {@link WrapperResult} object containing the tables, definitions, store, queries instance, and storage adapter.

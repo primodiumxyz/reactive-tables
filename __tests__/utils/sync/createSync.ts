@@ -28,7 +28,6 @@ export const createSync = <tableDefs extends ContractTableDefs>({
   const { publicClient, indexerUrl, initialBlockNumber } = networkConfig;
 
   const logFilters = Object.values(tableDefs).map((table) => ({ tableId: table.tableId as string }));
-  ``;
   const tables = { ...contractTables, ...localTables };
 
   const { storageAdapter, triggerUpdateStream } = createStorageAdapter({

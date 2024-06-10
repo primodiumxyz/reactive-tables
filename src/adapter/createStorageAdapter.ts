@@ -3,22 +3,14 @@ import { type Hex, size } from "viem";
 import { Write } from "@primodiumxyz/sync-stack";
 
 import { decodeArgs, type StorageAdapterLog } from "@/adapter";
-import {
-  type AllTableDefs,
-  type ContractTableDef,
-  type ContractTableDefs,
-  type StoreConfig,
-  debug,
-  hexKeyTupleToEntity,
-  resourceToLabel,
-} from "@/lib";
+import { type ContractTableDef, type ContractTableDefs, debug, hexKeyTupleToEntity, resourceToLabel } from "@/lib";
 import type { ContractTable, ContractTables, Properties } from "@/tables";
 
-export const createStorageAdapter = <config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined>({
+export const createStorageAdapter = <tableDefs extends ContractTableDefs = ContractTableDefs>({
   tables,
   shouldSkipUpdateStream,
 }: {
-  tables: ContractTables<AllTableDefs<config, extraTableDefs>>;
+  tables: ContractTables<tableDefs>;
   shouldSkipUpdateStream?: () => boolean;
 }) => {
   const processLog = (log: StorageAdapterLog) => {
@@ -154,7 +146,6 @@ export const createStorageAdapter = <config extends StoreConfig, extraTableDefs 
   });
 
   const triggerUpdateStream = () => {
-    // @ts-expect-error too complex union type
     for (const _table of Object.values(tables)) {
       const table = _table as ContractTable<ContractTableDef>;
       for (const entity of table.entities()) {

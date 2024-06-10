@@ -3,7 +3,7 @@ import { concat, EMPTY, from, Observable } from "rxjs";
 import type { BaseTable, Properties } from "@/tables";
 import type { TableUpdate, TableWatcherParams } from "@/queries";
 import { tableOperations, queries, type World, type QueryFragment, type Schema, type Entity } from "@/lib";
-const { getTableEntitys, setEntity, removeEntity, toUpdateStream } = tableOperations();
+const { getTableEntities, setEntity, removeEntity, toUpdateStream } = tableOperations();
 const { defineChangeQuery, defineEnterQuery, defineExitQuery, defineQuery } = queries();
 
 // All of the following code is taken and modified from MUD to fit new types and naming conventions.
@@ -122,7 +122,7 @@ export const systems = () => {
     system: (update: TableUpdate<S>) => void,
     options: TableWatcherParams = { runOnInit: true },
   ) => {
-    const initial$ = options?.runOnInit ? from(getTableEntitys(table)).pipe(toUpdateStream(table)) : EMPTY;
+    const initial$ = options?.runOnInit ? from(getTableEntities(table)).pipe(toUpdateStream(table)) : EMPTY;
     defineRxSystem(world, concat(initial$, table.update$), system);
   };
 

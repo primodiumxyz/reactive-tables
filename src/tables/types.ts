@@ -36,7 +36,7 @@ export type IndexedBaseTable<
   M extends BaseTableMetadata = BaseTableMetadata,
   T = unknown,
 > = BaseTable<PS, M, T> & {
-  getEntitysWithProperties: (properties: Properties<PS, T>) => Set<Entity>;
+  getEntitiesWithProperties: (properties: Properties<PS, T>) => Set<Entity>;
 };
 
 export type BaseTableMetadata<M extends Metadata = Metadata> = M & {

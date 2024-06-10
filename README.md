@@ -14,7 +14,7 @@
   - [Querying tables](#querying-tables)
   - [Watching tables for changes](#watching-tables-for-changes)
 - [Details](#details)
-  - [Entity points](#entity-points)
+  - [Entry points](#entity-points)
   - [Structure](#structure)
   - [Conventions](#conventions)
 - [Contributing](#contributing)
@@ -213,11 +213,11 @@ If there are any issues with dependencies at some point, e.g. after updating the
 
 ## Details
 
-### Entity points
+### Entry points
 
-There are basically 3 entity points to the package, which are all exported from the main module:
+There are basically 3 entry points to the package, which are all exported from the main module:
 
-1. `createWrapper` - The main entity point, which takes the MUD configuration, and returns the registry, table definitions, the TinyBase store wrapper and a storage adapter for RPC/indexer-client sync.
+1. `createWrapper` - The main entry point, which takes the MUD configuration, and returns the registry, table definitions, the TinyBase store wrapper and a storage adapter for RPC/indexer-client sync.
 2. `createLocalTable` (and `createLocal<type>Table` templates) - A factory function for creating local tables, with the same API as contract tables.
 3. `query`, `$query`, `useQuery` - Global methods for querying multiple tables at once, and watching for changes.
 
@@ -235,7 +235,7 @@ src - "Source files"
 │   ├── external - "Any external utilities, e.g. non-modified or adapted MUD types and functions"
 ├── queries - "Table queries and listeners"
 ├── tables - "Table creation from contract definition or local properties to generic table object with metadata and methods"
-├── createWrapper.ts - "Main entity point for the package, creates a tables registry from a MUD config object"
+├── createWrapper.ts - "Main entry point for the package, creates a tables registry from a MUD config object"
 ├── index.ts - "Main module, exports all relevant functions and constants"
 └── utils.ts - "Utilities for encoding/decoding"
 __tests__ - "Tests related to the library"
