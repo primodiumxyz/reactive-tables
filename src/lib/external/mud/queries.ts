@@ -105,7 +105,7 @@ function filterNullish<T>(): OperatorFunction<T, NonNullable<T>> {
   );
 }
 
-function useDeepMemo<T>(currentProperties: T): T {
+export function useDeepMemo<T>(currentProperties: T): T {
   const [stableProperties, setStableProperties] = useState(currentProperties);
 
   useEffect(() => {
