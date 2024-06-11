@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 import { createTableKeyMethods, createTableWatcher } from "@/tables";
 import type { BaseTable, BaseTableMetadata, Properties, PropertiesSansMetadata, TableMethods } from "@/tables";
-import { type TableWatcherOptions, type TableWatcherParams, type TableUpdate } from "@/queries";
+import { type TableWatcherParams, type TableUpdate, TableMethodsWatcherOptions } from "@/queries";
 import {
   defaultEntity,
   queries,
@@ -231,7 +231,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
   /* ---------------------------------- WATCH --------------------------------- */
   // Create a query tied to this table, with callbacks on change, enter & exit from the query conditions
   // or if no query, on any change in the table
-  const watch = (options: Omit<TableWatcherOptions<PS, M, T>, "world" | "table">, params?: TableWatcherParams) =>
+  const watch = (options: TableMethodsWatcherOptions<PS, M, T>, params?: TableWatcherParams) =>
     createTableWatcher({ world, table, ...options }, params);
 
   // Base methods available to all tables

@@ -53,6 +53,11 @@ export type TableWatcherOptions<PS extends Schema, M extends BaseTableMetadata =
   table: BaseTable<PS, M, T> | Table<PS, M, T>;
   // Opt in to any callback
 } & TableWatcherCallbacks<PS, M, T>;
+export type TableMethodsWatcherOptions<
+  PS extends Schema,
+  M extends BaseTableMetadata = BaseTableMetadata,
+  T = unknown,
+> = Omit<TableWatcherOptions<PS, M, T>, "world" | "table"> & { world?: World };
 
 /**
  * Defines the callbacks for a table watcher.
