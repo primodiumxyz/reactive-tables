@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { type QueryOptions, type TableWatcherCallbacks, type TableUpdate, type TableWatcherParams } from "@/queries";
 import { queries, tableOperations, useDeepMemo, QueryFragmentType, type Entity } from "@/lib";
@@ -66,13 +66,16 @@ export const useQuery = (
   ]);
 
   const query = useMemo(() => defineQuery(queryFragments, { runOnInit: true }), [queryFragments, params]);
-  const [entities, setRecords] = useState<Entity[]>([...query.matching]);
+  const [entities, setRecords] = useState<Entity[]>([...query.matching]); // will throw if no positive fragment
+  const mounted = useRef(false);
 
   useEffect(() => {
-    setRecords([...query.matching]); // will throw if no positive fragment
+    setRecords([...query.matching]);
 
     // fix: if pre-populated with state, useComponentValue doesn’t update when there’s a component that has been removed.
     const subscription = query.update$.subscribe((_update) => {
+      if (!mounted.current) return; // we want to control run on init
+
       const update = _update as TableUpdate<
         (typeof _update)["table"]["propertiesSchema"],
         (typeof _update)["table"]["metadata"]
@@ -108,6 +111,7 @@ export const useQuery = (
       });
     }
 
+    mounted.current = true;
     return () => subscription.unsubscribe();
   }, [options, queryFragments]);
 
