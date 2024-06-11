@@ -55,7 +55,7 @@ export const createIndexer = <S extends Schema, M extends BaseTableMetadata, T =
 
   // Initial indexing
   for (const entity of table.entities()) {
-    const properties = tableOperations().getEntityProperties(table, entity);
+    const properties = tableOperations.getEntityProperties(table, entity);
     add(getEntitySymbol(entity), properties);
   }
 

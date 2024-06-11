@@ -26,7 +26,7 @@ const {
   getTableEntities,
   getEntitiesWithProperties,
   toUpdateStream,
-} = tableOperations();
+} = tableOperations;
 
 // All of the following code is taken and modified from MUD to fit new types and naming conventions.
 
@@ -117,7 +117,7 @@ export function useDeepMemo<T>(currentProperties: T): T {
   return stableProperties;
 }
 
-export const queries = () => {
+const _queries = () => {
   /**
    * Create a {@link WithQueryFragment}.
    *
@@ -689,3 +689,5 @@ export const queries = () => {
     useEntityQuery,
   };
 };
+
+export const queries = _queries();

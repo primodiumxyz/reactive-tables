@@ -21,8 +21,7 @@ function getTableName(table: BaseTable<any, any, any>) {
 }
 
 // All of the following code is taken and modified from MUD to fit new types and naming conventions.
-
-export const tableOperations = () => {
+const _tableOperations = () => {
   /**
    * Set the properties for a given entity in a given table.
    *
@@ -401,3 +400,5 @@ export const tableOperations = () => {
     isTableUpdate,
   };
 };
+
+export const tableOperations = _tableOperations();

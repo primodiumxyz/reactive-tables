@@ -2,8 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { type QueryOptions, type TableWatcherCallbacks, type TableUpdate, type TableWatcherParams } from "@/queries";
 import { queries, tableOperations, useDeepMemo, QueryFragmentType, type Entity } from "@/lib";
-const { getEntityProperties } = tableOperations();
-const { defineQuery, With, WithProperties, Without, WithoutProperties } = queries();
+const { getEntityProperties } = tableOperations;
+const { defineQuery, With, WithProperties, Without, WithoutProperties } = queries;
 
 /**
  * React hook to query all entities matching multiple conditions across tables.
