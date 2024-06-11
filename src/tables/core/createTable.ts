@@ -1,16 +1,13 @@
 import { Subject } from "rxjs";
 
-import { createTableMethods, type BaseTableMetadata, type Table, type BaseTable } from "@/tables";
-import {
-  createIndexer,
-  getEntityHex,
-  mapObject,
-  transformIterator,
-  uuid,
-  type Schema,
-  type World,
-  type EntitySymbol,
-} from "@/lib";
+import { createTableMethods } from "@/tables/methods/createTableMethods";
+import { type BaseTableMetadata, type Table, type BaseTable } from "@/tables/types";
+import { getEntityHex, type EntitySymbol } from "@/lib/external/mud/entity";
+import { createIndexer } from "@/lib/external/mud/indexer";
+import type { Schema } from "@/lib/external/mud/schema";
+import { mapObject, transformIterator } from "@/lib/external/mud/utils";
+import type { World } from "@/lib/external/mud/world";
+import { uuid } from "@/lib/external/uuid";
 
 /**
  * Defines the options for creating a table (especially useful for local tables).

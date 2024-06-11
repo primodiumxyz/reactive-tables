@@ -1,18 +1,15 @@
 import { Subject, filter, map } from "rxjs";
 import { useEffect, useState } from "react";
 
-import { createTableKeyMethods, createTableWatcher } from "@/tables";
-import type { BaseTable, BaseTableMetadata, Properties, PropertiesSansMetadata, TableMethods } from "@/tables";
-import { type TableWatcherParams, type TableUpdate, TableMethodsWatcherOptions } from "@/queries";
-import {
-  defaultEntity,
-  queries,
-  tableOperations,
-  type Entity,
-  type Schema,
-  type TableMutationOptions,
-  type World,
-} from "@/lib";
+import { createTableKeyMethods } from "@/tables/methods/createTableKeyMethods";
+import { createTableWatcher } from "@/tables/methods/createTableWatcher";
+import type { BaseTable, BaseTableMetadata, Properties, PropertiesSansMetadata, TableMethods } from "@/tables/types";
+import { type TableWatcherParams, type TableUpdate, TableMethodsWatcherOptions } from "@/queries/types";
+import { defaultEntity, type Entity } from "@/lib/external/mud/entity";
+import type { Schema } from "@/lib/external/mud/schema";
+import { type TableMutationOptions, tableOperations } from "@/lib/external/mud/tables";
+import { queries } from "@/lib/external/mud/queries";
+import type { World } from "@/lib/external/mud/world";
 const {
   setEntity,
   removeEntity,

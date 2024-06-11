@@ -1,6 +1,7 @@
-import type { BaseTableMetadata } from "@/tables";
-import type { TableWatcherOptions, TableUpdate, TableWatcherParams } from "@/queries";
-import { systems, type Schema } from "@/lib";
+import type { BaseTableMetadata } from "@/tables/types";
+import type { TableWatcherOptions, TableUpdate, TableWatcherParams } from "@/queries/types";
+import type { Schema } from "@/lib/external/mud/schema";
+import { systems } from "@/lib/external/mud/systems";
 
 /**
  * Create a watcher/listener for a table, on all changes or selective ones (enter, exit, change, any update).

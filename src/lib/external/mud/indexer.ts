@@ -1,5 +1,7 @@
-import { type Schema, type Entity, type EntitySymbol, getEntityHex, getEntitySymbol, tableOperations } from "@/lib";
-import type { BaseTable, BaseTableMetadata, Properties } from "@/tables";
+import type { BaseTable, BaseTableMetadata, Properties } from "@/tables/types";
+import { type Entity, type EntitySymbol, getEntityHex, getEntitySymbol } from "@/lib/external/mud/entity";
+import type { Schema } from "@/lib/external/mud/schema";
+import { tableOperations } from "@/lib/external/mud/tables";
 
 /**
  * Create an indexed table from a given table.

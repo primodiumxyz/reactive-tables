@@ -1,23 +1,22 @@
 import { Subject } from "rxjs";
 
+import type { ResourceLabel } from "@/lib/external/mud/common";
+import type { Entity, EntitySymbol } from "@/lib/external/mud/entity";
 import type {
   AbiKeySchema,
   AbiToSchema,
-  ContractTableDef,
   MappedType,
   Metadata,
-  Entity,
-  EntitySymbol,
-  ResourceLabel,
   Schema,
   SchemaAbiType,
   SchemaAbiTypeToRecsType,
   StaticAbiType,
-  TableMutationOptions,
-  Type,
-  World,
-} from "@/lib";
-import type { TableMethodsWatcherOptions, TableUpdate, TableWatcherParams } from "@/queries";
+} from "@/lib/external/mud/schema";
+import { Type } from "@/lib/external/mud/schema";
+import type { TableMutationOptions } from "@/lib/external/mud/tables";
+import type { World } from "@/lib/external/mud/world";
+import type { ContractTableDef } from "@/lib/definitions";
+import type { TableMethodsWatcherOptions, TableUpdate, TableWatcherParams } from "@/queries/types";
 
 export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> {
   id: string;

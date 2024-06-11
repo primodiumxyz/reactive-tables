@@ -1,6 +1,11 @@
-import { createTable, type ContractTables } from "@/tables";
-import { defaultEntity, mapObject, resourceToLabel, schemaAbiTypeToRecsType, Type } from "@/lib";
-import type { ContractTableDefs, StoreConfig, SchemaAbiType, AllTableDefs, Schema, World } from "@/lib";
+import { createTable } from "@/tables/core/createTable";
+import type { ContractTables } from "@/tables/types";
+import { resourceToLabel } from "@/lib/external/mud/common";
+import { defaultEntity } from "@/lib/external/mud/entity";
+import { schemaAbiTypeToRecsType, Type, type Schema, type SchemaAbiType } from "@/lib/external/mud/schema";
+import { mapObject } from "@/lib/external/mud/utils";
+import type { World } from "@/lib/external/mud/world";
+import type { AllTableDefs, ContractTableDefs, StoreConfig } from "@/lib/definitions";
 
 type CreateContractTablesOptions<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
   world: World;

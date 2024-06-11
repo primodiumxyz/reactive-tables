@@ -1,7 +1,7 @@
 import { concatHex, decodeAbiParameters, encodeAbiParameters, type Hex, isHex, size, sliceHex } from "viem";
 
-import type { Properties } from "@/tables";
-import type { AbiToSchema, AbiKeySchema, SchemaToPrimitives } from "@/lib";
+import type { Properties } from "@/tables/types";
+import type { AbiToSchema, AbiKeySchema, SchemaToPrimitives } from "@/lib/external/mud/schema";
 
 // (jsdocs)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

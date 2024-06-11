@@ -1,8 +1,12 @@
 import { concat, EMPTY, from, Observable } from "rxjs";
 
-import type { BaseTable, Properties } from "@/tables";
-import type { TableUpdate, TableWatcherParams } from "@/queries";
-import { tableOperations, queries, type World, type QueryFragment, type Schema, type Entity } from "@/lib";
+import type { BaseTable, Properties } from "@/tables/types";
+import type { TableUpdate, TableWatcherParams } from "@/queries/types";
+import type { Entity } from "@/lib/external/mud/entity";
+import { queries, type QueryFragment } from "@/lib/external/mud/queries";
+import type { Schema } from "@/lib/external/mud/schema";
+import { tableOperations } from "@/lib/external/mud/tables";
+import type { World } from "@/lib/external/mud/world";
 const { getTableEntities, setEntity, removeEntity, toUpdateStream } = tableOperations;
 const { defineChangeQuery, defineEnterQuery, defineExitQuery, defineQuery } = queries;
 
