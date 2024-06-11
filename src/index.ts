@@ -21,6 +21,7 @@ export type {
   ContractTableDefs,
   Metadata,
   Entity,
+  EntitySymbol,
   Schema,
   StoreConfig,
   World,
