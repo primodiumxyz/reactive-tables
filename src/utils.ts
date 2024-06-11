@@ -17,6 +17,9 @@ export {
   uuid,
 } from "@/lib";
 
+// Storage adapter
+export { StorageAdapterBlock, StorageAdapterLog } from "@/adapter";
+
 export {
   // Direct access to MUD functionnalities
   tableOperations,
