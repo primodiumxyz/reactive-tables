@@ -74,7 +74,7 @@
     "sort-package-json": "^2.10.0",
     "ts-node": "^10.9.2",
     "tsup": "^8.0.2",
-    "typescript": "^5.4.4",
+    "typescript": "5.5.0-beta",
     "vite": "^5.2.9",
     "vitest": "^1.5.2"
   },
