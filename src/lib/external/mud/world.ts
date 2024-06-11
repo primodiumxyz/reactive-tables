@@ -7,7 +7,7 @@ import {
   type Entity,
   type EntitySymbol,
 } from "@/lib";
-const { hasEntity: tableHasEntity, removeEntity: tableRemoveEntity } = tableOperations();
+const { hasEntity: tableHasEntity, removeEntity: tableRemoveEntity } = tableOperations;
 
 /**
  * Type of World returned by {@link createWorld}.

@@ -1,6 +1,6 @@
 import type { QueryOptions } from "@/queries";
 import { queries, type QueryFragment, type Entity } from "@/lib";
-const { runQuery, With, WithProperties, Without, WithoutProperties } = queries();
+const { runQuery, With, WithProperties, Without, WithoutProperties } = queries;
 
 /**
  * Queries all entities matching multiple provided conditions across tables.

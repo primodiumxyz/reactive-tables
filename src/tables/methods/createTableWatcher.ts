@@ -51,7 +51,7 @@ export const createTableWatcher = <PS extends Schema, M extends BaseTableMetadat
     throw new Error("At least one callback has to be provided");
   }
 
-  systems().defineTableSystem(
+  systems.defineTableSystem(
     world,
     table,
     (_update) => {

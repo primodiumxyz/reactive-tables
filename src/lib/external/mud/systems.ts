@@ -3,12 +3,12 @@ import { concat, EMPTY, from, Observable } from "rxjs";
 import type { BaseTable, Properties } from "@/tables";
 import type { TableUpdate, TableWatcherParams } from "@/queries";
 import { tableOperations, queries, type World, type QueryFragment, type Schema, type Entity } from "@/lib";
-const { getTableEntities, setEntity, removeEntity, toUpdateStream } = tableOperations();
-const { defineChangeQuery, defineEnterQuery, defineExitQuery, defineQuery } = queries();
+const { getTableEntities, setEntity, removeEntity, toUpdateStream } = tableOperations;
+const { defineChangeQuery, defineEnterQuery, defineExitQuery, defineQuery } = queries;
 
 // All of the following code is taken and modified from MUD to fit new types and naming conventions.
 
-export const systems = () => {
+const _systems = () => {
   /**
    * Create a system that is called on every update of the given observable.
    *
@@ -163,3 +163,5 @@ export const systems = () => {
     defineSyncSystem,
   };
 };
+
+export const systems = _systems();

@@ -13,7 +13,6 @@ import {
   type TableMutationOptions,
   type World,
 } from "@/lib";
-const { runQuery, defineQuery, useEntityQuery, With, WithProperties, WithoutProperties } = queries();
 const {
   setEntity,
   removeEntity,
@@ -21,7 +20,8 @@ const {
   getEntityProperties,
   hasEntity,
   isTableUpdate: _isTableUpdate,
-} = tableOperations();
+} = tableOperations;
+const { runQuery, defineQuery, useEntityQuery, With, WithProperties, WithoutProperties } = queries;
 
 /* -------------------------------------------------------------------------- */
 /*                               ATTACH METHODS                               */

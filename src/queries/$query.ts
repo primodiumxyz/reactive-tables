@@ -1,6 +1,6 @@
 import type { QueryOptions, TableWatcherCallbacks, TableWatcherParams } from "@/queries";
 import { queries, systems, type World } from "@/lib";
-const { With, WithProperties, Without, WithoutProperties } = queries();
+const { With, WithProperties, Without, WithoutProperties } = queries;
 
 /**
  * Listen to all entities matching multiple conditions across tables.
@@ -59,7 +59,7 @@ export const $query = (
     throw new Error("At least one `with` or `withProperties` condition needs to be provided");
   }
 
-  systems().defineSystem(
+  systems.defineSystem(
     world,
     [
       ...(inside?.map((fragment) => With(fragment)) ?? []),
