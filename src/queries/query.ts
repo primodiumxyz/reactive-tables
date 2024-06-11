@@ -1,5 +1,6 @@
-import type { QueryOptions } from "@/queries";
-import { queries, type QueryFragment, type Entity } from "@/lib";
+import type { QueryOptions } from "@/queries/types";
+import { queries, type QueryFragment } from "@/lib/external/mud/queries";
+import type { Entity } from "@/lib/external/mud/entity";
 const { runQuery, With, WithProperties, Without, WithoutProperties } = queries;
 
 /**

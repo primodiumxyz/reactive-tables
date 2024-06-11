@@ -2,9 +2,13 @@ import { hexToResource, spliceHex } from "@latticexyz/common";
 import { type Hex, size } from "viem";
 import { Write } from "@primodiumxyz/sync-stack";
 
-import { decodeArgs, type StorageAdapterLog } from "@/adapter";
-import { type ContractTableDef, type ContractTableDefs, debug, hexKeyTupleToEntity, resourceToLabel } from "@/lib";
-import type { ContractTable, ContractTables, Properties } from "@/tables";
+import { decodePropertiesArgs } from "@/adapter/decodeProperties";
+import type { StorageAdapterLog } from "@/adapter/types";
+import type { ContractTable, ContractTables, Properties } from "@/tables/types";
+import { resourceToLabel } from "@/lib/external/mud/common";
+import { hexKeyTupleToEntity } from "@/lib/external/mud/entity";
+import type { ContractTableDef, ContractTableDefs } from "@/lib/definitions";
+import { debug } from "@/lib/debug";
 
 export const createStorageAdapter = <tableDefs extends ContractTableDefs = ContractTableDefs>({
   tables,
@@ -37,7 +41,7 @@ export const createStorageAdapter = <tableDefs extends ContractTableDefs = Contr
       if (!processed) return;
       const { entity, table } = processed;
 
-      const properties = decodeArgs(table.metadata.abiPropertiesSchema, log.args);
+      const properties = decodePropertiesArgs(table.metadata.abiPropertiesSchema, log.args);
 
       debug("setting properties", {
         namespace: table.metadata.namespace,
@@ -67,7 +71,7 @@ export const createStorageAdapter = <tableDefs extends ContractTableDefs = Contr
       const previousProperties = table.get(entity);
       const previousStaticData = previousProperties?.__staticData ?? ("0x" as Hex);
       const newStaticData = spliceHex(previousStaticData, log.args.start, size(log.args.data), log.args.data);
-      const newProperties = decodeArgs(table.metadata.abiPropertiesSchema, {
+      const newProperties = decodePropertiesArgs(table.metadata.abiPropertiesSchema, {
         staticData: newStaticData,
         encodedLengths: previousProperties?.__encodedLengths ?? ("0x" as Hex),
         dynamicData: previousProperties?.__dynamicData ?? ("0x" as Hex),
@@ -102,7 +106,7 @@ export const createStorageAdapter = <tableDefs extends ContractTableDefs = Contr
       const previousProperties = table.get(entity);
       const previousDynamicData = previousProperties?.__dynamicData ?? ("0x" as Hex);
       const newDynamicData = spliceHex(previousDynamicData, log.args.start, log.args.deleteCount, log.args.data);
-      const newProperties = decodeArgs(table.metadata.abiPropertiesSchema, {
+      const newProperties = decodePropertiesArgs(table.metadata.abiPropertiesSchema, {
         staticData: previousProperties?.__staticData ?? ("0x" as Hex),
         encodedLengths: log.args.encodedLengths,
         dynamicData: newDynamicData,

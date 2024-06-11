@@ -1,5 +1,8 @@
-import { createTable, type BaseTableMetadata, type Table, type TableOptions } from "@/tables";
-import { Type, uuid, type Schema, type World } from "@/lib";
+import { createTable, type TableOptions } from "@/tables/core/createTable";
+import type { BaseTableMetadata, Table } from "@/tables/types";
+import type { World } from "@/lib/external/mud/world";
+import { type Schema, Type } from "@/lib/external/mud/schema";
+import { uuid } from "@/lib/external/uuid";
 
 /**
  * Creates a local table with the specified properties schema, options and metadata.

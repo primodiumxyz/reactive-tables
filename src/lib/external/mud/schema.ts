@@ -1,7 +1,7 @@
 import type { SchemaAbiTypeToPrimitiveType } from "@latticexyz/schema-type/internal";
 import type { Hex } from "viem";
 
-import type { Entity } from "@/lib";
+import type { Entity } from "@/lib/external/mud/entity";
 
 /* -------------------------------------------------------------------------- */
 /*                                   SCHEMAS                                  */

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { type QueryOptions, type TableWatcherCallbacks, type TableUpdate, type TableWatcherParams } from "@/queries";
-import { queries, tableOperations, useDeepMemo, QueryFragmentType, type Entity } from "@/lib";
+import type { QueryOptions, TableWatcherCallbacks, TableUpdate, TableWatcherParams } from "@/queries/types";
+import { type Entity } from "@/lib/external/mud/entity";
+import { queries, QueryFragmentType, useDeepMemo } from "@/lib/external/mud/queries";
+import { tableOperations } from "@/lib/external/mud/tables";
 const { getEntityProperties } = tableOperations;
 const { defineQuery, With, WithProperties, Without, WithoutProperties } = queries;
 

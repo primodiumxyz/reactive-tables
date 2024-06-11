@@ -1,5 +1,7 @@
-import type { QueryOptions, TableWatcherCallbacks, TableWatcherParams } from "@/queries";
-import { queries, systems, type World } from "@/lib";
+import type { QueryOptions, TableWatcherCallbacks, TableWatcherParams } from "@/queries/types";
+import { queries } from "@/lib/external/mud/queries";
+import { systems } from "@/lib/external/mud/systems";
+import type { World } from "@/lib/external/mud/world";
 const { With, WithProperties, Without, WithoutProperties } = queries;
 
 /**
