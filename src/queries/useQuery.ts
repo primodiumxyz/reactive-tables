@@ -1,13 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-import {
-  query,
-  type QueryOptions,
-  type TableWatcherCallbacks,
-  type TableUpdate,
-  type TableWatcherParams,
-} from "@/queries";
-import { queries, type Entity } from "@/lib";
+import { type QueryOptions, type TableWatcherCallbacks, type TableUpdate, type TableWatcherParams } from "@/queries";
+import { queries, tableOperations, useDeepMemo, QueryFragmentType, type Entity } from "@/lib";
+const { getEntityProperties } = tableOperations();
 const { defineQuery, With, WithProperties, Without, WithoutProperties } = queries();
 
 /**
@@ -54,31 +49,33 @@ const { defineQuery, With, WithProperties, Without, WithoutProperties } = querie
 export const useQuery = (
   options: QueryOptions,
   callbacks?: TableWatcherCallbacks,
-  params: TableWatcherParams = { runOnInit: true },
+  params: TableWatcherParams = {
+    runOnInit: true,
+  },
 ): Entity[] => {
   // Not available in a non-browser environment
   if (typeof window === "undefined") throw new Error("useQuery is only available in a browser environment");
   const { with: inside, without: notInside, withProperties, withoutProperties } = options;
   const { onChange, onEnter, onExit, onUpdate } = callbacks ?? {};
 
-  const [entities, setRecords] = useState<Entity[]>([]);
+  const queryFragments = useDeepMemo([
+    ...(inside?.map((fragment) => With(fragment)) ?? []),
+    ...(withProperties?.map((matching) => WithProperties(matching.table, { ...matching.properties })) ?? []),
+    ...(notInside?.map((table) => Without(table)) ?? []),
+    ...(withoutProperties?.map((matching) => WithoutProperties(matching.table, { ...matching.properties })) ?? []),
+  ]);
 
-  const queryFragments = useMemo(
-    () => [
-      ...(inside?.map((fragment) => With(fragment)) ?? []),
-      ...(withProperties?.map((matching) => WithProperties(matching.table, { ...matching.properties })) ?? []),
-      ...(notInside?.map((table) => Without(table)) ?? []),
-      ...(withoutProperties?.map((matching) => WithoutProperties(matching.table, { ...matching.properties })) ?? []),
-    ],
-    [options],
-  );
+  const query = useMemo(() => defineQuery(queryFragments, { runOnInit: true }), [queryFragments, params]);
+  const [entities, setRecords] = useState<Entity[]>([...query.matching]); // will throw if no positive fragment
+  const mounted = useRef(false);
 
   useEffect(() => {
-    setRecords(query(options, queryFragments)); // will throw if no positive fragment
+    setRecords([...query.matching]);
 
     // fix: if pre-populated with state, useComponentValue doesn’t update when there’s a component that has been removed.
-    const queryResult = defineQuery(queryFragments, params);
-    const subscription = queryResult.update$.subscribe((_update) => {
+    const subscription = query.update$.subscribe((_update) => {
+      if (!mounted.current) return; // we want to control run on init
+
       const update = _update as TableUpdate<
         (typeof _update)["table"]["propertiesSchema"],
         (typeof _update)["table"]["metadata"]
@@ -96,6 +93,25 @@ export const useQuery = (
       }
     });
 
+    // perform run on init if needed
+    if (params.runOnInit) {
+      const enterTable = queryFragments.find(
+        (fragment) => fragment.type === QueryFragmentType.With || fragment.type === QueryFragmentType.WithProperties,
+      )!.table;
+      query.matching.forEach((entity) => {
+        const update = {
+          table: enterTable,
+          entity,
+          properties: { current: getEntityProperties(enterTable, entity), prev: undefined },
+          type: "enter",
+        } as const satisfies TableUpdate;
+
+        onEnter?.(update);
+        onUpdate?.(update);
+      });
+    }
+
+    mounted.current = true;
     return () => subscription.unsubscribe();
   }, [options, queryFragments]);
 

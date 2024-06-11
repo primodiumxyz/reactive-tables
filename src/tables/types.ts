@@ -17,7 +17,7 @@ import type {
   Type,
   World,
 } from "@/lib";
-import type { TableUpdate, TableWatcherOptions, TableWatcherParams } from "@/queries";
+import type { TableMethodsWatcherOptions, TableUpdate, TableWatcherParams } from "@/queries";
 
 export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> {
   id: string;
@@ -458,9 +458,8 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * Create a watcher/listener for a table, on all changes or selective ones (enter, exit, change, any update).
    * This will listen to changes in the table and trigger callbacks when entities enter, exit, or change.
    *
-   * @param options The {@link TableWatcherOptions} for creating the table watcher.
-   * - `world` The RECS world containing the table to watch (abstracted).
-   * - `table` The table to watch for changes (abstracted).
+   * @param options The {@link TableMethodsWatcherOptions} for creating the table watcher.
+   * - `world` The RECS world containing the table to watch (optional, default global world).
    * - `onChange` Callback triggered on any change in the table/query (encompassing enter, exit, and update).
    * - `onEnter` Callback triggered when an entity enters the table/query (`properties.prev` will be undefined).
    * - `onExit` Callback triggered when an entity exits the table/query (`properties.current` will be undefined).
@@ -490,7 +489,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * @category Methods
    * @internal
    */
-  watch: (options: Omit<TableWatcherOptions<PS, M, T>, "world" | "table">, params?: TableWatcherParams) => void;
+  watch: (options: TableMethodsWatcherOptions<PS, M, T>, params?: TableWatcherParams) => void;
 };
 
 /**

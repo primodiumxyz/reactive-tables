@@ -245,9 +245,9 @@ describe("sync: should properly sync similar properties to RECS tables", () => {
       const propertiesSchema = tables[key].propertiesSchema ?? {};
       for (const key of Object.keys(propertiesSchema)) {
         if (!(key in table) || key === "__lastSyncedAtBlock") {
-          expect(recsComp[key]).toBeUndefined();
+          expect(recsComp[key as keyof typeof recsComp]).toBeUndefined();
         } else {
-          expect(table[key as keyof typeof table]).toEqual(recsComp[key]);
+          expect(table[key as keyof typeof table]).toEqual(recsComp[key as keyof typeof recsComp]);
         }
       }
 

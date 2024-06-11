@@ -21,7 +21,9 @@ export const createContractTables = <config extends StoreConfig, extraTableDefs 
   world,
   tableDefs,
 }: CreateContractTablesOptions<config, extraTableDefs>) => {
-  world.registerEntity({ id: defaultEntity });
+  if (!world.hasEntity(defaultEntity)) {
+    world.registerEntity({ id: defaultEntity });
+  }
 
   return mapObject(tableDefs, (def) => {
     const propertiesSchema = {

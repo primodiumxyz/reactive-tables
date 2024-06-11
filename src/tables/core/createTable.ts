@@ -23,7 +23,7 @@ import {
  */
 export type TableOptions<M extends BaseTableMetadata> = {
   id: string; // default: uuid
-  metadata?: M;
+  metadata?: Partial<M>;
   indexed?: boolean;
   persist?: boolean; // TODO
 };

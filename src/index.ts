@@ -3,7 +3,7 @@
 export * from "@/createWrapper";
 
 // Local tables (with custom schema and templates)
-export * from "@/tables/createLocalTable";
+export * from "@/tables/core/createLocalTable";
 
 // Queries: global (filtering keys and callbacks), query (direct query returning Entity[]), useQuery (React hook returning Entity[] with callbacks)
 export { $query, query, useQuery } from "@/queries";
@@ -21,6 +21,7 @@ export type {
   ContractTableDefs,
   Metadata,
   Entity,
+  EntitySymbol,
   Schema,
   StoreConfig,
   World,
@@ -41,4 +42,5 @@ export type {
   PropertiesSansMetadata,
   Table,
   Tables,
+  TableOptions,
 } from "@/tables";
