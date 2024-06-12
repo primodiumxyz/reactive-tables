@@ -1,7 +1,7 @@
 import { map, pipe } from "rxjs";
 import isEqual from "fast-deep-equal";
 
-import type { IndexedBaseTable, BaseTable, TableMutationOptions, TableUpdate } from "@/tables/types";
+import type { BaseTable, IndexedBaseTable, TableMutationOptions, TableUpdate } from "@/tables/types";
 import { type Entity, getEntitySymbol } from "@/lib/external/mud/entity";
 import { type BaseTableMetadata, OptionalTypes, type Properties, type Schema } from "@/lib/external/mud/schema";
 

@@ -1,5 +1,6 @@
 import { Subject } from "rxjs";
 
+import type { TableMethodsWatcherOptions, TableWatcherParams } from "@/queries/types";
 import type { Entity, EntitySymbol } from "@/lib/external/mud/entity";
 import type {
   BaseTableMetadata,
@@ -13,12 +14,12 @@ import type {
 } from "@/lib/external/mud/schema";
 import type { World } from "@/lib/external/mud/world";
 import type { ContractTableDef } from "@/lib/definitions";
-import type { TableMethodsWatcherOptions, TableWatcherParams } from "@/queries/types";
 
 /* -------------------------------------------------------------------------- */
-/*                                   GLOBAL                                   */
+/*                                   OBJECT                                   */
 /* -------------------------------------------------------------------------- */
 
+/* --------------------------------- GLOBAL --------------------------------- */
 export type Tables = { [name: string]: Table };
 export type Table<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = BaseTable<
   PS,
@@ -27,10 +28,7 @@ export type Table<PS extends Schema = Schema, M extends BaseTableMetadata = Base
 > &
   TableMethods<PS, M, T>;
 
-/* -------------------------------------------------------------------------- */
-/*                                  CONTRACT                                  */
-/* -------------------------------------------------------------------------- */
-
+/* -------------------------------- CONTRACT -------------------------------- */
 export type ContractTables<tableDefs extends Record<string, ContractTableDef>> = {
   [name in keyof tableDefs]: ContractTable<tableDefs[name]>;
 };
@@ -41,10 +39,7 @@ export type ContractTable<
   // KS extends ContractTableKeySchema<tableDef> = ContractTableKeySchema<tableDef>,
 > = Table<PS, ContractTableMetadata<tableDef>>;
 
-/* -------------------------------------------------------------------------- */
-/*                                   INDEXED                                  */
-/* -------------------------------------------------------------------------- */
-
+/* --------------------------------- INDEXED -------------------------------- */
 export type IndexedBaseTable<
   PS extends Schema = Schema,
   M extends BaseTableMetadata = BaseTableMetadata,
@@ -53,15 +48,11 @@ export type IndexedBaseTable<
   getEntitiesWithProperties: (properties: Properties<PS, T>) => Set<Entity>;
 };
 
-/* -------------------------------------------------------------------------- */
-/*                                    BASE                                    */
-/* -------------------------------------------------------------------------- */
-
+/* ---------------------------------- BASE ---------------------------------- */
 export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> {
   id: string;
   properties: { [key in keyof PS]: Map<EntitySymbol, MappedType<T>[PS[key]]> };
   propertiesSchema: PS;
-  // keySchema: KS | { entity: Type.Entity }; // default key schema for tables without keys
   metadata: M;
   world: World;
   entities: () => IterableIterator<Entity>;
@@ -69,6 +60,11 @@ export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetada
   update$: Subject<TableUpdate<PS, M, T>> & { observers: any };
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                   METHODS                                  */
+/* -------------------------------------------------------------------------- */
+
+/* -------------------------------- MUTATION -------------------------------- */
 /**
  * Defines the type of update for an entity inside a specific table.
  *
@@ -104,10 +100,7 @@ export type TableMutationOptions = {
   skipUpdateStream?: boolean;
 };
 
-/* -------------------------------------------------------------------------- */
-/*                                   METHODS                                  */
-/* -------------------------------------------------------------------------- */
-
+/* ---------------------------------- TABLE --------------------------------- */
 /**
  * Defines the methods available for any table.
  *

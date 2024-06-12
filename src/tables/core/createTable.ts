@@ -1,7 +1,7 @@
 import { Subject } from "rxjs";
 
 import { createTableMethods } from "@/tables/methods/createTableMethods";
-import { type Table, type BaseTable } from "@/tables/types";
+import type { Table, BaseTable } from "@/tables/types";
 import { type EntitySymbol, getEntityHex } from "@/lib/external/mud/entity";
 import { createIndexer } from "@/lib/external/mud/indexer";
 import type { BaseTableMetadata, Schema } from "@/lib/external/mud/schema";
