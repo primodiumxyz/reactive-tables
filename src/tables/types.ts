@@ -1,18 +1,16 @@
 import { Subject } from "rxjs";
 
-import type { ResourceLabel } from "@/lib/external/mud/common";
 import type { Entity, EntitySymbol } from "@/lib/external/mud/entity";
 import type {
-  AbiKeySchema,
-  AbiToSchema,
+  BaseTableMetadata,
+  ContractTableMetadata,
+  ContractTablePropertiesSchema,
+  Keys,
   MappedType,
-  Metadata,
+  Properties,
+  PropertiesSansMetadata,
   Schema,
-  SchemaAbiType,
-  SchemaAbiTypeToRecsType,
-  StaticAbiType,
 } from "@/lib/external/mud/schema";
-import { Type } from "@/lib/external/mud/schema";
 import type { TableMutationOptions } from "@/lib/external/mud/tables";
 import type { World } from "@/lib/external/mud/world";
 import type { ContractTableDef } from "@/lib/definitions";
@@ -38,13 +36,6 @@ export type IndexedBaseTable<
   getEntitiesWithProperties: (properties: Properties<PS, T>) => Set<Entity>;
 };
 
-export type BaseTableMetadata<M extends Metadata = Metadata> = M & {
-  name: string;
-  globalName: string;
-  namespace?: string;
-  abiKeySchema: { [name: string]: StaticAbiType }; // local tables are given a default key schema as well for encoding/decoding entities
-};
-
 export type Tables = { [name: string]: Table };
 export type Table<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = BaseTable<
   PS,
@@ -61,47 +52,6 @@ export type ContractTable<
   PS extends ContractTablePropertiesSchema<tableDef> = ContractTablePropertiesSchema<tableDef>,
   // KS extends ContractTableKeySchema<tableDef> = ContractTableKeySchema<tableDef>,
 > = Table<PS, ContractTableMetadata<tableDef>>;
-
-export type ContractTablePropertiesSchema<tableDef extends ContractTableDef> = {
-  __staticData: Type.OptionalHex;
-  __encodedLengths: Type.OptionalHex;
-  __dynamicData: Type.OptionalHex;
-  __lastSyncedAtBlock: Type.OptionalBigInt;
-} & {
-  [fieldName in keyof tableDef["valueSchema"] & string]: Type &
-    SchemaAbiTypeToRecsType<SchemaAbiType & tableDef["valueSchema"][fieldName]["type"]>;
-};
-
-export type ContractTableKeySchema<tableDef extends ContractTableDef> = {
-  [fieldName in keyof tableDef["keySchema"] & string]: Type &
-    SchemaAbiTypeToRecsType<SchemaAbiType & tableDef["keySchema"][fieldName]["type"]>;
-};
-
-export type ContractTableMetadata<tableDef extends ContractTableDef> = {
-  name: tableDef["name"];
-  namespace: tableDef["namespace"];
-  globalName: ResourceLabel;
-  abiPropertiesSchema: { [name in keyof tableDef["valueSchema"] & string]: tableDef["valueSchema"][name]["type"] };
-  abiKeySchema: { [name in keyof tableDef["keySchema"] & string]: tableDef["keySchema"][name]["type"] };
-};
-
-// Used to infer the TypeScript types from the RECS types (from schema)
-export type Properties<S extends Schema, T = unknown> = {
-  [key in keyof S]: MappedType<T>[S[key]];
-};
-
-// Used to infer the TypeScript types from the RECS types (from abi)
-export type Keys<TKeySchema extends AbiKeySchema, T = unknown> = {
-  [key in keyof AbiToSchema<TKeySchema>]: MappedType<T>[AbiToSchema<TKeySchema>[key]];
-};
-
-// Used to infer the TypeScript types from the RECS types (excluding metadata)
-export type PropertiesSansMetadata<S extends Schema, T = unknown> = {
-  [key in keyof S as Exclude<
-    key,
-    "__staticData" | "__encodedLengths" | "__dynamicData" | "__lastSyncedAtBlock"
-  >]: MappedType<T>[S[key]];
-};
 
 /**
  * Defines the methods available for any table.

@@ -1,6 +1,6 @@
-import type { BaseTable, BaseTableMetadata, Properties, Table } from "@/tables/types";
+import type { BaseTable, Table } from "@/tables/types";
 import type { Entity } from "@/lib/external/mud/entity";
-import type { Schema } from "@/lib/external/mud/schema";
+import type { BaseTableMetadata, Properties, Schema } from "@/lib/external/mud/schema";
 import type { World } from "@/lib/external/mud/world";
 
 /* --------------------------------- GLOBAL --------------------------------- */

@@ -1,11 +1,6 @@
 import { concatHex, decodeAbiParameters, encodeAbiParameters, type Hex, isHex, size, sliceHex } from "viem";
 
-import type { Properties } from "@/tables/types";
-import type { AbiToSchema, AbiKeySchema, SchemaToPrimitives } from "@/lib/external/mud/schema";
-
-// (jsdocs)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { createTableKeyMethods } from "@/tables";
+import type { AbiToSchema, AbiKeySchema, Properties, SchemaToPrimitives } from "@/lib/external/mud/schema";
 
 /**
  * An entity is a string that represents a tuple of hex keys, to identify a row in a table.

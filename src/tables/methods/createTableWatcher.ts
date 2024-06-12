@@ -1,6 +1,5 @@
-import type { BaseTableMetadata } from "@/tables/types";
 import type { TableWatcherOptions, TableUpdate, TableWatcherParams } from "@/queries/types";
-import type { Schema } from "@/lib/external/mud/schema";
+import type { BaseTableMetadata, Schema } from "@/lib/external/mud/schema";
 import { systems } from "@/lib/external/mud/systems";
 
 /**

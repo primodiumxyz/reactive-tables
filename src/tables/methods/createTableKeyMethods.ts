@@ -1,14 +1,6 @@
-import type {
-  BaseTable,
-  BaseTableMetadata,
-  Keys,
-  Properties,
-  PropertiesSansMetadata,
-  TableBaseMethods,
-  TableWithKeysMethods,
-} from "@/tables/types";
+import type { BaseTable, TableBaseMethods, TableWithKeysMethods } from "@/tables/types";
 import { decodeEntity, encodeEntity, defaultEntity, type Entity } from "@/lib/external/mud/entity";
-import type { Schema } from "@/lib/external/mud/schema";
+import type { BaseTableMetadata, Keys, Properties, PropertiesSansMetadata, Schema } from "@/lib/external/mud/schema";
 
 /**
  * Create a set of methods to interact with a table using values for its keys properties,

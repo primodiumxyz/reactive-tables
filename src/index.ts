@@ -17,11 +17,15 @@ export type {
   AbiPropertiesSchema,
   AbiToSchema,
   AllTableDefs,
+  BaseTableMetadata,
   ContractTableDef,
   ContractTableDefs,
+  ContractTableMetadata,
   Metadata,
   Entity,
   EntitySymbol,
+  Properties,
+  PropertiesSansMetadata,
   Schema,
   StoreConfig,
   World,
@@ -31,16 +35,4 @@ export { createWorld, namespaceWorld, Type } from "@/lib";
 export type { QueryOptions, TableWatcherCallbacks, TableUpdate, UpdateType } from "@/queries";
 export type { StorageAdapter } from "@/adapter";
 
-export type {
-  BaseTable,
-  BaseTableMetadata,
-  ContractTable,
-  ContractTables,
-  ContractTableMetadata,
-  IndexedBaseTable,
-  Properties,
-  PropertiesSansMetadata,
-  Table,
-  Tables,
-  TableOptions,
-} from "@/tables";
+export type { BaseTable, ContractTable, ContractTables, IndexedBaseTable, Table, Tables, TableOptions } from "@/tables";

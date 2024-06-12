@@ -1,6 +1,6 @@
-import type { BaseTable, BaseTableMetadata, Properties } from "@/tables/types";
+import type { BaseTable } from "@/tables/types";
 import { type Entity, type EntitySymbol, getEntityHex, getEntitySymbol } from "@/lib/external/mud/entity";
-import type { Schema } from "@/lib/external/mud/schema";
+import type { Schema, BaseTableMetadata, Properties } from "@/lib/external/mud/schema";
 import { tableOperations } from "@/lib/external/mud/tables";
 
 /**

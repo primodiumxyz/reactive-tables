@@ -1,10 +1,10 @@
 import { map, pipe } from "rxjs";
 import isEqual from "fast-deep-equal";
 
-import type { BaseTableMetadata, IndexedBaseTable, Properties, BaseTable } from "@/tables/types";
+import type { IndexedBaseTable, BaseTable } from "@/tables/types";
 import type { TableUpdate } from "@/queries/types";
 import { getEntitySymbol, type Entity } from "@/lib/external/mud/entity";
-import { OptionalTypes, type Schema } from "@/lib/external/mud/schema";
+import { type BaseTableMetadata, OptionalTypes, type Properties, type Schema } from "@/lib/external/mud/schema";
 
 export type TableMutationOptions = {
   skipUpdateStream?: boolean;
