@@ -11,30 +11,9 @@ import type {
   PropertiesSansMetadata,
   Schema,
 } from "@/lib/external/mud/schema";
-import type { TableMutationOptions } from "@/lib/external/mud/tables";
 import type { World } from "@/lib/external/mud/world";
 import type { ContractTableDef } from "@/lib/definitions";
 import type { TableMethodsWatcherOptions, TableUpdate, TableWatcherParams } from "@/queries/types";
-
-export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> {
-  id: string;
-  properties: { [key in keyof PS]: Map<EntitySymbol, MappedType<T>[PS[key]]> };
-  propertiesSchema: PS;
-  // keySchema: KS | { entity: Type.Entity }; // default key schema for tables without keys
-  metadata: M;
-  world: World;
-  entities: () => IterableIterator<Entity>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  update$: Subject<TableUpdate<PS, M, T>> & { observers: any };
-}
-
-export type IndexedBaseTable<
-  PS extends Schema = Schema,
-  M extends BaseTableMetadata = BaseTableMetadata,
-  T = unknown,
-> = BaseTable<PS, M, T> & {
-  getEntitiesWithProperties: (properties: Properties<PS, T>) => Set<Entity>;
-};
 
 export type Tables = { [name: string]: Table };
 export type Table<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = BaseTable<
@@ -52,6 +31,30 @@ export type ContractTable<
   PS extends ContractTablePropertiesSchema<tableDef> = ContractTablePropertiesSchema<tableDef>,
   // KS extends ContractTableKeySchema<tableDef> = ContractTableKeySchema<tableDef>,
 > = Table<PS, ContractTableMetadata<tableDef>>;
+
+export type IndexedBaseTable<
+  PS extends Schema = Schema,
+  M extends BaseTableMetadata = BaseTableMetadata,
+  T = unknown,
+> = BaseTable<PS, M, T> & {
+  getEntitiesWithProperties: (properties: Properties<PS, T>) => Set<Entity>;
+};
+
+export type TableMutationOptions = {
+  skipUpdateStream?: boolean;
+};
+
+export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> {
+  id: string;
+  properties: { [key in keyof PS]: Map<EntitySymbol, MappedType<T>[PS[key]]> };
+  propertiesSchema: PS;
+  // keySchema: KS | { entity: Type.Entity }; // default key schema for tables without keys
+  metadata: M;
+  world: World;
+  entities: () => IterableIterator<Entity>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  update$: Subject<TableUpdate<PS, M, T>> & { observers: any };
+}
 
 /**
  * Defines the methods available for any table.

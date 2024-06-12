@@ -12,10 +12,6 @@ import {
   type World,
 } from "@/lib";
 
-// (jsdocs)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { createLocalTable } from "@/tables";
-
 /**
  * Defines the options for creating a TinyBase wrapper.
  *
