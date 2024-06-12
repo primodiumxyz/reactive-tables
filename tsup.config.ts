@@ -5,6 +5,7 @@ export default defineConfig({
     index: "src/index.ts",
     utils: "src/utils.ts",
   },
+  external: ["react", "react-dom"],
   outDir: "dist",
   format: ["esm"],
   dts: true,
