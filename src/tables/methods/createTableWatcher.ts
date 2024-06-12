@@ -1,4 +1,5 @@
-import type { TableWatcherOptions, TableUpdate, TableWatcherParams } from "@/queries/types";
+import type { TableUpdate } from "@/tables/types";
+import type { TableWatcherOptions, TableWatcherParams } from "@/queries/types";
 import type { BaseTableMetadata, Schema } from "@/lib/external/mud/schema";
 import { systems } from "@/lib/external/mud/systems";
 

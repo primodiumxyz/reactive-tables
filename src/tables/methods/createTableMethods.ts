@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 
 import { createTableKeyMethods } from "@/tables/methods/createTableKeyMethods";
 import { createTableWatcher } from "@/tables/methods/createTableWatcher";
-import type { BaseTable, TableMethods, TableMutationOptions } from "@/tables/types";
-import { type TableWatcherParams, type TableUpdate, TableMethodsWatcherOptions } from "@/queries/types";
+import type { BaseTable, TableMethods, TableMutationOptions, TableUpdate } from "@/tables/types";
+import { type TableWatcherParams, type TableMethodsWatcherOptions } from "@/queries/types";
 import { defaultEntity, type Entity } from "@/lib/external/mud/entity";
 import type { BaseTableMetadata, Properties, PropertiesSansMetadata, Schema } from "@/lib/external/mud/schema";
 import { tableOperations } from "@/lib/external/mud/tables";

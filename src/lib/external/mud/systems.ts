@@ -1,7 +1,7 @@
 import { concat, EMPTY, from, Observable } from "rxjs";
 
-import type { BaseTable } from "@/tables/types";
-import type { TableUpdate, TableWatcherParams } from "@/queries/types";
+import type { BaseTable, TableUpdate } from "@/tables/types";
+import type { TableWatcherParams } from "@/queries/types";
 import type { Entity } from "@/lib/external/mud/entity";
 import { queries, type QueryFragment } from "@/lib/external/mud/queries";
 import type { Properties, Schema } from "@/lib/external/mud/schema";

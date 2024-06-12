@@ -13,7 +13,11 @@ import type {
 } from "@/lib/external/mud/schema";
 import type { World } from "@/lib/external/mud/world";
 import type { ContractTableDef } from "@/lib/definitions";
-import type { TableMethodsWatcherOptions, TableUpdate, TableWatcherParams } from "@/queries/types";
+import type { TableMethodsWatcherOptions, TableWatcherParams } from "@/queries/types";
+
+/* -------------------------------------------------------------------------- */
+/*                                   GLOBAL                                   */
+/* -------------------------------------------------------------------------- */
 
 export type Tables = { [name: string]: Table };
 export type Table<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = BaseTable<
@@ -23,14 +27,23 @@ export type Table<PS extends Schema = Schema, M extends BaseTableMetadata = Base
 > &
   TableMethods<PS, M, T>;
 
+/* -------------------------------------------------------------------------- */
+/*                                  CONTRACT                                  */
+/* -------------------------------------------------------------------------- */
+
 export type ContractTables<tableDefs extends Record<string, ContractTableDef>> = {
   [name in keyof tableDefs]: ContractTable<tableDefs[name]>;
 };
+
 export type ContractTable<
   tableDef extends ContractTableDef = ContractTableDef,
   PS extends ContractTablePropertiesSchema<tableDef> = ContractTablePropertiesSchema<tableDef>,
   // KS extends ContractTableKeySchema<tableDef> = ContractTableKeySchema<tableDef>,
 > = Table<PS, ContractTableMetadata<tableDef>>;
+
+/* -------------------------------------------------------------------------- */
+/*                                   INDEXED                                  */
+/* -------------------------------------------------------------------------- */
 
 export type IndexedBaseTable<
   PS extends Schema = Schema,
@@ -40,9 +53,9 @@ export type IndexedBaseTable<
   getEntitiesWithProperties: (properties: Properties<PS, T>) => Set<Entity>;
 };
 
-export type TableMutationOptions = {
-  skipUpdateStream?: boolean;
-};
+/* -------------------------------------------------------------------------- */
+/*                                    BASE                                    */
+/* -------------------------------------------------------------------------- */
 
 export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> {
   id: string;
@@ -55,6 +68,45 @@ export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetada
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   update$: Subject<TableUpdate<PS, M, T>> & { observers: any };
 }
+
+/**
+ * Defines the type of update for an entity inside a specific table.
+ *
+ * - `enter` - The entity is now matching the query (or entering the table being watched).
+ * - `exit` - The entity is no longer matching the query (or exiting the table being watched).
+ * - `change` - The entity is still matching the query (or inside the table), but its properties have changed.
+ * - `noop` - No change has occurred.
+ * @category Queries
+ */
+export type UpdateType = "enter" | "exit" | "change" | "noop";
+
+/**
+ * Defines the characteristics of a table update.
+ * @template PS The schema of the properties for all entities inside the table being watched.
+ * @template M The metadata of the table.
+ * @template T The type of the properties to match.
+ * @param table The table subject to change (usually without methods, except if ran on init).
+ * If the query covers multiple tables, and `runOnInit` is set to `true` (see {@link CreateTableWatcherOptions}), this will be `undefined`.
+ * @param entity The entity for which the update has occurred.
+ * @param properties The properties of the entity before and after the update (whatever is available).
+ * If the entity is entering the query, `prev` will be `undefined`. If the entity is exiting the query, `current` will be `undefined`.
+ * @param type The type of update that has occurred (see {@link UpdateType}).
+ * @category Queries
+ */
+export type TableUpdate<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = {
+  table: BaseTable<PS, M, T> | Table<PS, M, T>;
+  entity: Entity;
+  properties: { current: Properties<PS, T> | undefined; prev: Properties<PS, T> | undefined };
+  type: UpdateType;
+};
+
+export type TableMutationOptions = {
+  skipUpdateStream?: boolean;
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                   METHODS                                  */
+/* -------------------------------------------------------------------------- */
 
 /**
  * Defines the methods available for any table.
