@@ -1,8 +1,8 @@
 import type { SchemaAbiTypeToPrimitiveType } from "@latticexyz/schema-type/internal";
-import type { Hex } from "viem";
+import { decodeAbiParameters, encodeAbiParameters, type Hex } from "viem";
 
 import type { ResourceLabel } from "@/lib/external/mud/common";
-import type { Entity } from "@/lib/external/mud/entity";
+import { entityToHexKeyTuple, hexKeyTupleToEntity, type Entity } from "@/lib/external/mud/entity";
 import type { ContractTableDef } from "@/lib/definitions";
 
 /* -------------------------------------------------------------------------- */
@@ -662,4 +662,57 @@ export type AbiToSchema<
         ? schema[fieldName]["type"]
         : schema[fieldName])
   >;
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                   RECORD                                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Concatenate a tuple of hex keys into a single entity, after encoding them into hex strings.
+ *
+ * Note: This is especially useful when trying to retrieve an entity using its separate key properties, as it is done in the table key
+ * methods attached to contract tables (see {@link createTableKeyMethods}).
+ *
+ * @category Entity
+ */
+export const encodeEntity = <TKeySchema extends AbiKeySchema, T = unknown>(
+  abiKeySchema: TKeySchema,
+  keys: Properties<AbiToSchema<TKeySchema>, T>,
+) => {
+  if (Object.keys(abiKeySchema).length !== Object.keys(keys).length) {
+    throw new Error(
+      `entity length ${Object.keys(keys).length} does not match entity schema length ${Object.keys(abiKeySchema).length}`,
+    );
+  }
+
+  return hexKeyTupleToEntity(
+    Object.entries(abiKeySchema).map(([keyName, type]) => encodeAbiParameters([{ type }], [keys[keyName]])),
+  );
+};
+
+/**
+ * Decode an entity into a tuple of hex keys, after decoding them from hex strings.
+ *
+ * Note: This is useful for retrieving the values of each separate key property from an entity, using its schema and actual entity string.
+ *
+ * @category Entity
+ */
+export const decodeEntity = <TKeySchema extends AbiKeySchema>(
+  abiKeySchema: TKeySchema,
+  entity: Entity,
+): SchemaToPrimitives<TKeySchema> => {
+  const hexKeyTuple = entityToHexKeyTuple(entity);
+  if (hexKeyTuple.length !== Object.keys(abiKeySchema).length) {
+    throw new Error(
+      `entity entity tuple length ${hexKeyTuple.length} does not match entity schema length ${Object.keys(abiKeySchema).length}`,
+    );
+  }
+
+  return Object.fromEntries(
+    Object.entries(abiKeySchema).map(([entity, type], index) => [
+      entity,
+      decodeAbiParameters([{ type }], hexKeyTuple[index] as Hex)[0],
+    ]),
+  ) as SchemaToPrimitives<TKeySchema>;
 };

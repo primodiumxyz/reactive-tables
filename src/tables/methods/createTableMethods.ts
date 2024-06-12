@@ -3,11 +3,11 @@ import { useEffect, useState } from "react";
 
 import { createTableKeyMethods } from "@/tables/methods/createTableKeyMethods";
 import { createTableWatcher } from "@/tables/methods/createTableWatcher";
-import type { BaseTable, TableMethods } from "@/tables/types";
+import type { BaseTable, TableMethods, TableMutationOptions } from "@/tables/types";
 import { type TableWatcherParams, type TableUpdate, TableMethodsWatcherOptions } from "@/queries/types";
 import { defaultEntity, type Entity } from "@/lib/external/mud/entity";
 import type { BaseTableMetadata, Properties, PropertiesSansMetadata, Schema } from "@/lib/external/mud/schema";
-import { type TableMutationOptions, tableOperations } from "@/lib/external/mud/tables";
+import { tableOperations } from "@/lib/external/mud/tables";
 import { queries } from "@/lib/external/mud/queries";
 import type { World } from "@/lib/external/mud/world";
 const {
