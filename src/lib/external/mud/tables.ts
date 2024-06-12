@@ -1,14 +1,9 @@
 import { map, pipe } from "rxjs";
 import isEqual from "fast-deep-equal";
 
-import type { BaseTableMetadata, IndexedBaseTable, Properties, BaseTable } from "@/tables/types";
-import type { TableUpdate } from "@/queries/types";
-import { getEntitySymbol, type Entity } from "@/lib/external/mud/entity";
-import { OptionalTypes, type Schema } from "@/lib/external/mud/schema";
-
-export type TableMutationOptions = {
-  skipUpdateStream?: boolean;
-};
+import type { BaseTable, IndexedBaseTable, TableMutationOptions, TableUpdate } from "@/tables/types";
+import { type Entity, getEntitySymbol } from "@/lib/external/mud/entity";
+import { type BaseTableMetadata, OptionalTypes, type Properties, type Schema } from "@/lib/external/mud/schema";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getTableName(table: BaseTable<any, any, any>) {

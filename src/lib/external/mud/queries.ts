@@ -16,10 +16,9 @@ import { observable, ObservableSet } from "mobx";
 import isEqual from "fast-deep-equal";
 import { useEffect, useMemo, useState } from "react";
 
-import type { TableUpdate } from "@/queries/types";
-import type { BaseTable, Properties } from "@/tables/types";
+import type { BaseTable, TableUpdate } from "@/tables/types";
 import type { Entity } from "@/lib/external/mud/entity";
-import { type Schema, Type } from "@/lib/external/mud/schema";
+import { type Properties, type Schema, Type } from "@/lib/external/mud/schema";
 import { tableOperations } from "@/lib/external/mud/tables";
 const {
   hasEntity,

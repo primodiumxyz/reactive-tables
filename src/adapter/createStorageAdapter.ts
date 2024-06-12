@@ -4,9 +4,10 @@ import { Write } from "@primodiumxyz/sync-stack";
 
 import { decodePropertiesArgs } from "@/adapter/decodeProperties";
 import type { StorageAdapterLog } from "@/adapter/types";
-import type { ContractTable, ContractTables, Properties } from "@/tables/types";
+import type { ContractTable, ContractTables } from "@/tables/types";
 import { resourceToLabel } from "@/lib/external/mud/common";
 import { hexKeyTupleToEntity } from "@/lib/external/mud/entity";
+import type { Properties } from "@/lib/external/mud/schema";
 import type { ContractTableDef, ContractTableDefs } from "@/lib/definitions";
 import { debug } from "@/lib/debug";
 

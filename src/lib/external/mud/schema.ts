@@ -1,7 +1,9 @@
 import type { SchemaAbiTypeToPrimitiveType } from "@latticexyz/schema-type/internal";
-import type { Hex } from "viem";
+import { decodeAbiParameters, encodeAbiParameters, type Hex } from "viem";
 
-import type { Entity } from "@/lib/external/mud/entity";
+import type { ResourceLabel } from "@/lib/external/mud/common";
+import { entityToHexKeyTuple, hexKeyTupleToEntity, type Entity } from "@/lib/external/mud/entity";
+import type { ContractTableDef } from "@/lib/definitions";
 
 /* -------------------------------------------------------------------------- */
 /*                                   SCHEMAS                                  */
@@ -49,6 +51,58 @@ export type UnparsedAbiPropertiesSchema = {
   readonly [k: string]: {
     readonly type: SchemaAbiType;
   };
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                   TABLES                                   */
+/* -------------------------------------------------------------------------- */
+
+export type BaseTableMetadata<M extends Metadata = Metadata> = M & {
+  name: string;
+  globalName: string;
+  namespace?: string;
+  abiKeySchema: { [name: string]: StaticAbiType }; // local tables are given a default key schema as well for encoding/decoding entities
+};
+
+export type ContractTablePropertiesSchema<tableDef extends ContractTableDef> = {
+  __staticData: Type.OptionalHex;
+  __encodedLengths: Type.OptionalHex;
+  __dynamicData: Type.OptionalHex;
+  __lastSyncedAtBlock: Type.OptionalBigInt;
+} & {
+  [fieldName in keyof tableDef["valueSchema"] & string]: Type &
+    SchemaAbiTypeToRecsType<SchemaAbiType & tableDef["valueSchema"][fieldName]["type"]>;
+};
+
+export type ContractTableKeySchema<tableDef extends ContractTableDef> = {
+  [fieldName in keyof tableDef["keySchema"] & string]: Type &
+    SchemaAbiTypeToRecsType<SchemaAbiType & tableDef["keySchema"][fieldName]["type"]>;
+};
+
+export type ContractTableMetadata<tableDef extends ContractTableDef> = {
+  name: tableDef["name"];
+  namespace: tableDef["namespace"];
+  globalName: ResourceLabel;
+  abiPropertiesSchema: { [name in keyof tableDef["valueSchema"] & string]: tableDef["valueSchema"][name]["type"] };
+  abiKeySchema: { [name in keyof tableDef["keySchema"] & string]: tableDef["keySchema"][name]["type"] };
+};
+
+// Used to infer the TypeScript types from the RECS types (from schema)
+export type Properties<S extends Schema, T = unknown> = {
+  [key in keyof S]: MappedType<T>[S[key]];
+};
+
+// Used to infer the TypeScript types from the RECS types (from abi)
+export type Keys<TKeySchema extends AbiKeySchema, T = unknown> = {
+  [key in keyof AbiToSchema<TKeySchema>]: MappedType<T>[AbiToSchema<TKeySchema>[key]];
+};
+
+// Used to infer the TypeScript types from the RECS types (excluding metadata)
+export type PropertiesSansMetadata<S extends Schema, T = unknown> = {
+  [key in keyof S as Exclude<
+    key,
+    "__staticData" | "__encodedLengths" | "__dynamicData" | "__lastSyncedAtBlock"
+  >]: MappedType<T>[S[key]];
 };
 
 /* -------------------------------------------------------------------------- */
@@ -608,4 +662,57 @@ export type AbiToSchema<
         ? schema[fieldName]["type"]
         : schema[fieldName])
   >;
+};
+
+/* -------------------------------------------------------------------------- */
+/*                                   RECORD                                   */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Concatenate a tuple of hex keys into a single entity, after encoding them into hex strings.
+ *
+ * Note: This is especially useful when trying to retrieve an entity using its separate key properties, as it is done in the table key
+ * methods attached to contract tables (see {@link createTableKeyMethods}).
+ *
+ * @category Entity
+ */
+export const encodeEntity = <TKeySchema extends AbiKeySchema, T = unknown>(
+  abiKeySchema: TKeySchema,
+  keys: Properties<AbiToSchema<TKeySchema>, T>,
+) => {
+  if (Object.keys(abiKeySchema).length !== Object.keys(keys).length) {
+    throw new Error(
+      `entity length ${Object.keys(keys).length} does not match entity schema length ${Object.keys(abiKeySchema).length}`,
+    );
+  }
+
+  return hexKeyTupleToEntity(
+    Object.entries(abiKeySchema).map(([keyName, type]) => encodeAbiParameters([{ type }], [keys[keyName]])),
+  );
+};
+
+/**
+ * Decode an entity into a tuple of hex keys, after decoding them from hex strings.
+ *
+ * Note: This is useful for retrieving the values of each separate key property from an entity, using its schema and actual entity string.
+ *
+ * @category Entity
+ */
+export const decodeEntity = <TKeySchema extends AbiKeySchema>(
+  abiKeySchema: TKeySchema,
+  entity: Entity,
+): SchemaToPrimitives<TKeySchema> => {
+  const hexKeyTuple = entityToHexKeyTuple(entity);
+  if (hexKeyTuple.length !== Object.keys(abiKeySchema).length) {
+    throw new Error(
+      `entity entity tuple length ${hexKeyTuple.length} does not match entity schema length ${Object.keys(abiKeySchema).length}`,
+    );
+  }
+
+  return Object.fromEntries(
+    Object.entries(abiKeySchema).map(([entity, type], index) => [
+      entity,
+      decodeAbiParameters([{ type }], hexKeyTuple[index] as Hex)[0],
+    ]),
+  ) as SchemaToPrimitives<TKeySchema>;
 };

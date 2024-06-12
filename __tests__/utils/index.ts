@@ -1,5 +1,5 @@
-import { Schema } from "@/lib";
-import { BaseTable, BaseTableMetadata, Table } from "@/tables";
+import { BaseTable, Table } from "@/tables";
+import { BaseTableMetadata, Schema } from "@/lib";
 
 export * from "./networkConfig";
 export * from "./actions";

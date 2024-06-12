@@ -2,10 +2,13 @@ export {
   // Decoding/encoding keys from/into an entity
   decodeEntity,
   encodeEntity,
-  // Concat a tuple of hex keys into a single entity
-  hexKeyTupleToEntity,
   // Convert an entity into a tuple of hex keys
   entityToHexKeyTuple,
+  // Concat a tuple of hex keys into a single entity
+  hexKeyTupleToEntity,
+  // symbol <-> entity
+  getEntityHex,
+  getEntitySymbol,
   // Convert ABI types to TypeScript understandable types
   schemaAbiTypeToRecsType,
   // uuid
@@ -17,4 +20,4 @@ export {
 } from "@/lib";
 
 // Storage adapter
-export { StorageAdapterBlock, StorageAdapterLog } from "@/adapter";
+export type { StorageAdapterBlock, StorageAdapterLog } from "@/adapter";

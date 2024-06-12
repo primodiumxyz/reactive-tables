@@ -1,7 +1,7 @@
 import { createTable, type TableOptions } from "@/tables/core/createTable";
-import type { BaseTableMetadata, Table } from "@/tables/types";
+import type { Table } from "@/tables/types";
 import type { World } from "@/lib/external/mud/world";
-import { type Schema, Type } from "@/lib/external/mud/schema";
+import { type BaseTableMetadata, type Schema, Type } from "@/lib/external/mud/schema";
 import { uuid } from "@/lib/external/uuid";
 
 /**

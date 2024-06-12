@@ -1,50 +1,25 @@
 import { Subject } from "rxjs";
 
-import type { ResourceLabel } from "@/lib/external/mud/common";
+import type { TableMethodsWatcherOptions, TableWatcherParams } from "@/queries/types";
 import type { Entity, EntitySymbol } from "@/lib/external/mud/entity";
 import type {
-  AbiKeySchema,
-  AbiToSchema,
+  BaseTableMetadata,
+  ContractTableMetadata,
+  ContractTablePropertiesSchema,
+  Keys,
   MappedType,
-  Metadata,
+  Properties,
+  PropertiesSansMetadata,
   Schema,
-  SchemaAbiType,
-  SchemaAbiTypeToRecsType,
-  StaticAbiType,
 } from "@/lib/external/mud/schema";
-import { Type } from "@/lib/external/mud/schema";
-import type { TableMutationOptions } from "@/lib/external/mud/tables";
 import type { World } from "@/lib/external/mud/world";
 import type { ContractTableDef } from "@/lib/definitions";
-import type { TableMethodsWatcherOptions, TableUpdate, TableWatcherParams } from "@/queries/types";
 
-export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> {
-  id: string;
-  properties: { [key in keyof PS]: Map<EntitySymbol, MappedType<T>[PS[key]]> };
-  propertiesSchema: PS;
-  // keySchema: KS | { entity: Type.Entity }; // default key schema for tables without keys
-  metadata: M;
-  world: World;
-  entities: () => IterableIterator<Entity>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  update$: Subject<TableUpdate<PS, M, T>> & { observers: any };
-}
+/* -------------------------------------------------------------------------- */
+/*                                   OBJECT                                   */
+/* -------------------------------------------------------------------------- */
 
-export type IndexedBaseTable<
-  PS extends Schema = Schema,
-  M extends BaseTableMetadata = BaseTableMetadata,
-  T = unknown,
-> = BaseTable<PS, M, T> & {
-  getEntitiesWithProperties: (properties: Properties<PS, T>) => Set<Entity>;
-};
-
-export type BaseTableMetadata<M extends Metadata = Metadata> = M & {
-  name: string;
-  globalName: string;
-  namespace?: string;
-  abiKeySchema: { [name: string]: StaticAbiType }; // local tables are given a default key schema as well for encoding/decoding entities
-};
-
+/* --------------------------------- GLOBAL --------------------------------- */
 export type Tables = { [name: string]: Table };
 export type Table<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = BaseTable<
   PS,
@@ -53,56 +28,79 @@ export type Table<PS extends Schema = Schema, M extends BaseTableMetadata = Base
 > &
   TableMethods<PS, M, T>;
 
+/* -------------------------------- CONTRACT -------------------------------- */
 export type ContractTables<tableDefs extends Record<string, ContractTableDef>> = {
   [name in keyof tableDefs]: ContractTable<tableDefs[name]>;
 };
+
 export type ContractTable<
   tableDef extends ContractTableDef = ContractTableDef,
   PS extends ContractTablePropertiesSchema<tableDef> = ContractTablePropertiesSchema<tableDef>,
   // KS extends ContractTableKeySchema<tableDef> = ContractTableKeySchema<tableDef>,
 > = Table<PS, ContractTableMetadata<tableDef>>;
 
-export type ContractTablePropertiesSchema<tableDef extends ContractTableDef> = {
-  __staticData: Type.OptionalHex;
-  __encodedLengths: Type.OptionalHex;
-  __dynamicData: Type.OptionalHex;
-  __lastSyncedAtBlock: Type.OptionalBigInt;
-} & {
-  [fieldName in keyof tableDef["valueSchema"] & string]: Type &
-    SchemaAbiTypeToRecsType<SchemaAbiType & tableDef["valueSchema"][fieldName]["type"]>;
+/* --------------------------------- INDEXED -------------------------------- */
+export type IndexedBaseTable<
+  PS extends Schema = Schema,
+  M extends BaseTableMetadata = BaseTableMetadata,
+  T = unknown,
+> = BaseTable<PS, M, T> & {
+  getEntitiesWithProperties: (properties: Properties<PS, T>) => Set<Entity>;
 };
 
-export type ContractTableKeySchema<tableDef extends ContractTableDef> = {
-  [fieldName in keyof tableDef["keySchema"] & string]: Type &
-    SchemaAbiTypeToRecsType<SchemaAbiType & tableDef["keySchema"][fieldName]["type"]>;
+/* ---------------------------------- BASE ---------------------------------- */
+export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> {
+  id: string;
+  properties: { [key in keyof PS]: Map<EntitySymbol, MappedType<T>[PS[key]]> };
+  propertiesSchema: PS;
+  metadata: M;
+  world: World;
+  entities: () => IterableIterator<Entity>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  update$: Subject<TableUpdate<PS, M, T>> & { observers: any };
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                   METHODS                                  */
+/* -------------------------------------------------------------------------- */
+
+/* -------------------------------- MUTATION -------------------------------- */
+/**
+ * Defines the type of update for an entity inside a specific table.
+ *
+ * - `enter` - The entity is now matching the query (or entering the table being watched).
+ * - `exit` - The entity is no longer matching the query (or exiting the table being watched).
+ * - `change` - The entity is still matching the query (or inside the table), but its properties have changed.
+ * - `noop` - No change has occurred.
+ * @category Queries
+ */
+export type UpdateType = "enter" | "exit" | "change" | "noop";
+
+/**
+ * Defines the characteristics of a table update.
+ * @template PS The schema of the properties for all entities inside the table being watched.
+ * @template M The metadata of the table.
+ * @template T The type of the properties to match.
+ * @param table The table subject to change (usually without methods, except if ran on init).
+ * If the query covers multiple tables, and `runOnInit` is set to `true` (see {@link CreateTableWatcherOptions}), this will be `undefined`.
+ * @param entity The entity for which the update has occurred.
+ * @param properties The properties of the entity before and after the update (whatever is available).
+ * If the entity is entering the query, `prev` will be `undefined`. If the entity is exiting the query, `current` will be `undefined`.
+ * @param type The type of update that has occurred (see {@link UpdateType}).
+ * @category Queries
+ */
+export type TableUpdate<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = {
+  table: BaseTable<PS, M, T> | Table<PS, M, T>;
+  entity: Entity;
+  properties: { current: Properties<PS, T> | undefined; prev: Properties<PS, T> | undefined };
+  type: UpdateType;
 };
 
-export type ContractTableMetadata<tableDef extends ContractTableDef> = {
-  name: tableDef["name"];
-  namespace: tableDef["namespace"];
-  globalName: ResourceLabel;
-  abiPropertiesSchema: { [name in keyof tableDef["valueSchema"] & string]: tableDef["valueSchema"][name]["type"] };
-  abiKeySchema: { [name in keyof tableDef["keySchema"] & string]: tableDef["keySchema"][name]["type"] };
+export type TableMutationOptions = {
+  skipUpdateStream?: boolean;
 };
 
-// Used to infer the TypeScript types from the RECS types (from schema)
-export type Properties<S extends Schema, T = unknown> = {
-  [key in keyof S]: MappedType<T>[S[key]];
-};
-
-// Used to infer the TypeScript types from the RECS types (from abi)
-export type Keys<TKeySchema extends AbiKeySchema, T = unknown> = {
-  [key in keyof AbiToSchema<TKeySchema>]: MappedType<T>[AbiToSchema<TKeySchema>[key]];
-};
-
-// Used to infer the TypeScript types from the RECS types (excluding metadata)
-export type PropertiesSansMetadata<S extends Schema, T = unknown> = {
-  [key in keyof S as Exclude<
-    key,
-    "__staticData" | "__encodedLengths" | "__dynamicData" | "__lastSyncedAtBlock"
-  >]: MappedType<T>[S[key]];
-};
-
+/* ---------------------------------- TABLE --------------------------------- */
 /**
  * Defines the methods available for any table.
  *

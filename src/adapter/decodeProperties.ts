@@ -17,8 +17,7 @@ import {
 } from "@latticexyz/schema-type/internal";
 import { type Hex } from "viem";
 
-import type { Properties } from "@/tables/types";
-import type { AbiPropertiesSchema, AbiToSchema } from "@/lib/external/mud/schema";
+import type { AbiPropertiesSchema, AbiToSchema, Properties } from "@/lib/external/mud/schema";
 
 // Modified from https://github.com/latticexyz/mud/blob/ade94a7fa761070719bcd4b4dac6cb8cc7783c3b/packages/protocol-parser/src/decodePropertiesArgs.ts#L8
 

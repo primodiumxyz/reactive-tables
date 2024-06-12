@@ -28,10 +28,6 @@ export type ContractTableDef = MUDTableDef;
  */
 export type ContractTableDefs = { [key: string]: ContractTableDef };
 
-// (jsdocs)
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { WrapperOptions } from "@/createWrapper";
-
 // Import and resolve MUD base store & world tables definitions
 import storeConfig from "@latticexyz/store/mud.config";
 import worldConfig from "@latticexyz/world/mud.config";

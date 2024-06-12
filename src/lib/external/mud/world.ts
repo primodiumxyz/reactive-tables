@@ -1,5 +1,5 @@
 import type { BaseTable } from "@/tables/types";
-import { getEntityHex, getEntitySymbol, type Entity, type EntitySymbol } from "@/lib/external/mud/entity";
+import { type Entity, type EntitySymbol, getEntityHex, getEntitySymbol } from "@/lib/external/mud/entity";
 import { tableOperations } from "@/lib/external/mud/tables";
 import { transformIterator } from "@/lib/external/mud/utils";
 const { hasEntity: tableHasEntity, removeEntity: tableRemoveEntity } = tableOperations;

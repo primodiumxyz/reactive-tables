@@ -1,41 +1,11 @@
-import type { BaseTable, BaseTableMetadata, Properties, Table } from "@/tables/types";
-import type { Entity } from "@/lib/external/mud/entity";
-import type { Schema } from "@/lib/external/mud/schema";
+import type { BaseTable, Table, TableUpdate } from "@/tables/types";
+import type { BaseTableMetadata, Properties, Schema } from "@/lib/external/mud/schema";
 import type { World } from "@/lib/external/mud/world";
 
-/* --------------------------------- GLOBAL --------------------------------- */
-/**
- * Defines the type of update for an entity inside a specific table.
- *
- * - `enter` - The entity is now matching the query (or entering the table being watched).
- * - `exit` - The entity is no longer matching the query (or exiting the table being watched).
- * - `change` - The entity is still matching the query (or inside the table), but its properties have changed.
- * - `noop` - No change has occurred.
- * @category Queries
- */
-export type UpdateType = "enter" | "exit" | "change" | "noop";
+/* -------------------------------------------------------------------------- */
+/*                                   WATCHER                                  */
+/* -------------------------------------------------------------------------- */
 
-/**
- * Defines the characteristics of a table update.
- * @template PS The schema of the properties for all entities inside the table being watched.
- * @template M The metadata of the table.
- * @template T The type of the properties to match.
- * @param table The table subject to change (usually without methods, except if ran on init).
- * If the query covers multiple tables, and `runOnInit` is set to `true` (see {@link CreateTableWatcherOptions}), this will be `undefined`.
- * @param entity The entity for which the update has occurred.
- * @param properties The properties of the entity before and after the update (whatever is available).
- * If the entity is entering the query, `prev` will be `undefined`. If the entity is exiting the query, `current` will be `undefined`.
- * @param type The type of update that has occurred (see {@link UpdateType}).
- * @category Queries
- */
-export type TableUpdate<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = {
-  table: BaseTable<PS, M, T> | Table<PS, M, T>;
-  entity: Entity;
-  properties: { current: Properties<PS, T> | undefined; prev: Properties<PS, T> | undefined };
-  type: UpdateType;
-};
-
-/* --------------------------------- WATCHER -------------------------------- */
 /**
  * Defines the options for watching entities inside a specific table.
  *
@@ -97,7 +67,10 @@ export type TableWatcherParams = {
   runOnInit?: boolean;
 };
 
-/* ---------------------------------- QUERY --------------------------------- */
+/* -------------------------------------------------------------------------- */
+/*                                    QUERY                                   */
+/* -------------------------------------------------------------------------- */
+
 /**
  * Defines a query for entities matching properties for a specific table.
  * @template tableDef The definition of the contract table.
