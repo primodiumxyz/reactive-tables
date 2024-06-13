@@ -396,8 +396,64 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
   use(entity?: Entity | undefined): Properties<PS, T> | undefined;
   use(entity: Entity | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
-  // TODO: document
+  /**
+   * Block updates for an entity or the table as a whole, meaning it won't react to changes anymore.
+   *
+   * Note: This won't record the updates anymore, thus not keeping track of the tables update for an entity
+   * as long as it's blocked.
+   *
+   * @param entity (optional) The entity to block updates for.
+   * @example
+   * This example blocks updates for an entity in the "Player" table.
+   *
+   * ```ts
+   * const player = tables.Player.use(recordA);
+   * tables.Player.set({ name: "Alice", score: 0 }, recordA);
+   * console.log(player);
+   * // -> { name: "Alice", score: 0 }
+   *
+   * tables.Player.blockUpdates(recordA);
+   * tables.Player.update({ score: 30 }, recordA);
+   * console.log(player);
+   * // -> { name: "Alice", score: 0 }
+   * ```
+   * @category Methods
+   * @internal
+   */
   blockUpdates: (entity?: Entity) => void;
+
+  /**
+   * Unblock updates for an entity or the table as a whole, meaning it will react to changes again.
+   *
+   * Note: The updates will start being recorded for the entity again, but the table will be resumed to
+   * its state before it was blocked.
+   *
+   * @param entity (optional) The entity to unblock updates for.
+   * @example
+   * This example unblocks updates for an entity in the "Player" table after it's been blocked.
+   *
+   * ```ts
+   * const player = tables.Player.use(recordA);
+   * tables.Player.set({ name: "Alice", score: 0 }, recordA);
+   * console.log(player);
+   * // -> { name: "Alice", score: 0 }
+   *
+   * tables.Player.blockUpdates(recordA);
+   * tables.Player.update({ score: 30 }, recordA);
+   * console.log(player);
+   * // -> { name: "Alice", score: 0 }
+   *
+   * tables.Player.unblockUpdates(recordA);
+   * console.log(player);
+   * // -> { name: "Alice", score: 0 }
+   *
+   * tables.Player.update({ score: 30 }, recordA);
+   * console.log(player);
+   * // -> { name: "Alice", score: 30 }
+   * ```
+   * @category Methods
+   * @internal
+   */
   unblockUpdates: (entity?: Entity) => void;
 
   /**
