@@ -37,7 +37,13 @@ export type {
 export { createWorld, namespaceWorld, Type } from "@/lib";
 
 export type { StorageAdapter } from "@/adapter";
-export type { QueryOptions, TableWatcherCallbacks } from "@/queries";
+export type {
+  QueryOptions,
+  QueryMatchingProperties,
+  TableWatcherCallbacks,
+  TableWatcherOptions,
+  WatcherOptions,
+} from "@/queries";
 export type {
   BaseTable,
   ContractTable,

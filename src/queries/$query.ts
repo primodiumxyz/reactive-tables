@@ -1,7 +1,7 @@
-import type { QueryOptions, TableWatcherCallbacks, TableWatcherParams } from "@/queries/types";
+import type { QueryOptions, TableWatcherParams, WatcherOptions } from "@/queries/types";
+import type { BaseTables, Tables } from "@/tables/types";
 import { queries } from "@/lib/external/mud/queries";
 import { systems } from "@/lib/external/mud/systems";
-import type { World } from "@/lib/external/mud/world";
 const { With, WithProperties, Without, WithoutProperties } = queries;
 
 /**
@@ -14,9 +14,8 @@ const { With, WithProperties, Without, WithoutProperties } = queries;
  *
  * Note: See {@link QueryOptions} for more details on conditions criteria.
  *
- * @param world The RECS world containing the tables to watch.
- * @param queryOptions The {@link QueryOptions} object containing the conditions to match.
- * @param callbacks The {@link TableWatcherCallbacks} to trigger on changes. Including: onUpdate, onEnter, onExit, onChange.
+ * @param query The {@link QueryOptions} object containing the conditions to match.
+ * @param options The {@link WatcherOptions} with the world object and callbacks to trigger on changes. Including: onUpdate, onEnter, onExit, onChange.
  * These will trigger a {@link TableUpdate} object inside the id of the updated table, the entity, the previous and new properties of the entity and the type of update.
  * @param params (optional) Additional {@link TableWatcherParams} for the query. Currently only supports `runOnInit` to trigger the callbacks for all matching entities on initialization.
  * @example
@@ -45,18 +44,17 @@ const { With, WithProperties, Without, WithoutProperties } = queries;
  * ```
  * @category Queries
  */
-export const $query = (
-  world: World,
-  queryOptions: QueryOptions,
-  callbacks: TableWatcherCallbacks,
+export const $query = <tables extends BaseTables | Tables>(
+  query: QueryOptions<tables>,
+  options: WatcherOptions<tables>,
   params: TableWatcherParams = { runOnInit: true },
 ) => {
-  const { onUpdate, onEnter, onExit, onChange } = callbacks;
+  const { world, onUpdate, onEnter, onExit, onChange } = options;
   if (!onUpdate && !onEnter && !onExit && !onChange) {
     throw new Error("At least one callback has to be provided");
   }
 
-  const { with: inside, without: notInside, withProperties, withoutProperties } = queryOptions;
+  const { with: inside, without: notInside, withProperties, withoutProperties } = query;
   if (!inside && !withProperties) {
     throw new Error("At least one `with` or `withProperties` condition needs to be provided");
   }

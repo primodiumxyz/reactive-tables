@@ -932,8 +932,8 @@ describe("queries: should emit appropriate update events with the correct data",
         { runOnInit: true },
       ),
     );
-    $query(world, queryOptions, { onChange: onChangeListener }, { runOnInit: false });
-    $query(world, queryOptions, { onChange: onChangeListenerRunOnInit }, { runOnInit: true });
+    $query(queryOptions, { world, onChange: onChangeListener }, { runOnInit: false });
+    $query(queryOptions, { world, onChange: onChangeListenerRunOnInit }, { runOnInit: true });
 
     const expectedAggregatorItems = [
       {
