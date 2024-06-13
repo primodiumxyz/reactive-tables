@@ -26,7 +26,7 @@ import {
   Properties,
   Schema,
   PropType,
-} from "@primodiumxyz/reactive-tables-tinybase";
+} from "v1_@primodiumxyz/reactive-tables";
 
 // utils
 import { getRandomBigInts, getRandomNumbers } from "@test/utils";
