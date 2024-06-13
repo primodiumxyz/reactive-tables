@@ -4,8 +4,6 @@ import { renderHook } from "@testing-library/react-hooks";
 // libs
 import { createWorld as createRecsWorld, getComponentValue } from "@latticexyz/recs";
 import { encodeEntity, singletonEntity, syncToRecs } from "@latticexyz/store-sync/recs";
-import { ResolvedStoreConfig } from "@latticexyz/store/config";
-import { storeToV1 } from "@latticexyz/store/config/v2";
 import { Hex, padHex, toHex } from "viem";
 
 // src
@@ -35,8 +33,6 @@ import {
   networkConfig,
   getRandomBigInts,
   getRandomNumbers,
-  setItems,
-  setPositionForEntity,
   toBaseTable,
 } from "@test/utils";
 import mudConfig from "@test/contracts/mud.config";
@@ -58,7 +54,12 @@ const emptyData = {
   __lastSyncedAtBlock: BigInt(0),
 };
 
-const setup = async () => {
+type SetupOptions = {
+  startSync?: boolean;
+};
+
+const setup = async (options?: SetupOptions) => {
+  const { startSync = true } = options ?? {};
   const world = createWorld();
   const recsWorld = createRecsWorld();
 
@@ -90,8 +91,11 @@ const setup = async () => {
       error: (err) => console.error(err),
     },
   });
-  sync.start();
-  world.registerDisposer(sync.unsubscribe);
+
+  if (startSync) {
+    sync.start();
+    world.registerDisposer(sync.unsubscribe);
+  }
 
   // Sync RECS tables for comparison
   const { components: recsComponents } = await syncToRecs({
@@ -109,19 +113,6 @@ const setup = async () => {
     ...["A", "B", "C"].map((id) => padHex(toHex(`entity${id}`))),
   ] as Entity[];
 
-  // We want to wait for both tables to be in sync & live
-  const waitForSyncLive = async () => {
-    let synced = false;
-
-    while (!synced) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const tinyBaseSync = tables.SyncStatus.get();
-      const recsSync = getComponentValue(recsComponents.SyncProgress, singletonEntity);
-      synced = tinyBaseSync?.step === SyncStep.Live && recsSync?.step === "live";
-    }
-  };
-
   return {
     world,
     tables,
@@ -131,7 +122,6 @@ const setup = async () => {
     recsComponents,
     entities,
     networkConfig,
-    waitForSyncLive,
   };
 };
 
@@ -160,7 +150,7 @@ const waitForBlockSynced = async <tableDef extends ContractTableDef>(
 
 describe("setup: create wrapper", () => {
   it("should properly initialize and return expected objects", async () => {
-    const { tables, tableDefs, storageAdapter } = await setup();
+    const { tables, tableDefs, storageAdapter } = await setup({ startSync: false });
 
     // Verify the existence of the result
     expect(tables).toBeDefined();
@@ -193,7 +183,7 @@ describe("local: create local table", () => {
 
 describe("sync: should properly sync similar properties to RECS tables", () => {
   it("sync via RPC", async () => {
-    const { tables, recsComponents, entities, waitForSyncLive } = await setup();
+    const { tables, recsComponents, entities } = await setup();
     const player = entities[0];
     assert(tables);
 
@@ -205,7 +195,6 @@ describe("sync: should properly sync similar properties to RECS tables", () => {
       ({ blockNumber, status } = await fuzz(FUZZ_ITERATIONS, targetTables));
     }
 
-    await waitForSyncLive();
     // Wait for sync to be live at the block of the latest transaction for each table
     await Promise.all(
       targetTables.map((table) =>
@@ -262,7 +251,7 @@ describe("methods: should set and return intended properties", () => {
   describe("basic methods", () => {
     // Init and return tables and utils
     const preTest = async () => {
-      const { tables, entities } = await setup();
+      const { tables, entities } = await setup({ startSync: false });
       const player = entities[0];
       assert(tables);
 
@@ -272,50 +261,29 @@ describe("methods: should set and return intended properties", () => {
         items: getRandomNumbers(length),
         weights: getRandomNumbers(length),
         totalWeight: getRandomBigInts(1)[0],
+        ...emptyData,
       });
 
       return { tables, player, getRandomArgs };
     };
 
     // Check returned properties against input args
-    const postTest = (args: Record<string, unknown>, properties: Record<string, unknown>) => {
+    const postTest = (args: Record<string, unknown>, properties?: Record<string, unknown>) => {
       Object.entries(args).forEach(([key, v]) => {
         expect(properties?.[key]).toEqual(v);
       });
     };
 
-    // Get table properties after a transaction was made
+    // Set/get table properties
     it("table.get(), table.getWithKeys()", async () => {
       const { tables, player, getRandomArgs } = await preTest();
 
       // Set the items and wait for sync
       const args = getRandomArgs();
-      const { blockNumber } = await setItems(args);
-      await waitForBlockSynced(blockNumber, tables.Inventory, player);
-
-      const properties = tables.Inventory.get(player);
-      const propsWithKeys = tables.Inventory.getWithKeys({ id: player });
-      postTest({ ...args, block: blockNumber }, { ...properties, block: properties?.__lastSyncedAtBlock });
-      expect(properties).toEqual(propsWithKeys);
-    });
-
-    // Set table properties locally
-    it("table.set(), table.setWithKeys", async () => {
-      const { tables, player, getRandomArgs } = await preTest();
-
-      // Set the properties manually
-      const args = {
-        ...getRandomArgs(),
-        __staticData: "0x" as Hex,
-        __encodedLengths: "0x" as Hex,
-        __dynamicData: "0x" as Hex,
-        __lastSyncedAtBlock: BigInt(0),
-      };
       tables.Inventory.set(args, player);
 
       const properties = tables.Inventory.get(player);
       const propsWithKeys = tables.Inventory.getWithKeys({ id: player });
-      assert(properties);
       postTest(args, properties);
       expect(properties).toEqual(propsWithKeys);
     });
@@ -324,28 +292,27 @@ describe("methods: should set and return intended properties", () => {
     it("table.update()", async () => {
       const { tables, player, getRandomArgs } = await preTest();
 
-      // Set the items and wait for sync
+      // Set the items
       const args = getRandomArgs();
-      const { blockNumber } = await setItems(args);
-      await waitForBlockSynced(blockNumber, tables.Inventory, player);
-
-      // Update the table
-      const updateArgs = getRandomArgs();
-      tables.Inventory.update(updateArgs, player);
-
+      tables.Inventory.set(args, player);
       const properties = tables.Inventory.get(player);
-      assert(properties);
-      postTest(updateArgs, properties);
+      postTest(args, properties);
+
+      // Update the items
+      const argsB = getRandomArgs();
+      tables.Inventory.update({ items: argsB.items, totalWeight: argsB.totalWeight }, player);
+      const propertiesB = tables.Inventory.get(player);
+      postTest({ ...args, items: argsB.items, totalWeight: argsB.totalWeight }, propertiesB);
     });
 
     // Remove table properties locally
     it("table.remove()", async () => {
       const { tables, player, getRandomArgs } = await preTest();
 
-      // Set the items and wait for sync
+      // Set the items
       const args = getRandomArgs();
-      const { blockNumber } = await setItems(args);
-      await waitForBlockSynced(blockNumber, tables.Inventory, player);
+      tables.Inventory.set(args, player);
+      assert(tables.Inventory.get(player));
 
       // Remove the entity from the table
       tables.Inventory.remove(player);
@@ -359,11 +326,9 @@ describe("methods: should set and return intended properties", () => {
   describe("native methods", () => {
     // Records iterator
     it("table.entities()", async () => {
-      const { tables, entities, waitForSyncLive } = await setup();
+      const { tables, entities } = await setup({ startSync: false });
       assert(tables);
-
-      await Promise.all(entities.map(async (entity) => await setPositionForEntity({ entity, x: 1, y: 1 })));
-      await waitForSyncLive();
+      entities.forEach((entity) => tables.Position.set({ x: 1, y: 1, ...emptyData }, entity));
 
       const iterator = tables.Position.entities();
 
@@ -377,25 +342,24 @@ describe("methods: should set and return intended properties", () => {
 
   /* --------------------------------- QUERIES -------------------------------- */
   describe("query methods", () => {
-    const getRandomArgs = (entity: Entity) => {
+    const getRandomArgs = () => {
       const nums = getRandomNumbers(2);
-      return { entity, x: nums[0], y: nums[1] };
+      return { x: nums[0], y: nums[1], ...emptyData };
     };
 
     const preTest = async () => {
-      const { tables, networkConfig, entities, waitForSyncLive } = await setup();
+      const { tables, networkConfig, entities } = await setup({ startSync: false });
       assert(tables);
 
       // 4 entities: A has some properties, B has different properties, C & D have the same properties
       // Obviously this might return similar values and break tests, or running tests a bunch of times over the same running local node might as well
-      const argsA = getRandomArgs(entities[0]);
-      const argsB = getRandomArgs(entities[1]);
-      const argsC = getRandomArgs(entities[2]);
-      const argsD = { ...argsC, entity: entities[3] };
+      const argsA = getRandomArgs();
+      const argsB = getRandomArgs();
+      const argsC = getRandomArgs();
+      const argsD = argsC;
 
       const args = [argsA, argsB, argsC, argsD];
-      await Promise.all(args.map(async (a) => await setPositionForEntity(a)));
-      await waitForSyncLive();
+      entities.forEach((entity, i) => tables.Position.set(args[i], entity));
 
       return { tables, networkConfig, entities, args };
     };
@@ -417,16 +381,16 @@ describe("methods: should set and return intended properties", () => {
       );
 
       // Test with args not included for any entity
-      let randomArgs = getRandomArgs(entities[0]);
+      let randomArgs = getRandomArgs();
       while (args.some((a) => a.x === randomArgs.x && a.y === randomArgs.y)) {
-        randomArgs = getRandomArgs(entities[0]);
+        randomArgs = getRandomArgs();
       }
       expect(tables.Position.getAllWith({ x: randomArgs.x, y: randomArgs.y })).toEqual([]);
 
       // Matching only a part of the args should not be enough for the entity to be included
-      let argsWithPartialEquality = getRandomArgs(entities[0]);
+      let argsWithPartialEquality = getRandomArgs();
       while (args.some((a) => a.x === argsWithPartialEquality.x)) {
-        argsWithPartialEquality = getRandomArgs(entities[0]);
+        argsWithPartialEquality = getRandomArgs();
       }
       expect(tables.Position.getAllWith({ x: argsWithPartialEquality.x, y: args[0].y })).toEqual([]);
     });
@@ -445,9 +409,9 @@ describe("methods: should set and return intended properties", () => {
       );
 
       // Test with args not included for any entity
-      let randomArgs = getRandomArgs(entities[0]);
+      let randomArgs = getRandomArgs();
       while (args.some((a) => a.x === randomArgs.x && a.y === randomArgs.y)) {
-        randomArgs = getRandomArgs(entities[0]);
+        randomArgs = getRandomArgs();
       }
       expect(tables.Position.getAllWithout({ x: randomArgs.x, y: randomArgs.y }).sort()).toEqual(entities.sort());
     });
@@ -476,32 +440,13 @@ describe("methods: should set and return intended properties", () => {
 
   /* ---------------------------------- HOOKS --------------------------------- */
   describe("reactive methods", () => {
-    const getRandomArgs = (entity: Entity) => {
+    const getRandomArgs = () => {
       const nums = getRandomNumbers(2);
-      return { entity, x: nums[0], y: nums[1] };
-    };
-
-    const updatePosition = async <
-      tableDef extends ResolvedStoreConfig<storeToV1<typeof mudConfig>>["tables"]["Position"],
-    >(
-      Position: ContractTable<tableDef>,
-      entity: Entity,
-      waitForSync = true,
-    ) => {
-      const args = getRandomArgs(entity);
-      const { blockNumber } = await setPositionForEntity(args);
-      if (waitForSync) await waitForBlockSynced(blockNumber, Position, entity);
-
-      return {
-        args: {
-          ...args,
-          ...emptyData,
-        },
-      };
+      return { x: nums[0], y: nums[1], ...emptyData };
     };
 
     it("table.use(), table.useWithKeys()", async () => {
-      const { tables, entities } = await setup();
+      const { tables, entities } = await setup({ startSync: false });
       assert(tables);
       const player = entities[0];
 
@@ -509,13 +454,15 @@ describe("methods: should set and return intended properties", () => {
       const { result: resultWithKeys } = renderHook(() => tables.Position.useWithKeys({ id: player }));
 
       // Update the position
-      const { args } = await updatePosition(tables.Position, player);
+      const args = getRandomArgs();
+      tables.Position.set(args, player);
       expect(result.current).toHaveProperty("x", args.x);
       expect(result.current).toHaveProperty("y", args.y);
       expect(result.current).toEqual(resultWithKeys.current);
 
       // Update the position again with different properties
-      const { args: argsB } = await updatePosition(tables.Position, player);
+      const argsB = getRandomArgs();
+      tables.Position.set(argsB, player);
       expect(result.current).toHaveProperty("x", argsB.x);
       expect(result.current).toHaveProperty("y", argsB.y);
       expect(result.current).toEqual(resultWithKeys.current);
@@ -527,23 +474,23 @@ describe("methods: should set and return intended properties", () => {
     });
 
     it("table.pauseUpdates()", async () => {
-      const { tables, entities } = await setup();
+      const { tables, entities } = await setup({ startSync: false });
       assert(tables);
       const player = entities[0];
 
       const { result } = renderHook(() => tables.Position.use(entities[0]));
 
       // Update the position
-      const { args } = await updatePosition(tables.Position, player);
+      const args = getRandomArgs();
+      tables.Position.set(args, player);
       expect(result.current).toHaveProperty("x", args.x);
       expect(result.current).toHaveProperty("y", args.y);
 
       // Pause updates
       tables.Position.pauseUpdates(player, { x: args.x, y: args.y, ...emptyData });
       // Update the position again with different properties
-      await updatePosition(tables.Position, player, false); // it won't sync since we paused updates
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("after update");
+      const argsB = getRandomArgs();
+      tables.Position.set(argsB, player);
 
       // It should still have the same properties
       expect(result.current).toHaveProperty("x", args.x);
@@ -551,23 +498,25 @@ describe("methods: should set and return intended properties", () => {
     });
 
     it("table.resumeUpdates()", async () => {
-      const { tables, entities } = await setup();
+      const { tables, entities } = await setup({ startSync: false });
       assert(tables);
       const player = entities[0];
 
       const { result } = renderHook(() => tables.Position.use(entities[0]));
 
       // Update the position
-      const { args } = await updatePosition(tables.Position, player);
+      const args = getRandomArgs();
+      tables.Position.set(args, player);
       expect(result.current).toHaveProperty("x", args.x);
       expect(result.current).toHaveProperty("y", args.y);
 
       // Pause updates
-      tables.Position.pauseUpdates(player, { x: args.x, y: args.y, ...emptyData });
+      tables.Position.pauseUpdates(player);
 
       // Update the position again with different properties
-      const { args: argsB } = await updatePosition(tables.Position, player, false);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const argsB = getRandomArgs();
+      tables.Position.set(argsB, player);
+
       // It should keep the old properties
       expect(result.current).toHaveProperty("x", args.x);
       expect(result.current).toHaveProperty("y", args.y);
@@ -580,13 +529,16 @@ describe("methods: should set and return intended properties", () => {
     });
 
     it("table.useAll()", async () => {
-      const { tables, entities } = await setup();
+      const { tables, entities } = await setup({ startSync: false });
       assert(tables);
 
       const { result } = renderHook(() => tables.Position.useAll());
 
       // Update the position for all entities
-      await Promise.all(entities.map(async (entity) => await updatePosition(tables.Position, entity)));
+      entities.forEach(async (entity) => {
+        const args = getRandomArgs();
+        tables.Position.set(args, entity);
+      });
       expect(result.current.sort()).toEqual(entities.sort());
 
       // Clear the positions
@@ -594,7 +546,10 @@ describe("methods: should set and return intended properties", () => {
       expect(result.current).toEqual([]);
 
       // Update the position for a few entities
-      await Promise.all(entities.slice(0, 2).map(async (entity) => await updatePosition(tables.Position, entity)));
+      entities.slice(0, 2).forEach(async (entity) => {
+        const args = getRandomArgs();
+        tables.Position.set(args, entity);
+      });
       expect(result.current.sort()).toEqual(entities.slice(0, 2).sort());
 
       // Remove an entity
@@ -603,43 +558,40 @@ describe("methods: should set and return intended properties", () => {
     });
 
     it("table.useAllWith()", async () => {
-      const { tables, entities } = await setup();
+      const { tables, entities } = await setup({ startSync: false });
       assert(tables);
 
-      const targetPos = { x: 10, y: 10 };
+      const targetPos = { x: 10, y: 10, ...emptyData };
       const { result } = renderHook(() => tables.Position.useAllWith(targetPos));
 
       // Update the position for all entities (not to the target position)
-      await Promise.all(
-        entities.map(async (entity) => {
-          let args = getRandomArgs(entity);
-          while (args.x === targetPos.x && args.y === targetPos.y) {
-            args = getRandomArgs(entity);
-          }
+      entities.forEach((entity) => {
+        let args = getRandomArgs();
+        while (args.x === targetPos.x && args.y === targetPos.y) {
+          args = getRandomArgs();
+        }
 
-          const { blockNumber } = await setPositionForEntity(args);
-          await waitForBlockSynced(blockNumber, tables.Position, entity);
-        }),
-      );
+        tables.Position.set(args, entity);
+      });
 
       expect(result.current).toEqual([]);
 
       // Update the position for a few entities to the target position
-      const { blockNumber: blockNumberB } = await setPositionForEntity({ ...targetPos, entity: entities[0] });
-      await waitForBlockSynced(blockNumberB, tables.Position, entities[0]);
+      tables.Position.set(targetPos, entities[0]);
       expect(result.current).toEqual([entities[0]]);
 
-      const { blockNumber: blockNumberC } = await setPositionForEntity({ ...targetPos, entity: entities[1] });
-      await waitForBlockSynced(blockNumberC, tables.Position, entities[1]);
+      tables.Position.set(targetPos, entities[1]);
       expect(result.current.sort()).toEqual([entities[0], entities[1]].sort());
 
       // And with only part of the properties matching
-      const { blockNumber: blockNumberD } = await setPositionForEntity({
-        x: targetPos.x,
-        y: 0,
-        entity: entities[2],
-      });
-      await waitForBlockSynced(blockNumberD, tables.Position, entities[2]);
+      tables.Position.set(
+        {
+          x: targetPos.x,
+          y: 0,
+          ...emptyData,
+        },
+        entities[2],
+      );
       expect(result.current.sort()).toEqual([entities[0], entities[1]].sort());
 
       // Remove an entity
@@ -648,42 +600,40 @@ describe("methods: should set and return intended properties", () => {
     });
 
     it("table.useAllWithout()", async () => {
-      const { tables, entities } = await setup();
+      const { tables, entities } = await setup({ startSync: false });
       assert(tables);
 
-      const targetPos = { x: 10, y: 10 };
+      const targetPos = { x: 10, y: 10, ...emptyData };
       const { result } = renderHook(() => tables.Position.useAllWithout(targetPos));
 
       // Update the position for all entities (not to the target position)
-      await Promise.all(
-        entities.map(async (entity) => {
-          let args = getRandomArgs(entity);
-          while (args.x === targetPos.x && args.y === targetPos.y) {
-            args = getRandomArgs(entity);
-          }
-          const { blockNumber } = await setPositionForEntity(args);
-          await waitForBlockSynced(blockNumber, tables.Position, entity);
-        }),
-      );
+      entities.map(async (entity) => {
+        let args = getRandomArgs();
+        while (args.x === targetPos.x && args.y === targetPos.y) {
+          args = getRandomArgs();
+        }
+
+        tables.Position.set(args, entity);
+      });
 
       expect(result.current.sort()).toEqual(entities.sort());
 
       // Update the position for a few entities to the target position
-      const { blockNumber: blockNumberB } = await setPositionForEntity({ ...targetPos, entity: entities[0] });
-      await waitForBlockSynced(blockNumberB, tables.Position, entities[0]);
+      tables.Position.set(targetPos, entities[0]);
       expect(result.current.sort()).toEqual(entities.slice(1).sort());
 
-      const { blockNumber: blockNumberC } = await setPositionForEntity({ ...targetPos, entity: entities[1] });
-      await waitForBlockSynced(blockNumberC, tables.Position, entities[1]);
+      tables.Position.set(targetPos, entities[1]);
       expect(result.current.sort()).toEqual(entities.slice(2).sort());
 
       // And with only part of the properties matching
-      const { blockNumber: blockNumberD } = await setPositionForEntity({
-        x: targetPos.x,
-        y: 0,
-        entity: entities[2],
-      });
-      await waitForBlockSynced(blockNumberD, tables.Position, entities[2]);
+      tables.Position.set(
+        {
+          x: targetPos.x,
+          y: 0,
+          ...emptyData,
+        },
+        entities[2],
+      );
       expect(result.current.sort()).toEqual(entities.slice(2).sort());
 
       // Remove an entity
@@ -695,7 +645,7 @@ describe("methods: should set and return intended properties", () => {
   /* ---------------------------------- KEYS ---------------------------------- */
   describe("keys (contract-specific) methods", () => {
     it("table.getEntityKeys()", async () => {
-      const { tables, entities } = await setup();
+      const { tables, entities } = await setup({ startSync: false });
       assert(tables);
 
       const player = entities[0];
@@ -710,30 +660,14 @@ describe("methods: should set and return intended properties", () => {
 /* -------------------------------------------------------------------------- */
 
 describe("queries: should emit appropriate update events with the correct data", () => {
-  const getRandomArgs = (entity: Entity) => {
+  const getRandomArgs = () => {
     const nums = getRandomNumbers(2);
-    return { entity, x: nums[0], y: nums[1] };
-  };
-
-  const updatePosition = async <
-    tableDef extends ResolvedStoreConfig<storeToV1<typeof mudConfig>>["tables"]["Position"],
-  >(
-    Position: ContractTable<tableDef>,
-    entity: Entity,
-    to?: { x: number; y: number },
-  ) => {
-    const args = to ? { entity, ...to } : getRandomArgs(entity);
-    const { blockNumber } = await setPositionForEntity(args);
-    await waitForBlockSynced(blockNumber, Position, entity);
-
-    return { args };
+    return { x: nums[0], y: nums[1], ...emptyData };
   };
 
   const preTest = async () => {
-    const { world, tables, waitForSyncLive, entities } = await setup();
+    const { world, tables, entities } = await setup({ startSync: false });
     assert(tables);
-    // Just wait for sync for the test to be accurate (prevent tampering data by syncing during the test)
-    await waitForSyncLive();
 
     // Aggregate updates triggered by the system on table update
     const aggregator: TableUpdate[] = [];
@@ -751,51 +685,51 @@ describe("queries: should emit appropriate update events with the correct data",
 
     // Update the position for an entity (and enter the table)
     const propsA = tables.Position.get(entities[0]);
-    await updatePosition(tables.Position, entities[0]);
-    const propsB = tables.Position.get(entities[0]);
+    const argsA = getRandomArgs();
+    tables.Position.set(argsA, entities[0]);
 
     expect(aggregator).toEqual([
       {
         table: toBaseTable(table),
         entity: entities[0],
-        properties: { current: propsB, prev: propsA },
+        properties: { current: argsA, prev: propsA },
         type: propsA ? "update" : "enter",
       },
     ]);
 
     // Update entity[1]
-    const propsC = tables.Position.get(entities[1]);
-    await updatePosition(tables.Position, entities[1]);
-    const propsD = tables.Position.get(entities[1]);
+    const propsB = tables.Position.get(entities[1]);
+    const argsB = getRandomArgs();
+    tables.Position.set(argsB, entities[1]);
     // Exit entity[0]
     tables.Position.remove(entities[0]);
     // Enter again entity[0]
-    await updatePosition(tables.Position, entities[0]);
-    const propsE = tables.Position.get(entities[0]);
+    const argsC = getRandomArgs();
+    tables.Position.set(argsC, entities[0]);
 
     expect(aggregator).toEqual([
       {
         table: toBaseTable(table),
         entity: entities[0],
-        properties: { current: propsB, prev: propsA },
+        properties: { current: argsA, prev: propsA },
         type: propsA ? "update" : "enter",
       },
       {
         table: toBaseTable(table),
         entity: entities[1],
-        properties: { current: propsD, prev: propsC },
-        type: propsC ? "update" : "enter",
+        properties: { current: argsB, prev: propsB },
+        type: propsB ? "update" : "enter",
       },
       {
         table: toBaseTable(table),
         entity: entities[0],
-        properties: { current: undefined, prev: propsB },
+        properties: { current: undefined, prev: argsA },
         type: "exit",
       },
       {
         table: toBaseTable(table),
         entity: entities[0],
-        properties: { current: propsE, prev: undefined },
+        properties: { current: argsC, prev: undefined },
         type: "enter",
       },
     ]);
@@ -805,7 +739,10 @@ describe("queries: should emit appropriate update events with the correct data",
     const { tables, entities, onChange, aggregator } = await preTest();
 
     // Enter entities
-    await Promise.all(entities.map(async (entity) => await updatePosition(tables.Position, entity)));
+    entities.forEach((entity) => {
+      const args = getRandomArgs();
+      tables.Position.set(args, entity);
+    });
 
     tables.Position.watch({ onChange }, { runOnInit: true });
     expect(aggregator).toHaveLength(entities.length);
