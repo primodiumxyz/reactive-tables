@@ -1,4 +1,4 @@
-import type { SchemaAbiTypeToPrimitiveType } from "@latticexyz/schema-type/internal";
+import { type SchemaAbiTypeToPrimitiveType } from "@latticexyz/schema-type/internal";
 import { decodeAbiParameters, encodeAbiParameters, type Hex } from "viem";
 
 import type { ResourceLabel } from "@/lib/external/mud/common";
@@ -14,7 +14,7 @@ import type { ContractTableDef } from "@/lib/definitions";
  *
  * It uses a {@link Type} enum to be able to infer the TypeScript type of each property.
  *
- * @category Tables
+ * @category Schema
  */
 export type Schema = {
   [key: string]: Type;
@@ -23,7 +23,7 @@ export type Schema = {
 /**
  * Defines any additional metadata that can be attached to a {@link Table} or {@link BaseTable}.
  *
- * @category Tables
+ * @category Schema
  */
 export type Metadata =
   | {
@@ -114,7 +114,7 @@ export type PropertiesSansMetadata<S extends Schema, T = unknown> = {
  *
  * Note: This is modified from RECS.
  *
- * @category Tables
+ * @category Schema
  */
 export enum Type {
   Boolean,
@@ -145,7 +145,7 @@ export enum Type {
 /**
  * Defines a mapping between JavaScript {@link Type} enums and their corresponding TypeScript types.
  *
- * @category Tables
+ * @category Schema
  */
 export type MappedType<T = unknown> = {
   [Type.Boolean]: boolean;
@@ -430,7 +430,7 @@ export type TupleSplit<T, N extends number, O extends readonly any[] = readonly 
  * Note: This is copied from the RECS library.
  *
  * @see [@]latticexyz/store-sync/recs/schemaAbiTypeToRecsType.ts
- * @category RECS
+ * @category Schema
  */
 export const schemaAbiTypeToRecsType = {
   uint8: Type.Number,
@@ -639,7 +639,7 @@ export const schemaAbiTypeToRecsType = {
  * Note: This is copied from the RECS library.
  *
  * @see [@]latticexyz/store-sync/recs/schemaAbiTypeToRecsType.ts
- * @category RECS
+ * @category Schema
  */
 export type SchemaAbiTypeToRecsType<T extends SchemaAbiType> = (typeof schemaAbiTypeToRecsType)[T];
 
@@ -651,7 +651,7 @@ export type SchemaToPrimitives<TSchema extends AbiPropertiesSchema> = {
 /**
  * Converts an ABI type to its corresponding Typescript-understandable type.
  *
- * @category Table
+ * @category Schema
  */
 export type AbiToSchema<
   schema extends UnparsedAbiKeySchema | AbiKeySchema | UnparsedAbiPropertiesSchema | AbiPropertiesSchema,
