@@ -1,6 +1,6 @@
 import { Read, Sync } from "@primodiumxyz/sync-stack";
 
-import { StorageAdapter, createStorageAdapter } from "@/adapter";
+import { StorageAdapter } from "@/adapter";
 import { ContractTableDefs } from "@/lib";
 
 import {
@@ -11,7 +11,6 @@ import {
   Sync as SyncType,
 } from "@test/utils/sync/types";
 import { hydrateFromIndexer, hydrateFromRpc, subToRpc } from "@test/utils/sync/handleSync";
-import { SyncStep } from "@test/utils/sync/tables";
 
 /* -------------------------------------------------------------------------- */
 /*                                   GLOBAL                                   */
@@ -21,6 +20,8 @@ export const createSync = <tableDefs extends ContractTableDefs>({
   contractTables,
   localTables,
   tableDefs,
+  storageAdapter,
+  triggerUpdateStream,
   networkConfig,
   onSync,
 }: CreateSyncOptions<tableDefs>): CreateSyncResult => {
@@ -29,11 +30,6 @@ export const createSync = <tableDefs extends ContractTableDefs>({
 
   const logFilters = Object.values(tableDefs).map((table) => ({ tableId: table.tableId as string }));
   const tables = { ...contractTables, ...localTables };
-
-  const { storageAdapter, triggerUpdateStream } = createStorageAdapter({
-    tables: contractTables,
-    shouldSkipUpdateStream: () => localTables.SyncStatus.get()?.step !== SyncStep.Live,
-  });
 
   const unsubs: (() => void)[] = [];
   const startSync = () => {

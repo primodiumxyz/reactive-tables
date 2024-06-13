@@ -66,16 +66,18 @@ const setup = async (options: TestOptions = { useIndexer: false }) => {
   const world = createWorld();
   const recsWorld = createRecsWorld();
 
+  const localTables = createLocalSyncTables(world);
   // Initialize wrapper
   const {
     tables: contractTables,
     tableDefs,
     storageAdapter,
+    triggerUpdateStream,
   } = createWrapper({
     world: world,
     mudConfig,
+    shouldSkipUpdateStream: () => localTables.SyncStatus.get()?.step !== SyncStep.Live,
   });
-  const localTables = createLocalSyncTables(world);
   const tables = { ...localTables, ...contractTables };
 
   // Sync tables with the chain
@@ -83,6 +85,8 @@ const setup = async (options: TestOptions = { useIndexer: false }) => {
     contractTables,
     localTables,
     tableDefs,
+    storageAdapter,
+    triggerUpdateStream,
     networkConfig: {
       ...networkConfig,
       indexerUrl: useIndexer ? networkConfig.indexerUrl : undefined,

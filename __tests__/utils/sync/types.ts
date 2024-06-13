@@ -12,6 +12,8 @@ export type CreateSyncOptions<tableDefs extends ContractTableDefs> = {
   contractTables: ContractTables<tableDefs>;
   localTables: LocalSyncTables;
   tableDefs: ContractTableDefs;
+  storageAdapter: StorageAdapter;
+  triggerUpdateStream: () => void;
   networkConfig: NetworkConfig;
   onSync?: OnSyncCallbacks;
 };
@@ -23,17 +25,15 @@ export type CreateSyncResult = {
 
 export type CreateIndexerSyncOptions<tableDefs extends ContractTableDefs> = Omit<
   CreateSyncOptions<tableDefs>,
-  "contractTables" | "localTables" | "tableDefs" | "publicClient" | "onSync"
+  "contractTables" | "localTables" | "tableDefs" | "triggerUpdateStream" | "publicClient" | "onSync"
 > & {
-  storageAdapter: StorageAdapter;
   logFilters: { tableId: string }[];
 };
 
 export type CreateRpcSyncOptions<tableDefs extends ContractTableDefs> = Omit<
   CreateSyncOptions<tableDefs>,
-  "contractTables" | "localTables" | "tableDefs" | "onSync"
+  "contractTables" | "localTables" | "tableDefs" | "triggerUpdateStream" | "onSync"
 > & {
-  storageAdapter: StorageAdapter;
   logFilters: { tableId: string }[];
   startBlock: bigint;
   endBlock: bigint;
