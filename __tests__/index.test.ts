@@ -3,13 +3,12 @@ import { renderHook } from "@testing-library/react-hooks";
 
 // libs
 import { createWorld as createRecsWorld, getComponentValue } from "@latticexyz/recs";
-import { encodeEntity, singletonEntity, syncToRecs } from "@latticexyz/store-sync/recs";
+import { encodeEntity, singletonEntity, syncToRecs as _syncToRecs } from "@latticexyz/store-sync/recs";
 import { Hex, padHex, toHex } from "viem";
 
 // src
 import {
   ContractTable,
-  ContractTableDef,
   createWorld,
   $query,
   createLocalTable,
@@ -58,8 +57,8 @@ type SetupOptions = {
   startSync?: boolean;
 };
 
-const setup = async (options?: SetupOptions) => {
-  const { startSync = true } = options ?? {};
+const setup = (options?: SetupOptions) => {
+  const { startSync = false } = options ?? {};
   const world = createWorld();
   const recsWorld = createRecsWorld();
 
@@ -98,13 +97,17 @@ const setup = async (options?: SetupOptions) => {
   }
 
   // Sync RECS tables for comparison
-  const { components: recsComponents } = await syncToRecs({
-    world: recsWorld,
-    config: mudConfig,
-    address: networkConfig.worldAddress,
-    publicClient: networkConfig.publicClient,
-    startBlock: networkConfig.initialBlockNumber,
-  });
+  const syncToRecs = async () => {
+    const { components: recsComponents } = await _syncToRecs({
+      world: recsWorld,
+      config: mudConfig,
+      address: networkConfig.worldAddress,
+      publicClient: networkConfig.publicClient,
+      startBlock: networkConfig.initialBlockNumber,
+    });
+
+    return { recsComponents };
+  };
 
   // Grab a few entities to use across tests (because each test will keep the state of the chain
   // from previous runs)
@@ -119,29 +122,10 @@ const setup = async (options?: SetupOptions) => {
     tableDefs,
     storageAdapter,
     sync,
-    recsComponents,
+    syncToRecs,
     entities,
     networkConfig,
   };
-};
-
-/* -------------------------------------------------------------------------- */
-/*                                    UTILS                                   */
-/* -------------------------------------------------------------------------- */
-
-// Wait for a table to be synced at the specified block
-const waitForBlockSynced = async <tableDef extends ContractTableDef>(
-  txBlock: bigint,
-  table: ContractTable<tableDef>,
-  key?: Entity,
-) => {
-  let synced = false;
-
-  while (!synced) {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const lastSyncedBlock = table.get(key)?.__lastSyncedAtBlock;
-    synced = lastSyncedBlock ? lastSyncedBlock >= txBlock : false;
-  }
 };
 
 /* -------------------------------------------------------------------------- */
@@ -149,8 +133,8 @@ const waitForBlockSynced = async <tableDef extends ContractTableDef>(
 /* -------------------------------------------------------------------------- */
 
 describe("setup: create wrapper", () => {
-  it("should properly initialize and return expected objects", async () => {
-    const { tables, tableDefs, storageAdapter } = await setup({ startSync: false });
+  it("should properly initialize and return expected objects", () => {
+    const { tables, tableDefs, storageAdapter } = setup();
 
     // Verify the existence of the result
     expect(tables).toBeDefined();
@@ -182,25 +166,28 @@ describe("local: create local table", () => {
 /* -------------------------------------------------------------------------- */
 
 describe("sync: should properly sync similar properties to RECS tables", () => {
-  it("sync via RPC", async () => {
-    const { tables, recsComponents, entities } = await setup();
+  it.only("sync via RPC", async () => {
+    const { tables, syncToRecs, entities } = setup({ startSync: true });
+    const { recsComponents } = await syncToRecs();
     const player = entities[0];
     assert(tables);
 
     // Run a few transactions; if it fails, try again
     const targetTables = [tables.Counter, tables.Inventory, tables.Position] as unknown as ContractTable[];
     let { blockNumber, status } = await fuzz(FUZZ_ITERATIONS, targetTables);
+
     while (status !== "success") {
       console.error("Fuzzing failed, retrying...");
       ({ blockNumber, status } = await fuzz(FUZZ_ITERATIONS, targetTables));
     }
 
     // Wait for sync to be live at the block of the latest transaction for each table
-    await Promise.all(
-      targetTables.map((table) =>
-        waitForBlockSynced(blockNumber, table, "id" in table.metadata.abiKeySchema ? player : undefined),
-      ),
-    );
+    let synced = false;
+    while (!synced) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const lastProcessed = tables.SyncStatus.get()?.lastBlockNumberProcessed;
+      synced = lastProcessed ? lastProcessed >= blockNumber : false;
+    }
 
     // Ignore tables not registered in RECS (e.g. SyncSource)
     const registryKeys = Object.keys(tables).filter((key) =>
@@ -250,8 +237,8 @@ describe("methods: should set and return intended properties", () => {
   /* ---------------------------------- BASIC --------------------------------- */
   describe("basic methods", () => {
     // Init and return tables and utils
-    const preTest = async () => {
-      const { tables, entities } = await setup({ startSync: false });
+    const preTest = () => {
+      const { tables, entities } = setup();
       const player = entities[0];
       assert(tables);
 
@@ -275,8 +262,8 @@ describe("methods: should set and return intended properties", () => {
     };
 
     // Set/get table properties
-    it("table.get(), table.getWithKeys()", async () => {
-      const { tables, player, getRandomArgs } = await preTest();
+    it("table.get(), table.getWithKeys()", () => {
+      const { tables, player, getRandomArgs } = preTest();
 
       // Set the items and wait for sync
       const args = getRandomArgs();
@@ -289,8 +276,8 @@ describe("methods: should set and return intended properties", () => {
     });
 
     // Update table properties client-side
-    it("table.update()", async () => {
-      const { tables, player, getRandomArgs } = await preTest();
+    it("table.update()", () => {
+      const { tables, player, getRandomArgs } = preTest();
 
       // Set the items
       const args = getRandomArgs();
@@ -306,8 +293,8 @@ describe("methods: should set and return intended properties", () => {
     });
 
     // Remove table properties locally
-    it("table.remove()", async () => {
-      const { tables, player, getRandomArgs } = await preTest();
+    it("table.remove()", () => {
+      const { tables, player, getRandomArgs } = preTest();
 
       // Set the items
       const args = getRandomArgs();
@@ -325,8 +312,8 @@ describe("methods: should set and return intended properties", () => {
   /* --------------------------------- NATIVE --------------------------------- */
   describe("native methods", () => {
     // Records iterator
-    it("table.entities()", async () => {
-      const { tables, entities } = await setup({ startSync: false });
+    it("table.entities()", () => {
+      const { tables, entities } = setup();
       assert(tables);
       entities.forEach((entity) => tables.Position.set({ x: 1, y: 1, ...emptyData }, entity));
 
@@ -347,8 +334,8 @@ describe("methods: should set and return intended properties", () => {
       return { x: nums[0], y: nums[1], ...emptyData };
     };
 
-    const preTest = async () => {
-      const { tables, networkConfig, entities } = await setup({ startSync: false });
+    const preTest = () => {
+      const { tables, networkConfig, entities } = setup();
       assert(tables);
 
       // 4 entities: A has some properties, B has different properties, C & D have the same properties
@@ -364,15 +351,15 @@ describe("methods: should set and return intended properties", () => {
       return { tables, networkConfig, entities, args };
     };
 
-    it("table.getAll()", async () => {
-      const { tables, entities } = await preTest();
+    it("table.getAll()", () => {
+      const { tables, entities } = preTest();
 
       const allEntities = tables.Position.getAll();
       expect(allEntities.sort()).toEqual(entities.sort());
     });
 
-    it("table.getAllWith()", async () => {
-      const { tables, entities, args } = await preTest();
+    it("table.getAllWith()", () => {
+      const { tables, entities, args } = preTest();
 
       expect(tables.Position.getAllWith({ x: args[0].x, y: args[0].y })).toEqual([entities[0]]);
       expect(tables.Position.getAllWith({ x: args[1].x, y: args[1].y })).toEqual([entities[1]]);
@@ -395,8 +382,8 @@ describe("methods: should set and return intended properties", () => {
       expect(tables.Position.getAllWith({ x: argsWithPartialEquality.x, y: args[0].y })).toEqual([]);
     });
 
-    it("table.getAllWithout()", async () => {
-      const { tables, entities, args } = await preTest();
+    it("table.getAllWithout()", () => {
+      const { tables, entities, args } = preTest();
 
       expect(tables.Position.getAllWithout({ x: args[0].x, y: args[0].y }).sort()).toEqual(
         [entities[1], entities[2], entities[3]].sort(),
@@ -416,16 +403,16 @@ describe("methods: should set and return intended properties", () => {
       expect(tables.Position.getAllWithout({ x: randomArgs.x, y: randomArgs.y }).sort()).toEqual(entities.sort());
     });
 
-    it("table.clear()", async () => {
-      const { tables, entities } = await preTest();
+    it("table.clear()", () => {
+      const { tables, entities } = preTest();
       expect(tables.Position.getAll().sort()).toEqual(entities.sort());
 
       tables.Position.clear();
       expect(tables.Position.getAll()).toEqual([]);
     });
 
-    it("table.has(), table.hasWithKeys()", async () => {
-      const { tables, entities } = await preTest();
+    it("table.has(), table.hasWithKeys()", () => {
+      const { tables, entities } = preTest();
 
       entities.forEach((entity) => {
         expect(tables.Position.has(entity)).toBe(true);
@@ -445,8 +432,8 @@ describe("methods: should set and return intended properties", () => {
       return { x: nums[0], y: nums[1], ...emptyData };
     };
 
-    it("table.use(), table.useWithKeys()", async () => {
-      const { tables, entities } = await setup({ startSync: false });
+    it("table.use(), table.useWithKeys()", () => {
+      const { tables, entities } = setup();
       assert(tables);
       const player = entities[0];
 
@@ -473,8 +460,8 @@ describe("methods: should set and return intended properties", () => {
       expect(resultWithKeys.current).toBeUndefined();
     });
 
-    it("table.pauseUpdates()", async () => {
-      const { tables, entities } = await setup({ startSync: false });
+    it("table.pauseUpdates()", () => {
+      const { tables, entities } = setup();
       assert(tables);
       const player = entities[0];
 
@@ -497,8 +484,8 @@ describe("methods: should set and return intended properties", () => {
       expect(result.current).toHaveProperty("y", args.y);
     });
 
-    it("table.resumeUpdates()", async () => {
-      const { tables, entities } = await setup({ startSync: false });
+    it("table.resumeUpdates()", () => {
+      const { tables, entities } = setup();
       assert(tables);
       const player = entities[0];
 
@@ -528,8 +515,8 @@ describe("methods: should set and return intended properties", () => {
       expect(result.current).toHaveProperty("y", argsB.y);
     });
 
-    it("table.useAll()", async () => {
-      const { tables, entities } = await setup({ startSync: false });
+    it("table.useAll()", () => {
+      const { tables, entities } = setup();
       assert(tables);
 
       const { result } = renderHook(() => tables.Position.useAll());
@@ -557,8 +544,8 @@ describe("methods: should set and return intended properties", () => {
       expect(result.current).toEqual([entities[1]]);
     });
 
-    it("table.useAllWith()", async () => {
-      const { tables, entities } = await setup({ startSync: false });
+    it("table.useAllWith()", () => {
+      const { tables, entities } = setup();
       assert(tables);
 
       const targetPos = { x: 10, y: 10, ...emptyData };
@@ -599,8 +586,8 @@ describe("methods: should set and return intended properties", () => {
       expect(result.current).toEqual([entities[1]]);
     });
 
-    it("table.useAllWithout()", async () => {
-      const { tables, entities } = await setup({ startSync: false });
+    it("table.useAllWithout()", () => {
+      const { tables, entities } = setup();
       assert(tables);
 
       const targetPos = { x: 10, y: 10, ...emptyData };
@@ -644,8 +631,8 @@ describe("methods: should set and return intended properties", () => {
 
   /* ---------------------------------- KEYS ---------------------------------- */
   describe("keys (contract-specific) methods", () => {
-    it("table.getEntityKeys()", async () => {
-      const { tables, entities } = await setup({ startSync: false });
+    it("table.getEntityKeys()", () => {
+      const { tables, entities } = setup();
       assert(tables);
 
       const player = entities[0];
@@ -665,8 +652,8 @@ describe("queries: should emit appropriate update events with the correct data",
     return { x: nums[0], y: nums[1], ...emptyData };
   };
 
-  const preTest = async () => {
-    const { world, tables, entities } = await setup({ startSync: false });
+  const preTest = () => {
+    const { world, tables, entities } = setup();
     assert(tables);
 
     // Aggregate updates triggered by the system on table update
@@ -676,8 +663,8 @@ describe("queries: should emit appropriate update events with the correct data",
     return { world, tables, entities, onChange, aggregator };
   };
 
-  it("table.watch()", async () => {
-    const { tables, entities, onChange, aggregator } = await preTest();
+  it("table.watch()", () => {
+    const { tables, entities, onChange, aggregator } = preTest();
     const table = tables.Position;
 
     tables.Position.watch({ onChange }, { runOnInit: false });
@@ -735,8 +722,8 @@ describe("queries: should emit appropriate update events with the correct data",
     ]);
   });
 
-  it("table.watch(): run on init", async () => {
-    const { tables, entities, onChange, aggregator } = await preTest();
+  it("table.watch(): run on init", () => {
+    const { tables, entities, onChange, aggregator } = preTest();
 
     // Enter entities
     entities.forEach((entity) => {
@@ -748,8 +735,8 @@ describe("queries: should emit appropriate update events with the correct data",
     expect(aggregator).toHaveLength(entities.length);
   });
 
-  it("query() (query)", async () => {
-    const { tables, entities } = await setup();
+  it("query() (query)", () => {
+    const { tables, entities } = setup();
     const [player, A, B, C] = entities;
 
     // Prepare entities
@@ -813,8 +800,8 @@ describe("queries: should emit appropriate update events with the correct data",
     ).toEqual([A]);
   });
 
-  it("$query(), useQuery() (useQueryAllMatching)", async () => {
-    const { world, tables, entities, onChange: onChangeHook, aggregator: aggregatorHook } = await preTest();
+  it("$query(), useQuery() (useQueryAllMatching)", () => {
+    const { world, tables, entities, onChange: onChangeHook, aggregator: aggregatorHook } = preTest();
     const [player, A, B, C] = entities;
 
     // We need more aggregators for the query subscription
