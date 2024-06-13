@@ -23,7 +23,6 @@ export type NetworkConfig = {
   worldAddress: Address;
   initialBlockNumber: bigint;
   faucetServiceUrl?: string;
-  indexerUrl?: string;
   publicClient: PublicClient;
   burnerAccount: Account;
   worldContract: GetContractReturnType<typeof IWorldAbi, typeof publicClient>;
@@ -67,7 +66,6 @@ export const networkConfig: NetworkConfig = {
   chain,
   worldAddress,
   initialBlockNumber: BigInt(initialBlockNumber),
-  indexerUrl: chain.indexerUrl,
   publicClient,
   burnerAccount,
   worldContract,

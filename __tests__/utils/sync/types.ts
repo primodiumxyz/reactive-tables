@@ -23,22 +23,6 @@ export type CreateSyncResult = {
   unsubscribe: () => void;
 };
 
-export type CreateIndexerSyncOptions<tableDefs extends ContractTableDefs> = Omit<
-  CreateSyncOptions<tableDefs>,
-  "contractTables" | "localTables" | "tableDefs" | "triggerUpdateStream" | "publicClient" | "onSync"
-> & {
-  logFilters: { tableId: string }[];
-};
-
-export type CreateRpcSyncOptions<tableDefs extends ContractTableDefs> = Omit<
-  CreateSyncOptions<tableDefs>,
-  "contractTables" | "localTables" | "tableDefs" | "triggerUpdateStream" | "onSync"
-> & {
-  logFilters: { tableId: string }[];
-  startBlock: bigint;
-  endBlock: bigint;
-};
-
 export type Sync = {
   start: (
     onProgress?: (index: number, blockNumber: bigint, progress: number) => void,

@@ -51,10 +51,6 @@ const FUZZ_ITERATIONS = 50;
 /*                                    SETUP                                   */
 /* -------------------------------------------------------------------------- */
 
-type TestOptions = {
-  useIndexer?: boolean;
-};
-
 const emptyData = {
   __staticData: "0x" as Hex,
   __encodedLengths: "0x" as Hex,
@@ -62,8 +58,7 @@ const emptyData = {
   __lastSyncedAtBlock: BigInt(0),
 };
 
-const setup = async (options: TestOptions = { useIndexer: false }) => {
-  const { useIndexer } = options;
+const setup = async () => {
   const world = createWorld();
   const recsWorld = createRecsWorld();
 
@@ -88,10 +83,7 @@ const setup = async (options: TestOptions = { useIndexer: false }) => {
     tableDefs,
     storageAdapter,
     triggerUpdateStream,
-    networkConfig: {
-      ...networkConfig,
-      indexerUrl: useIndexer ? networkConfig.indexerUrl : undefined,
-    },
+    networkConfig,
     onSync: {
       progress: (_, __, progress) => console.log(`Syncing: ${(progress * 100).toFixed()}%`),
       complete: (blockNumber) => `Synced to block ${blockNumber?.toString()}`,
@@ -108,7 +100,6 @@ const setup = async (options: TestOptions = { useIndexer: false }) => {
     address: networkConfig.worldAddress,
     publicClient: networkConfig.publicClient,
     startBlock: networkConfig.initialBlockNumber,
-    indexerUrl: useIndexer ? networkConfig.indexerUrl : undefined,
   });
 
   // Grab a few entities to use across tests (because each test will keep the state of the chain
@@ -201,8 +192,8 @@ describe("local: create local table", () => {
 /* -------------------------------------------------------------------------- */
 
 describe("sync: should properly sync similar properties to RECS tables", () => {
-  const runTest = async (options: TestOptions) => {
-    const { tables, recsComponents, entities, waitForSyncLive } = await setup(options);
+  it("sync via RPC", async () => {
+    const { tables, recsComponents, entities, waitForSyncLive } = await setup();
     const player = entities[0];
     assert(tables);
 
@@ -259,14 +250,6 @@ describe("sync: should properly sync similar properties to RECS tables", () => {
       // We don't test the metadata because if the properties are right it's because it was decoded correctly
       // and there are rare inconsistencies with RECS sync returning either "0x" or undefined for empty value
     }
-  };
-
-  it("using indexer", async () => {
-    await runTest({ useIndexer: true });
-  });
-
-  it("using RPC", async () => {
-    await runTest({ useIndexer: false });
   });
 });
 
