@@ -4,6 +4,7 @@ import { resolveConfig } from "@latticexyz/store/internal";
 import { createContractTables, type ContractTables } from "@/tables";
 import { createStorageAdapter, type StorageAdapter } from "@/adapter";
 import {
+  createWorld,
   storeTableDefs,
   worldTableDefs,
   type AllTableDefs,
@@ -17,14 +18,14 @@ import {
  *
  * @template config The type of the configuration object specifying tables definitions for contracts codegen.
  * @template extraTableDefs The types of any additional custom definitions to generate tables for.
- * @param world The RECS world object, used for creating tables and entities.
  * @param mudConfig The actual MUD configuration, usually retrieved for the contracts package.
+ * @param world (optional) The RECS world object, used for creating tables and entities. If not provided, will create one and return it.
  * @param otherTableDefs (optional) Custom definitions to generate tables for as well.
  * @param shouldSkipUpdateStream (optional) Whether to skip the initial update stream (most likely to trigger it afterwards).
  */
 export type WrapperOptions<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
-  world: World;
   mudConfig: config;
+  world?: World;
   otherTableDefs?: extraTableDefs;
   shouldSkipUpdateStream?: () => boolean;
 };
@@ -36,12 +37,14 @@ export type WrapperOptions<config extends StoreConfig, extraTableDefs extends Co
  *
  * @template config The type of the configuration object specifying tables definitions for contracts codegen.
  * @template tableDefs The types of the definitions used for generating tables.
+ * @param world The RECS world object, either provided or created, on which all tables are registered.
  * @param tables The tables generated from all definitions (see {@link createContractTables}).
  * @param tableDefs The full definitions object, including provided MUD config and custom definitions, as well as store and world config tables.
  * @param storageAdapter The storage adapter for formatting onchain logs into TinyBase tabular data (see {@link createStorageAdapter}).
  * @param triggerUpdateStream A function to trigger the update stream on all tables and entities (e.g. after completing sync).
  */
 export type WrapperResult<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
+  world: World;
   tables: ContractTables<AllTableDefs<config, extraTableDefs>>;
   tableDefs: AllTableDefs<config, extraTableDefs>;
   storageAdapter: StorageAdapter;
@@ -111,11 +114,13 @@ export type WrapperResult<config extends StoreConfig, extraTableDefs extends Con
  * @category Creation
  */
 export const createWrapper = <config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined>({
-  world,
   mudConfig,
+  world: _world,
   otherTableDefs,
   shouldSkipUpdateStream,
 }: WrapperOptions<config, extraTableDefs>): WrapperResult<config, extraTableDefs> => {
+  const world = _world ?? createWorld();
+
   /* ------------------------------- DEFINITIONS ------------------------------ */
   // Resolve tables definitions
   const tableDefs = {
@@ -134,5 +139,5 @@ export const createWrapper = <config extends StoreConfig, extraTableDefs extends
   // as well as a function to trigger update stream on all entities for all tables (e.g. after completing sync)
   const { storageAdapter, triggerUpdateStream } = createStorageAdapter({ tables, shouldSkipUpdateStream });
 
-  return { tables, tableDefs, storageAdapter, triggerUpdateStream };
+  return { world, tables, tableDefs, storageAdapter, triggerUpdateStream };
 };
