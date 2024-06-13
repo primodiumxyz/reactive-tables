@@ -49,6 +49,9 @@ export type IndexedBaseTable<
 };
 
 /* ---------------------------------- BASE ---------------------------------- */
+export interface BaseTables {
+  [name: string]: BaseTable;
+}
 export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> {
   id: string;
   properties: { [key in keyof PS]: Map<EntitySymbol, MappedType<T>[PS[key]]> };

@@ -1,10 +1,24 @@
-import type { BaseTable, Table, TableUpdate } from "@/tables/types";
-import type { BaseTableMetadata, Properties, Schema } from "@/lib/external/mud/schema";
+import type { BaseTable, BaseTables, Table, TableUpdate, Tables } from "@/tables/types";
+import type { BaseTableMetadata, MappedType, Schema } from "@/lib/external/mud/schema";
 import type { World } from "@/lib/external/mud/world";
 
 /* -------------------------------------------------------------------------- */
 /*                                   WATCHER                                  */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * Defines the options for watching entities inside tables.
+ *
+ * @template tables The types of tables to watch.
+ * @param world The RECS World object (abstracted).
+ * @see {@link TableWatcherCallbacks}
+ * @category Queries
+ * @internal
+ */
+export type WatcherOptions<tables extends BaseTables | Tables> = {
+  world: World;
+  // Opt in to any callback
+} & TableWatcherCallbacks<tables[keyof tables]["propertiesSchema"], tables[keyof tables]["metadata"]>;
 
 /**
  * Defines the options for watching entities inside a specific table.
@@ -25,6 +39,7 @@ export type TableWatcherOptions<PS extends Schema, M extends BaseTableMetadata =
   table: BaseTable<PS, M, T> | Table<PS, M, T>;
   // Opt in to any callback
 } & TableWatcherCallbacks<PS, M, T>;
+
 export type TableMethodsWatcherOptions<
   PS extends Schema,
   M extends BaseTableMetadata = BaseTableMetadata,
@@ -80,14 +95,17 @@ export type TableWatcherParams = {
  * @category Queries
  * @internal
  */
-type QueryMatchingProperties<
-  PS extends Schema = Schema,
-  M extends BaseTableMetadata = BaseTableMetadata,
-  T = unknown,
-> = {
-  table: BaseTable<PS, M, T> | Table<PS, M, T>;
-  properties: Partial<Properties<PS, T>>;
-};
+export type QueryMatchingProperties<table, T = unknown> = table extends { propertiesSchema: infer S extends Schema }
+  ? {
+      table: table;
+      properties: Partial<{ [key in keyof S]: MappedType<T>[S[key]] }>;
+    }
+  : never;
+
+// but used as above it always accepts properties from ANY table in the list of QueryOptions
+// so to make sure it considers the one table provided to `table` to control type of `properties`
+// we need to use it like this:
+// { table: Table, properties: Partial<Properties<Table["propertiesSchema"]>> }
 
 /**
  * Defines the options for querying all entities matching multiple conditions across tables.
@@ -96,6 +114,7 @@ type QueryMatchingProperties<
  *
  * Note: The entities need to match ALL conditions to be included in the final result.
  *
+ * @template tables A registry of {@link Table}, including the tables involved in the query.
  * @param with An array of tables the entities need to be included in (have properties).
  * @param withProperties An array of table-properties pairs the entities need to match precisely.
  * @param without An array of tables the entities need to be excluded from (not have properties).
@@ -104,9 +123,9 @@ type QueryMatchingProperties<
  *
  * TODO: see if there is a way to handle type inference
  */
-export type QueryOptions = {
-  with?: (BaseTable | Table)[]; // inside these tables
-  withProperties?: QueryMatchingProperties[]; // with the specified propertiess for their associated tables
-  without?: (BaseTable | Table)[]; // not inside these tables
-  withoutProperties?: QueryMatchingProperties[]; // without the specified propertiess for their associated tables
+export type QueryOptions<tables extends BaseTables | Tables = BaseTables> = {
+  with?: tables[keyof tables][]; // inside these tables
+  withProperties?: QueryMatchingProperties<tables[keyof tables]>[]; // with the specified properties for their associated tables
+  without?: tables[keyof tables][]; // not inside these tables
+  withoutProperties?: QueryMatchingProperties<tables[keyof tables]>[]; // without the specified properties for their associated tables
 };

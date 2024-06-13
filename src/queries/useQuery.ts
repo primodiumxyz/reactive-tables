@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { TableUpdate } from "@/tables/types";
+import type { BaseTables, Tables, TableUpdate } from "@/tables/types";
 import type { QueryOptions, TableWatcherCallbacks, TableWatcherParams } from "@/queries/types";
 import { type Entity } from "@/lib/external/mud/entity";
 import { queries, QueryFragmentType, useDeepMemo } from "@/lib/external/mud/queries";
@@ -49,8 +49,8 @@ const { defineQuery, With, WithProperties, Without, WithoutProperties } = querie
  * ```
  * @category Queries
  */
-export const useQuery = (
-  options: QueryOptions,
+export const useQuery = <tables extends BaseTables | Tables>(
+  options: QueryOptions<tables>,
   callbacks?: TableWatcherCallbacks,
   params: TableWatcherParams = {
     runOnInit: true,
@@ -83,6 +83,7 @@ export const useQuery = (
         (typeof _update)["table"]["propertiesSchema"],
         (typeof _update)["table"]["metadata"]
       >; // TODO: test if weird type casting useful
+      console.log(update.table.id, update.type);
       onChange?.(update);
       if (update.type === "update") {
         // entity is changed within the query so no need to update entities
@@ -115,7 +116,10 @@ export const useQuery = (
     }
 
     mounted.current = true;
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted.current = false;
+      subscription.unsubscribe();
+    };
   }, [options, queryFragments]);
 
   return [...new Set(entities)];
