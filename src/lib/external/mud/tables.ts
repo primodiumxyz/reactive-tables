@@ -71,7 +71,7 @@ const _tableOperations = () => {
         entity,
         properties: { current: properties, prev: prevProperties },
         table,
-        type: prevProperties ? (prevProperties === properties ? "noop" : "change") : "enter",
+        type: prevProperties ? (prevProperties === properties ? "noop" : "update") : "enter",
       });
     }
   };

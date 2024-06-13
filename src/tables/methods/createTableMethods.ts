@@ -105,7 +105,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
         entity,
         properties: { current: properties, prev: prevProperties },
         table,
-        type: prevProperties ? "change" : "enter",
+        type: prevProperties ? "update" : "enter",
       });
     } else {
       setEntity(table, entity, properties, options);

@@ -16,7 +16,7 @@ const { With, WithProperties, Without, WithoutProperties } = queries;
  *
  * @param world The RECS world containing the tables to watch.
  * @param queryOptions The {@link QueryOptions} object containing the conditions to match.
- * @param callbacks The {@link TableWatcherCallbacks} to trigger on changes. Including: onChange, onEnter, onExit, onUpdate.
+ * @param callbacks The {@link TableWatcherCallbacks} to trigger on changes. Including: onUpdate, onEnter, onExit, onChange.
  * These will trigger a {@link TableUpdate} object inside the id of the updated table, the entity, the previous and new properties of the entity and the type of update.
  * @param params (optional) Additional {@link TableWatcherParams} for the query. Currently only supports `runOnInit` to trigger the callbacks for all matching entities on initialization.
  * @example
@@ -38,10 +38,10 @@ const { With, WithProperties, Without, WithoutProperties } = queries;
  * // -> { table: tables.Player, entity: recordA, current: { score: 10, online: true }, prev: undefined, type: "enter" }
  *
  * tables.Player.update({ score: 15 }, recordA);
- * // -> { table: tables.Player, entity: recordA, current: { online: true, score: 15 }, prev: { online: true, score: 10 }, type: "change" }
+ * // -> { table: tables.Player, entity: recordA, current: { online: true, score: 15 }, prev: { online: true, score: 10 }, type: "update" }
  *
  * tables.Player.update({ online: false }, recordA);
- * // -> { table: tables.Player, entity: recordA, current: { online: false, score: 15 }, prev: { online: true, score: 15 }, type: "change" }
+ * // -> { table: tables.Player, entity: recordA, current: { online: false, score: 15 }, prev: { online: true, score: 15 }, type: "update" }
  * ```
  * @category Queries
  */
@@ -51,8 +51,8 @@ export const $query = (
   callbacks: TableWatcherCallbacks,
   params: TableWatcherParams = { runOnInit: true },
 ) => {
-  const { onChange, onEnter, onExit, onUpdate } = callbacks;
-  if (!onChange && !onEnter && !onExit && !onUpdate) {
+  const { onUpdate, onEnter, onExit, onChange } = callbacks;
+  if (!onUpdate && !onEnter && !onExit && !onChange) {
     throw new Error("At least one callback has to be provided");
   }
 
@@ -70,8 +70,8 @@ export const $query = (
       ...(withoutProperties?.map((matching) => WithoutProperties(matching.table, { ...matching.properties })) ?? []),
     ],
     (update) => {
-      onUpdate?.(update);
-      if (update.type === "change") onChange?.(update);
+      onChange?.(update);
+      if (update.type === "update") onUpdate?.(update);
       if (update.type === "enter") onEnter?.(update);
       if (update.type === "exit") onExit?.(update);
     },

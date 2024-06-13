@@ -151,7 +151,7 @@ const _systems = () => {
       ({ entity, type }) => {
         if (type === "enter") setEntity(table(entity), entity, properties(entity));
         if (type === "exit") removeEntity(table(entity), entity);
-        if (options?.update && type === "change") setEntity(table(entity), entity, properties(entity));
+        if (options?.update && type === "update") setEntity(table(entity), entity, properties(entity));
       },
       options,
     );

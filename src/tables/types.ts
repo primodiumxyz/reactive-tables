@@ -74,7 +74,7 @@ export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetada
  * - `noop` - No change has occurred.
  * @category Queries
  */
-export type UpdateType = "enter" | "exit" | "change" | "noop";
+export type UpdateType = "enter" | "exit" | "update" | "noop";
 
 /**
  * Defines the characteristics of a table update.
@@ -457,10 +457,10 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    *
    * @param options The {@link TableMethodsWatcherOptions} for creating the table watcher.
    * - `world` The RECS world containing the table to watch (optional, default global world).
-   * - `onChange` Callback triggered on any change in the table/query (encompassing enter, exit, and update).
+   * - `onUpdate` Callback triggered when the properties of an entity are updated (within the query if provided).
    * - `onEnter` Callback triggered when an entity enters the table/query (`properties.prev` will be undefined).
    * - `onExit` Callback triggered when an entity exits the table/query (`properties.current` will be undefined).
-   * - `onUpdate` Callback triggered when the properties of an entity are updated (within the query if provided).
+   * - `onChange` Callback triggered on any change in the table/query (encompassing enter, exit, and update).
    * @param params Additional {@link TableWatcherParams} for the watcher.
    * @example
    * This example creates a watcher for all entities within (with properties inside) the "Player" table.
@@ -471,14 +471,14 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    *
    * // The function should be accessed from the table's methods
    * tables.Player.watch({
-   *   onChange: (update) => console.log(update),
+   *   onUpdate: (update) => console.log(update),
    * }, {
    *   runOnInit: false,
    * });
    * // no output
    *
    * tables.Player.update({ health: 90 }, playerRecord);
-   * // -> { table: tables.Player, entity: playerRecord, current: { health: 90 }, prev: { health: 100 }, type: "change" }
+   * // -> { table: tables.Player, entity: playerRecord, current: { health: 90 }, prev: { health: 100 }, type: "update" }
    *
    * tables.Player.remove(playerRecord);
    * // -> { table: tables.Player, entity: playerRecord, current: undefined, prev: { health: 90 }, type: "exit" }

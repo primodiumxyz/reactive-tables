@@ -39,10 +39,10 @@ export type TableMethodsWatcherOptions<
  * @template PS The schema of the properties for all entities inside the table being watched.
  * @template M The metadata of the table.
  * @template T The type of the properties to match.
- * @param onChange The callback to trigger when an entity inside the table being watched has changed (includes all below events).
+ * @param onUpdate The callback to trigger when an entity inside the table being watched has changed (includes all below events).
  * @param onEnter The callback to trigger when an entity inside the table being watched has entered the query (or the table).
  * @param onExit The callback to trigger when an entity inside the table being watched has exited the query (or the table).
- * @param onUpdate The callback to trigger when the properties of an entity inside the table being watched have changed.
+ * @param onChange The callback to trigger when the properties of an entity inside the table being watched have changed.
  * @see {@link TableUpdate}
  * @category Queries
  */
@@ -51,10 +51,10 @@ export type TableWatcherCallbacks<
   M extends BaseTableMetadata = BaseTableMetadata,
   T = unknown,
 > = Partial<{
-  onChange: (update: TableUpdate<PS, M, T>) => void;
+  onUpdate: (update: TableUpdate<PS, M, T>) => void;
   onEnter: (update: TableUpdate<PS, M, T>) => void;
   onExit: (update: TableUpdate<PS, M, T>) => void;
-  onUpdate: (update: TableUpdate<PS, M, T>) => void;
+  onChange: (update: TableUpdate<PS, M, T>) => void;
 }>;
 
 /**

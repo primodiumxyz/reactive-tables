@@ -749,16 +749,16 @@ describe("queries: should emit appropriate update events with the correct data",
 
     // Aggregate updates triggered by the system on table update
     const aggregator: TableUpdate[] = [];
-    const onUpdate = (update: (typeof aggregator)[number]) => aggregator.push(update);
+    const onChange = (update: (typeof aggregator)[number]) => aggregator.push(update);
 
-    return { world, tables, entities, onUpdate, aggregator };
+    return { world, tables, entities, onChange, aggregator };
   };
 
   it("table.watch()", async () => {
-    const { tables, entities, onUpdate, aggregator } = await preTest();
+    const { tables, entities, onChange, aggregator } = await preTest();
     const table = tables.Position;
 
-    tables.Position.watch({ onUpdate }, { runOnInit: false });
+    tables.Position.watch({ onChange }, { runOnInit: false });
     expect(aggregator).toEqual([]);
 
     // Update the position for an entity (and enter the table)
@@ -771,7 +771,7 @@ describe("queries: should emit appropriate update events with the correct data",
         table: toBaseTable(table),
         entity: entities[0],
         properties: { current: propsB, prev: propsA },
-        type: propsA ? "change" : "enter",
+        type: propsA ? "update" : "enter",
       },
     ]);
 
@@ -790,13 +790,13 @@ describe("queries: should emit appropriate update events with the correct data",
         table: toBaseTable(table),
         entity: entities[0],
         properties: { current: propsB, prev: propsA },
-        type: propsA ? "change" : "enter",
+        type: propsA ? "update" : "enter",
       },
       {
         table: toBaseTable(table),
         entity: entities[1],
         properties: { current: propsD, prev: propsC },
-        type: propsC ? "change" : "enter",
+        type: propsC ? "update" : "enter",
       },
       {
         table: toBaseTable(table),
@@ -814,12 +814,12 @@ describe("queries: should emit appropriate update events with the correct data",
   });
 
   it("table.watch(): run on init", async () => {
-    const { tables, entities, onUpdate, aggregator } = await preTest();
+    const { tables, entities, onChange, aggregator } = await preTest();
 
     // Enter entities
     await Promise.all(entities.map(async (entity) => await updatePosition(tables.Position, entity)));
 
-    tables.Position.watch({ onUpdate }, { runOnInit: true });
+    tables.Position.watch({ onChange }, { runOnInit: true });
     expect(aggregator).toHaveLength(entities.length);
   });
 
@@ -889,14 +889,14 @@ describe("queries: should emit appropriate update events with the correct data",
   });
 
   it("$query(), useQuery() (useQueryAllMatching)", async () => {
-    const { world, tables, entities, onUpdate: onUpdateHook, aggregator: aggregatorHook } = await preTest();
+    const { world, tables, entities, onChange: onChangeHook, aggregator: aggregatorHook } = await preTest();
     const [player, A, B, C] = entities;
 
     // We need more aggregators for the query subscription
     const aggregatorListener: TableUpdate[] = [];
     const aggregatorListenerRunOnInit: TableUpdate[] = [];
-    const onUpdateListener = (update: (typeof aggregatorListener)[number]) => aggregatorListener.push(update);
-    const onUpdateListenerRunOnInit = (update: (typeof aggregatorListenerRunOnInit)[number]) =>
+    const onChangeListener = (update: (typeof aggregatorListener)[number]) => aggregatorListener.push(update);
+    const onChangeListenerRunOnInit = (update: (typeof aggregatorListenerRunOnInit)[number]) =>
       aggregatorListenerRunOnInit.push(update);
 
     // Prepare entities
@@ -922,13 +922,13 @@ describe("queries: should emit appropriate update events with the correct data",
       useQuery(
         queryOptions,
         {
-          onUpdate: onUpdateHook,
+          onChange: onChangeHook,
         },
         { runOnInit: true },
       ),
     );
-    $query(world, queryOptions, { onUpdate: onUpdateListener }, { runOnInit: false });
-    $query(world, queryOptions, { onUpdate: onUpdateListenerRunOnInit }, { runOnInit: true });
+    $query(world, queryOptions, { onChange: onChangeListener }, { runOnInit: false });
+    $query(world, queryOptions, { onChange: onChangeListenerRunOnInit }, { runOnInit: true });
 
     const expectedAggregatorItems = [
       {
@@ -1017,7 +1017,7 @@ describe("queries: should emit appropriate update events with the correct data",
       table: toBaseTable(tables.Position),
       entity: B,
       properties: { current: propsH, prev: propsG },
-      type: "change",
+      type: "update",
     };
     const expectedAggregatorItemF = {
       table: toBaseTable(tables.Position),
