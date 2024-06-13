@@ -28,9 +28,10 @@
     "lint:fix": "eslint --cache --fix",
     "prepare": "husky install",
     "sort-package-json": "npx sort-package-json package.json",
-    "test": "vitest __tests__/index.test.ts",
+    "test": "vitest __tests__/index.test.ts --run",
     "test:benchmarks": "vitest __tests__/benchmark --run",
-    "test:verbose": "DEBUG=primodium:* vitest > testLogs.txt"
+    "test:verbose": "DEBUG=primodium:* vitest > testLogs.txt",
+    "test:watch": "vitest __tests__/index.test.ts"
   },
   "lint-staged": {
     "*.{ts,tsx}": "eslint --cache --fix",
