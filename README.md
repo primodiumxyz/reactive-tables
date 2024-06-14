@@ -136,9 +136,9 @@ $query(
   },
   {
     onEnter: (update) => console.log(update),
-    onChange: (update) => console.log(update),
+    onUpdate: (update) => console.log(update),
     onExit: (update) => console.log(update),
-    // or `onUpdate`, which encapsulates all the above
+    // or `onChange`, which encapsulates all the above
   },
   { runOnInit: true },
 ); // this is the default behavior

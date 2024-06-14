@@ -549,7 +549,7 @@ const _queries = () => {
                   // Entity matched before and still matches
                   updates.push({
                     entity: matchingEntity,
-                    type: "change",
+                    type: "update",
                     table: update.table,
                     properties: {
                       current: getEntityProperties(update.table, matchingEntity),
@@ -585,7 +585,7 @@ const _queries = () => {
 
                 if (pass) {
                   // Entity passed before and still passes, forward update
-                  return { ...update, type: "change" as const };
+                  return { ...update, type: "update" as const };
                 } else {
                   // Entity passed before but not anymore, forward update and exit
                   matching.delete(update.entity);
@@ -621,7 +621,7 @@ const _queries = () => {
     fragments: QueryFragment[],
     options?: { runOnInit?: boolean },
   ): Observable<TableUpdate> => {
-    return defineQuery(fragments, options).update$.pipe(filter((e) => e.type === "change"));
+    return defineQuery(fragments, options).update$.pipe(filter((e) => e.type === "update"));
   };
 
   /**

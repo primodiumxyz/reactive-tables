@@ -1,38 +1,5 @@
-import { ContractTableDefs } from "@/lib";
-
-import { NetworkConfig } from "@test/utils/networkConfig";
-import { AllTables, LocalSyncTables, OnSyncCallbacks, Sync as SyncType } from "@test/utils/sync/types";
+import { LocalSyncTables, OnSyncCallbacks, Sync as SyncType } from "@test/utils/sync/types";
 import { SyncSourceType, SyncStep } from "@test/utils/sync/tables";
-
-export const hydrateFromIndexer = <tableDefs extends ContractTableDefs>(
-  tables: AllTables<tableDefs>,
-  networkConfig: NetworkConfig,
-  sync: SyncType,
-  onSync: OnSyncCallbacks,
-) => {
-  const { SyncSource, SyncStatus } = tables;
-  const { progress: onProgress, complete: onComplete, error: onError } = onSync ?? {};
-
-  let startBlock = networkConfig.initialBlockNumber;
-
-  sync.start(async (index, blockNumber, progress) => {
-    startBlock = blockNumber;
-
-    onProgress?.(index, blockNumber, progress);
-    SyncSource.set({ value: SyncSourceType.Indexer });
-    SyncStatus.set({
-      step: SyncStep.Syncing,
-      progress,
-      message: `Hydrating from Indexer`,
-      lastBlockNumberProcessed: blockNumber,
-    });
-
-    if (progress === 1) {
-      // This will hydrate remaining blocks from RPC
-      onComplete?.(startBlock);
-    }
-  }, onError);
-};
 
 export const hydrateFromRpc = (tables: LocalSyncTables, sync: SyncType, onSync: OnSyncCallbacks) => {
   const { SyncStatus, SyncSource } = tables;

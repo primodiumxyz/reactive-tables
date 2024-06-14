@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { TableUpdate } from "@/tables/types";
+import type { BaseTables, Tables, TableUpdate } from "@/tables/types";
 import type { QueryOptions, TableWatcherCallbacks, TableWatcherParams } from "@/queries/types";
 import { type Entity } from "@/lib/external/mud/entity";
 import { queries, QueryFragmentType, useDeepMemo } from "@/lib/external/mud/queries";
@@ -19,7 +19,7 @@ const { defineQuery, With, WithProperties, Without, WithoutProperties } = querie
  *
  * @param store The TinyBase store containing the properties associated with contract tables.
  * @param options The {@link QueryOptions} object containing the conditions to match.
- * @param callbacks (optional) The {@link TableWatcherCallbacks} to trigger on changes. Including: onChange, onEnter, onExit, onUpdate.
+ * @param callbacks (optional) The {@link TableWatcherCallbacks} to trigger on changes. Including: onUpdate, onEnter, onExit, onChange.
  * These will trigger a {@link TableUpdate} object with the id of the updated table, the entity, the previous and new properties of the entity and the type of update.
  * @param params (optional) Additional {@link TableWatcherParams} for the query. Currently only supports `runOnInit` to trigger the callbacks for all matching entities on initialization.
  * @returns An array of {@link Entity} matching all conditions.
@@ -37,20 +37,20 @@ const { defineQuery, With, WithProperties, Without, WithoutProperties } = querie
  *   withProperties: [ { table: tables.Score, properties: { points: 10 } } ],
  *   without: [ tables.GameOver ],
  * }, {
- *   onChange: (update) => console.log(update),
+ *   onUpdate: (update) => console.log(update),
  * });
  * console.log(entities);
  * // -> [ recordA ]
  *
  * tables.Score.update({ points: 10 }, recordC);
- * // -> { table: tables.Score, entity: recordC, current: { points: 10 }, prev: { points: 3 }, type: "change" }
+ * // -> { table: tables.Score, entity: recordC, current: { points: 10 }, prev: { points: 3 }, type: "update" }
  * console.log(entities);
  * // -> [ recordA, recordC ]
  * ```
  * @category Queries
  */
-export const useQuery = (
-  options: QueryOptions,
+export const useQuery = <tables extends BaseTables | Tables>(
+  options: QueryOptions<tables>,
   callbacks?: TableWatcherCallbacks,
   params: TableWatcherParams = {
     runOnInit: true,
@@ -59,7 +59,7 @@ export const useQuery = (
   // Not available in a non-browser environment
   if (typeof window === "undefined") throw new Error("useQuery is only available in a browser environment");
   const { with: inside, without: notInside, withProperties, withoutProperties } = options;
-  const { onChange, onEnter, onExit, onUpdate } = callbacks ?? {};
+  const { onUpdate, onEnter, onExit, onChange } = callbacks ?? {};
 
   const queryFragments = useDeepMemo([
     ...(inside?.map((fragment) => With(fragment)) ?? []),
@@ -83,10 +83,11 @@ export const useQuery = (
         (typeof _update)["table"]["propertiesSchema"],
         (typeof _update)["table"]["metadata"]
       >; // TODO: test if weird type casting useful
-      onUpdate?.(update);
-      if (update.type === "change") {
+      console.log(update.table.id, update.type);
+      onChange?.(update);
+      if (update.type === "update") {
         // entity is changed within the query so no need to update entities
-        onChange?.(update);
+        onUpdate?.(update);
       } else if (update.type === "enter") {
         setRecords((prev) => [...prev, update.entity]);
         onEnter?.(update);
@@ -110,12 +111,15 @@ export const useQuery = (
         } as const satisfies TableUpdate;
 
         onEnter?.(update);
-        onUpdate?.(update);
+        onChange?.(update);
       });
     }
 
     mounted.current = true;
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted.current = false;
+      subscription.unsubscribe();
+    };
   }, [options, queryFragments]);
 
   return [...new Set(entities)];
