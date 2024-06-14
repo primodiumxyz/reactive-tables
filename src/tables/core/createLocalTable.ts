@@ -1,7 +1,7 @@
 import { createTable, type TableOptions } from "@/tables/core/createTable";
 import type { Table } from "@/tables/types";
 import type { World } from "@/lib/external/mud/world";
-import { type BaseTableMetadata, type Schema, Type } from "@/lib/external/mud/schema";
+import { type BaseTableMetadata, type Schema, Type, type Properties } from "@/lib/external/mud/schema";
 import { uuid } from "@/lib/external/uuid";
 
 /**
@@ -26,7 +26,7 @@ import { uuid } from "@/lib/external/uuid";
  * // -> { value: true }
  * ```
  *
- * @example @todo persistence
+ * @example
  * This example creates a persistent local table with coordinates properties.
  *
  * ```ts
@@ -39,7 +39,7 @@ export const createLocalTable = <PS extends Schema, M extends BaseTableMetadata,
   world: World,
   propertiesSchema: PS,
   options?: TableOptions<M>,
-  // defaultProperties?: Properties<PS, T>, // TODO: persistence
+  defaultProperties?: Properties<PS, T>,
 ) => {
   const { id, metadata: baseMetadata } = options ?? { id: uuid() };
 
@@ -48,11 +48,20 @@ export const createLocalTable = <PS extends Schema, M extends BaseTableMetadata,
     name: id,
     namespace: baseMetadata?.namespace ?? ("local" as const),
     globalName:
-      baseMetadata?.globalName ?? baseMetadata?.namespace ? `${baseMetadata.namespace}__${id}` : `local__${id}`,
+      baseMetadata?.globalName ?? baseMetadata?.namespace
+        ? (`${baseMetadata.namespace}__${id}` as const)
+        : (`local__${id}` as const),
     abiKeySchema: { entity: "bytes32" } as const,
   } as const satisfies BaseTableMetadata;
 
-  return createTable(world, propertiesSchema, { ...options, id, metadata }) as unknown as Table<PS, typeof metadata, T>;
+  const table = createTable(world, propertiesSchema, { ...options, id, metadata }) as unknown as Table<
+    PS,
+    typeof metadata,
+    T
+  >;
+  if (defaultProperties) table.set(defaultProperties);
+
+  return table;
 };
 
 /**

@@ -10,6 +10,7 @@ import type { BaseTableMetadata, Properties, PropertiesSansMetadata, Schema } fr
 import { tableOperations } from "@/lib/external/mud/tables";
 import { queries } from "@/lib/external/mud/queries";
 import type { World } from "@/lib/external/mud/world";
+import { LocalStorage } from "@/lib/persistence";
 const {
   setEntity,
   removeEntity,
@@ -27,6 +28,7 @@ const { runQuery, defineQuery, useEntityQuery, With, WithProperties, WithoutProp
 export const createTableMethods = <PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
   world: World,
   table: BaseTable<PS, M, T>,
+  persist?: boolean,
 ): TableMethods<PS, M, T> => {
   const paused: Map<Entity, boolean> = new Map();
   const blocked: Map<Entity, boolean> = new Map();
@@ -110,6 +112,8 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
     } else {
       setEntity(table, entity, properties, options);
     }
+
+    if (persist) LocalStorage.setProperties(table, properties, entity);
   };
 
   /* ----------------------------------- GET ---------------------------------- */
@@ -180,6 +184,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
   const update = (properties: Partial<Properties<PS, T>>, entity?: Entity, options?: TableMutationOptions) => {
     entity = entity ?? defaultEntity;
     updateEntity(table, entity, properties, undefined, options);
+    if (persist) LocalStorage.updateProperties(table, properties, entity);
   };
 
   /* ----------------------------------- HAS ---------------------------------- */

@@ -143,6 +143,26 @@ export enum Type {
 }
 
 /**
+ * Defines the Typescript types of properties that can be stored in a table.
+ *
+ * @category Schema
+ */
+export type Primitive =
+  | boolean
+  | number
+  | bigint
+  | string
+  | Hex
+  | Entity
+  | number[]
+  | bigint[]
+  | string[]
+  | Hex[]
+  | Entity[]
+  | unknown
+  | undefined;
+
+/**
  * Defines a mapping between JavaScript {@link Type} enums and their corresponding TypeScript types.
  *
  * @category Schema

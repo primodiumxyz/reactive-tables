@@ -8,11 +8,14 @@ import type { BaseTableMetadata, Schema } from "@/lib/external/mud/schema";
 import { mapObject, transformIterator } from "@/lib/external/mud/utils";
 import type { World } from "@/lib/external/mud/world";
 import { uuid } from "@/lib/external/uuid";
+import { LocalStorage } from "@/lib/persistence";
 
 /**
  * Defines the options for creating a table (especially useful for local tables).
  *
+ * @template PS The schema of the properties for all entities inside the table.
  * @template M The type of any provided metadata for the table.
+ * @template T The type of the properties to match.
  * @param id The unique identifier for the table, usually—but not necessarily— a human-readable and descriptive name.
  * @param metadata (optional) Any additional metadata to be associated with the table.
  * @param indexed (optional) Whether the table should be indexed or not. Default: false.
@@ -22,7 +25,7 @@ export type TableOptions<M extends BaseTableMetadata> = {
   id: string; // default: uuid
   metadata?: Partial<M>;
   indexed?: boolean;
-  persist?: boolean; // TODO
+  persist?: boolean;
 };
 
 /**
@@ -49,16 +52,16 @@ export const createTable = <PS extends Schema, M extends BaseTableMetadata, T = 
   options?: TableOptions<M>,
 ) => {
   if (Object.keys(propertiesSchema).length === 0) throw new Error("Table properties schema must have at least one key");
+  const { id, metadata: baseMetadata, indexed, persist } = options ?? { id: uuid(), indexed: false, persist: false };
+  if (persist && typeof window === "undefined")
+    throw new Error("Tables cannot be persisted in a non-browser environment");
+  if (persist && !options?.id) throw new Error("You must provide an id for a table to be persisted");
+
   const hasKeySchema = options?.metadata?.abiKeySchema && Object.keys(options.metadata.abiKeySchema).length > 0;
 
-  // Native RECS entities iterator
-  const entities = () =>
-    transformIterator((Object.values(properties)[0] as Map<EntitySymbol, unknown>).keys(), getEntityHex);
-
   // Metadata
-  const id = options?.id ?? uuid();
   const metadata = {
-    ...options?.metadata,
+    ...baseMetadata,
     name: options?.metadata?.name ?? id,
     globalName: options?.metadata?.globalName ?? id,
     // generate abi types for the key schema in case none is provided
@@ -67,8 +70,19 @@ export const createTable = <PS extends Schema, M extends BaseTableMetadata, T = 
     abiKeySchema: hasKeySchema ? options.metadata!.abiKeySchema! : ({ entity: "bytes32" } as const),
   } as const satisfies BaseTableMetadata;
 
-  const properties = mapObject(propertiesSchema, () => new Map()) as BaseTable<PS, typeof metadata, T>["properties"];
+  // Create a new properties mapping or retrieve the last state from local storage
+  const persistedState = persist ? LocalStorage.getAllProperties(id, propertiesSchema) : undefined;
+  const properties = (persistedState ?? mapObject(propertiesSchema, () => new Map())) as BaseTable<
+    PS,
+    typeof metadata,
+    T
+  >["properties"];
+
+  // Update stream
   const update$ = new Subject() as BaseTable<PS, typeof metadata, T>["update$"];
+  // Native RECS entities iterator
+  const entities = () =>
+    transformIterator((Object.values(properties)[0] as Map<EntitySymbol, unknown>).keys(), getEntityHex);
 
   const baseTable = {
     id,
@@ -82,10 +96,10 @@ export const createTable = <PS extends Schema, M extends BaseTableMetadata, T = 
 
   const table = {
     ...baseTable,
-    ...createTableMethods(world, baseTable),
+    ...createTableMethods(world, baseTable, persist),
   } as const satisfies Table<PS, typeof metadata, T>;
 
   world.registerTable(table);
-  if (options?.indexed) return createIndexer(table);
+  if (indexed) return createIndexer(table);
   return table as Table<PS, typeof metadata, T>;
 };
