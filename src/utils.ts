@@ -11,6 +11,9 @@ export {
   getEntitySymbol,
   // Convert ABI types to TypeScript understandable types
   schemaAbiTypeToRecsType,
+  // Other schema utilities
+  schemaAbiTypes,
+  staticAbiTypes,
   // uuid
   uuid,
   // Direct access to MUD functionnalities
@@ -19,5 +22,13 @@ export {
   systems,
 } from "@/lib";
 
-// Storage adapter
-export type { StorageAdapterBlock, StorageAdapterLog } from "@/adapter";
+// Schema types
+export type { MappedType, SchemaAbiType, SchemaToPrimitives, StaticAbiType } from "@/lib";
+
+export {
+  // Schema utilities
+  encodeField,
+  // Storage adapter
+  type StorageAdapterBlock,
+  type StorageAdapterLog,
+} from "@/adapter";

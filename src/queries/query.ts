@@ -1,3 +1,4 @@
+import type { BaseTables, Tables } from "@/tables/types";
 import type { QueryOptions } from "@/queries/types";
 import { queries, type QueryFragment } from "@/lib/external/mud/queries";
 import type { Entity } from "@/lib/external/mud/entity";
@@ -30,7 +31,10 @@ const { runQuery, With, WithProperties, Without, WithoutProperties } = queries;
  * ```
  * @category Queries
  */
-export const query = (options: QueryOptions, fragments?: QueryFragment[]): Entity[] => {
+export const query = <tables extends BaseTables | Tables>(
+  options: QueryOptions<tables>,
+  fragments?: QueryFragment[],
+): Entity[] => {
   const { with: inside, without: notInside, withProperties, withoutProperties } = options;
   if (!fragments && !inside && !withProperties) {
     throw new Error("At least one `with` or `withProperties` condition needs to be provided");

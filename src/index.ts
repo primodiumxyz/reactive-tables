@@ -15,15 +15,19 @@ export { defaultEntity, localProperties, metadataProperties } from "@/lib";
 export type {
   AbiKeySchema,
   AbiPropertiesSchema,
+  UnparsedAbiKeySchema,
+  UnparsedAbiPropertiesSchema,
   AbiToSchema,
   AllTableDefs,
   BaseTableMetadata,
   ContractTableDef,
   ContractTableDefs,
   ContractTableMetadata,
-  Metadata,
   Entity,
   EntitySymbol,
+  Keys,
+  Metadata,
+  OptionalTypes,
   Properties,
   PropertiesSansMetadata,
   Schema,
@@ -33,7 +37,13 @@ export type {
 export { createWorld, namespaceWorld, Type } from "@/lib";
 
 export type { StorageAdapter } from "@/adapter";
-export type { QueryOptions, TableWatcherCallbacks } from "@/queries";
+export type {
+  QueryOptions,
+  QueryMatchingProperties,
+  TableWatcherCallbacks,
+  TableWatcherOptions,
+  WatcherOptions,
+} from "@/queries";
 export type {
   BaseTable,
   ContractTable,

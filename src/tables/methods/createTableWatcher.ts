@@ -12,10 +12,10 @@ import { systems } from "@/lib/external/mud/systems";
  * @param options The {@link TableWatcherOptions} for creating the table watcher.
  * - `world` The RECS world containing the table to watch.
  * - `table` The table to watch for changes.
- * - `onChange` Callback triggered on any change in the table/query (encompassing enter, exit, and update).
+ * - `onUpdate` Callback triggered when the properties of an entity are updated (within the query if provided).
  * - `onEnter` Callback triggered when an entity enters the table/query (`properties.prev` will be undefined).
  * - `onExit` Callback triggered when an entity exits the table/query (`properties.current` will be undefined).
- * - `onUpdate` Callback triggered when the properties of an entity are updated (within the query if provided).
+ * - `onChange` Callback triggered on any change in the table/query (encompassing enter, exit, and update).
  * @param params Additional {@link TableWatcherParams} for the watcher.
  * @example
  * This example creates a watcher for all entities within (with properties inside) the "Player" table.
@@ -35,7 +35,7 @@ import { systems } from "@/lib/external/mud/systems";
  * // no output
  *
  * tables.Player.update({ health: 90 }, playerRecord);
- * // -> { table: tables.Player, entity: playerRecord, current: { health: 90 }, prev: { health: 100 }, type: "change" }
+ * // -> { table: tables.Player, entity: playerRecord, current: { health: 90 }, prev: { health: 100 }, type: "update" }
  *
  * tables.Player.remove(playerRecord);
  * // -> { table: tables.Player, entity: playerRecord, current: undefined, prev: { health: 90 }, type: "exit" }
@@ -47,8 +47,8 @@ export const createTableWatcher = <PS extends Schema, M extends BaseTableMetadat
   options: TableWatcherOptions<PS, M, T>,
   params: TableWatcherParams = { runOnInit: true },
 ) => {
-  const { world, table, onChange, onEnter, onExit, onUpdate } = options;
-  if (!onChange && !onEnter && !onExit && !onUpdate) {
+  const { world, table, onUpdate, onEnter, onExit, onChange } = options;
+  if (!onUpdate && !onEnter && !onExit && !onChange) {
     throw new Error("At least one callback has to be provided");
   }
 
@@ -57,8 +57,8 @@ export const createTableWatcher = <PS extends Schema, M extends BaseTableMetadat
     table,
     (_update) => {
       const update = _update as TableUpdate<PS, M, T>;
-      onUpdate?.(update);
-      if (update.type === "change") onChange?.(update);
+      onChange?.(update);
+      if (update.type === "update") onUpdate?.(update);
       if (update.type === "enter") onEnter?.(update);
       if (update.type === "exit") onExit?.(update);
     },

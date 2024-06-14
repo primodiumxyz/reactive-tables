@@ -49,6 +49,9 @@ export type IndexedBaseTable<
 };
 
 /* ---------------------------------- BASE ---------------------------------- */
+export interface BaseTables {
+  [name: string]: BaseTable;
+}
 export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> {
   id: string;
   properties: { [key in keyof PS]: Map<EntitySymbol, MappedType<T>[PS[key]]> };
@@ -74,7 +77,7 @@ export interface BaseTable<PS extends Schema = Schema, M extends BaseTableMetada
  * - `noop` - No change has occurred.
  * @category Queries
  */
-export type UpdateType = "enter" | "exit" | "change" | "noop";
+export type UpdateType = "enter" | "exit" | "update" | "noop";
 
 /**
  * Defines the characteristics of a table update.
@@ -396,8 +399,64 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
   use(entity?: Entity | undefined): Properties<PS, T> | undefined;
   use(entity: Entity | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
-  // TODO: document
+  /**
+   * Block updates for an entity or the table as a whole, meaning it won't react to changes anymore.
+   *
+   * Note: This won't record the updates anymore, thus not keeping track of the tables update for an entity
+   * as long as it's blocked.
+   *
+   * @param entity (optional) The entity to block updates for.
+   * @example
+   * This example blocks updates for an entity in the "Player" table.
+   *
+   * ```ts
+   * const player = tables.Player.use(recordA);
+   * tables.Player.set({ name: "Alice", score: 0 }, recordA);
+   * console.log(player);
+   * // -> { name: "Alice", score: 0 }
+   *
+   * tables.Player.blockUpdates(recordA);
+   * tables.Player.update({ score: 30 }, recordA);
+   * console.log(player);
+   * // -> { name: "Alice", score: 0 }
+   * ```
+   * @category Methods
+   * @internal
+   */
   blockUpdates: (entity?: Entity) => void;
+
+  /**
+   * Unblock updates for an entity or the table as a whole, meaning it will react to changes again.
+   *
+   * Note: The updates will start being recorded for the entity again, but the table will be resumed to
+   * its state before it was blocked.
+   *
+   * @param entity (optional) The entity to unblock updates for.
+   * @example
+   * This example unblocks updates for an entity in the "Player" table after it's been blocked.
+   *
+   * ```ts
+   * const player = tables.Player.use(recordA);
+   * tables.Player.set({ name: "Alice", score: 0 }, recordA);
+   * console.log(player);
+   * // -> { name: "Alice", score: 0 }
+   *
+   * tables.Player.blockUpdates(recordA);
+   * tables.Player.update({ score: 30 }, recordA);
+   * console.log(player);
+   * // -> { name: "Alice", score: 0 }
+   *
+   * tables.Player.unblockUpdates(recordA);
+   * console.log(player);
+   * // -> { name: "Alice", score: 0 }
+   *
+   * tables.Player.update({ score: 30 }, recordA);
+   * console.log(player);
+   * // -> { name: "Alice", score: 30 }
+   * ```
+   * @category Methods
+   * @internal
+   */
   unblockUpdates: (entity?: Entity) => void;
 
   /**
@@ -457,10 +516,10 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    *
    * @param options The {@link TableMethodsWatcherOptions} for creating the table watcher.
    * - `world` The RECS world containing the table to watch (optional, default global world).
-   * - `onChange` Callback triggered on any change in the table/query (encompassing enter, exit, and update).
+   * - `onUpdate` Callback triggered when the properties of an entity are updated (within the query if provided).
    * - `onEnter` Callback triggered when an entity enters the table/query (`properties.prev` will be undefined).
    * - `onExit` Callback triggered when an entity exits the table/query (`properties.current` will be undefined).
-   * - `onUpdate` Callback triggered when the properties of an entity are updated (within the query if provided).
+   * - `onChange` Callback triggered on any change in the table/query (encompassing enter, exit, and update).
    * @param params Additional {@link TableWatcherParams} for the watcher.
    * @example
    * This example creates a watcher for all entities within (with properties inside) the "Player" table.
@@ -471,14 +530,14 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    *
    * // The function should be accessed from the table's methods
    * tables.Player.watch({
-   *   onChange: (update) => console.log(update),
+   *   onUpdate: (update) => console.log(update),
    * }, {
    *   runOnInit: false,
    * });
    * // no output
    *
    * tables.Player.update({ health: 90 }, playerRecord);
-   * // -> { table: tables.Player, entity: playerRecord, current: { health: 90 }, prev: { health: 100 }, type: "change" }
+   * // -> { table: tables.Player, entity: playerRecord, current: { health: 90 }, prev: { health: 100 }, type: "update" }
    *
    * tables.Player.remove(playerRecord);
    * // -> { table: tables.Player, entity: playerRecord, current: undefined, prev: { health: 90 }, type: "exit" }
