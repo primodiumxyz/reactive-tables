@@ -21,6 +21,7 @@ import {
   TableUpdate,
   useQuery,
   QueryOptions,
+  createLocalBigIntTable,
 } from "@/index"; // use `from "@primodiumxyz/reactive-tables"` to test the build
 
 // tests
@@ -158,6 +159,27 @@ describe("local: create local table", () => {
     expect(tables.A.get()).toHaveProperty("y", 1);
     expect(tables.B.get()).toHaveProperty("bool", true);
     expect(tables.B.get()).toHaveProperty("array", [defaultEntity]);
+  });
+
+  it("should be able to retrieve the state from local storage for a persisted table", async () => {
+    const world = createWorld();
+    const tables = {
+      A: createLocalBigIntTable(world, { id: "A", persist: true }),
+      B: createLocalTable(world, { bool: Type.Boolean, array: Type.EntityArray }, { id: "B", persist: true }),
+    };
+
+    tables.A.set({ value: BigInt(1) });
+    tables.B.set({ bool: true, array: [defaultEntity] });
+
+    const nextWorld = createWorld();
+    const nextTables = {
+      A: createLocalBigIntTable(nextWorld, { id: "A", persist: true }),
+      B: createLocalTable(nextWorld, { bool: Type.Boolean, array: Type.EntityArray }, { id: "B", persist: true }),
+    };
+
+    expect(nextTables.A.get()).toHaveProperty("value", BigInt(1));
+    expect(nextTables.B.get()).toHaveProperty("bool", true);
+    expect(nextTables.B.get()).toHaveProperty("array", [defaultEntity]);
   });
 });
 
@@ -828,7 +850,7 @@ describe("queries: should emit appropriate update events with the correct data",
           properties: { totalWeight: BigInt(6) },
         },
       ],
-    } as const satisfies QueryOptions<typeof tables>;
+    } as const satisfies QueryOptions;
 
     const { result } = renderHook(() =>
       useQuery(
