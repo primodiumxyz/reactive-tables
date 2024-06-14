@@ -1,7 +1,7 @@
 import { Subject } from "rxjs";
 
 import { createTableMethods } from "@/tables/methods/createTableMethods";
-import type { Table, BaseTable } from "@/tables/types";
+import type { BaseTable, Table } from "@/tables/types";
 import { type EntitySymbol, getEntityHex } from "@/lib/external/mud/entity";
 import { createIndexer } from "@/lib/external/mud/indexer";
 import type { BaseTableMetadata, Schema } from "@/lib/external/mud/schema";
@@ -43,11 +43,11 @@ export type TableOptions<M extends BaseTableMetadata> = {
  * @category Tables
  * @internal
  */
-export function createTable<PS extends Schema, M extends BaseTableMetadata, T = unknown>(
+export const createTable = <PS extends Schema, M extends BaseTableMetadata, T = unknown>(
   world: World,
   propertiesSchema: PS,
   options?: TableOptions<M>,
-) {
+) => {
   if (Object.keys(propertiesSchema).length === 0) throw new Error("Table properties schema must have at least one key");
   const hasKeySchema = options?.metadata?.abiKeySchema && Object.keys(options.metadata.abiKeySchema).length > 0;
 
@@ -87,5 +87,5 @@ export function createTable<PS extends Schema, M extends BaseTableMetadata, T = 
 
   world.registerTable(table);
   if (options?.indexed) return createIndexer(table);
-  return table;
-}
+  return table as Table<PS, typeof metadata, T>;
+};
