@@ -166,7 +166,7 @@ describe("local: create local table", () => {
 /* -------------------------------------------------------------------------- */
 
 describe("sync: should properly sync similar properties to RECS tables", () => {
-  it.only("sync via RPC", async () => {
+  it("sync via RPC", async () => {
     const { tables, syncToRecs, entities } = setup({ startSync: true });
     const { recsComponents } = await syncToRecs();
     const player = entities[0];
