@@ -6,7 +6,7 @@ export * from "@/createWrapper";
 export * from "@/tables/core/createLocalTable";
 
 // Queries: global (filtering keys and callbacks), query (direct query returning Entity[]), useQuery (React hook returning Entity[] with callbacks)
-export { $query, query, useQuery } from "@/queries";
+export { queryMatchingCondition, queryPropertiesCondition, $query, query, useQuery } from "@/queries";
 
 /* -------------------------------- CONSTANTS ------------------------------- */
 export { defaultEntity, localProperties, metadataProperties } from "@/lib";
