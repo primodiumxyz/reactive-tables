@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import type { BaseTables, Tables, TableUpdate } from "@/tables/types";
+import { queryToFragments } from "@/queries/utils";
 import type { QueryOptions, TableWatcherCallbacks, TableWatcherParams } from "@/queries/types";
+import type { BaseTables, Tables, TableUpdate } from "@/tables/types";
 import { type Entity } from "@/lib/external/mud/entity";
 import { queries, QueryFragmentType, useDeepMemo } from "@/lib/external/mud/queries";
 import { tableOperations } from "@/lib/external/mud/tables";
 const { getEntityProperties } = tableOperations;
-const { defineQuery, With, WithProperties, Without, WithoutProperties } = queries;
+const { defineQuery } = queries;
 
 /**
  * React hook to query all entities matching multiple conditions across tables.
@@ -58,17 +59,11 @@ export const useQuery = <tables extends BaseTables | Tables>(
 ): Entity[] => {
   // Not available in a non-browser environment
   if (typeof window === "undefined") throw new Error("useQuery is only available in a browser environment");
-  const { with: inside, without: notInside, withProperties, withoutProperties } = options;
   const { onUpdate, onEnter, onExit, onChange } = callbacks ?? {};
 
-  const queryFragments = useDeepMemo([
-    ...(inside?.map((fragment) => With(fragment)) ?? []),
-    ...(withProperties?.map((matching) => WithProperties(matching.table, { ...matching.properties })) ?? []),
-    ...(notInside?.map((table) => Without(table)) ?? []),
-    ...(withoutProperties?.map((matching) => WithoutProperties(matching.table, { ...matching.properties })) ?? []),
-  ]);
-
+  const queryFragments = useDeepMemo(queryToFragments(options));
   const query = useMemo(() => defineQuery(queryFragments, { runOnInit: true }), [queryFragments, params]);
+
   const [entities, setRecords] = useState<Entity[]>([...query.matching]); // will throw if no positive fragment
   const mounted = useRef(false);
 

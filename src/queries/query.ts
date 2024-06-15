@@ -1,8 +1,9 @@
-import type { BaseTables, Tables } from "@/tables/types";
+import { queryToFragments } from "@/queries/utils";
 import type { QueryOptions } from "@/queries/types";
+import type { BaseTables, Tables } from "@/tables/types";
 import { queries, type QueryFragment } from "@/lib/external/mud/queries";
 import type { Entity } from "@/lib/external/mud/entity";
-const { runQuery, With, WithProperties, Without, WithoutProperties } = queries;
+const { runQuery } = queries;
 
 /**
  * Queries all entities matching multiple provided conditions across tables.
@@ -35,18 +36,6 @@ export const query = <tables extends BaseTables | Tables>(
   options: QueryOptions<tables>,
   fragments?: QueryFragment[],
 ): Entity[] => {
-  const { with: inside, without: notInside, withProperties, withoutProperties } = options;
-  if (!fragments && !inside && !withProperties) {
-    throw new Error("At least one `with` or `withProperties` condition needs to be provided");
-  }
-
   if (fragments) return [...runQuery(fragments)];
-  return [
-    ...runQuery([
-      ...(inside?.map((fragment) => With(fragment)) ?? []),
-      ...(withProperties?.map((matching) => WithProperties(matching.table, { ...matching.properties })) ?? []),
-      ...(notInside?.map((table) => Without(table)) ?? []),
-      ...(withoutProperties?.map((matching) => WithoutProperties(matching.table, { ...matching.properties })) ?? []),
-    ]),
-  ];
+  return [...runQuery(queryToFragments(options))];
 };

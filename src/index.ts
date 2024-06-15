@@ -39,7 +39,8 @@ export { createWorld, namespaceWorld, Type } from "@/lib";
 export type { StorageAdapter } from "@/adapter";
 export type {
   QueryOptions,
-  QueryMatchingProperties,
+  QueryMatchingCondition,
+  QueryPropertiesCondition,
   TableWatcherCallbacks,
   TableWatcherOptions,
   WatcherOptions,

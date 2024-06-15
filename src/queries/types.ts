@@ -1,5 +1,5 @@
 import type { BaseTable, BaseTables, Table, TableUpdate, Tables } from "@/tables/types";
-import type { BaseTableMetadata, MappedType, Schema } from "@/lib/external/mud/schema";
+import type { BaseTableMetadata, Properties, Schema } from "@/lib/external/mud/schema";
 import type { World } from "@/lib/external/mud/world";
 
 /* -------------------------------------------------------------------------- */
@@ -88,24 +88,30 @@ export type TableWatcherParams = {
 
 /**
  * Defines a query for entities matching properties for a specific table.
- * @template tableDef The definition of the contract table.
- * @template T The type of the properties to match.
+ *
+ * @template table The table to query.
  * @param table The full table object to query.
  * @param properties The properties to match for the given table
  * @category Queries
  * @internal
  */
-export type QueryMatchingProperties<table, T = unknown> = table extends { propertiesSchema: infer S extends Schema }
-  ? {
-      table: table;
-      properties: Partial<{ [key in keyof S]: MappedType<T>[S[key]] }>;
-    }
-  : never;
+export type QueryPropertiesCondition<table extends BaseTable = BaseTable, T = unknown> = {
+  table: table;
+  properties: Partial<Properties<table["propertiesSchema"], T>>;
+};
 
-// but used as above it always accepts properties from ANY table in the list of QueryOptions
-// so to make sure it considers the one table provided to `table` to control type of `properties`
-// we need to use it like this:
-// { table: Table, properties: Partial<Properties<Table["propertiesSchema"]>> }
+/**
+ * Defines the conditions for querying entities matching custom properties verification for a specific table.
+ *
+ * @template table The table to query.
+ * @param table The full table object to query.
+ * @param where A function that passes the properties to check for more complex conditions.
+ * @category Queries
+ */
+export type QueryMatchingCondition<table extends BaseTable = BaseTable, T = unknown> = {
+  table: table;
+  where: (properties: Properties<table["propertiesSchema"], T>) => boolean;
+};
 
 /**
  * Defines the options for querying all entities matching multiple conditions across tables.
@@ -116,16 +122,17 @@ export type QueryMatchingProperties<table, T = unknown> = table extends { proper
  *
  * @template tables A registry of {@link Table}, including the tables involved in the query.
  * @param with An array of tables the entities need to be included in (have properties).
- * @param withProperties An array of table-properties pairs the entities need to match precisely.
+ * @param withProperties An array of {@link QueryPropertiesCondition} to check for entities, either as precise values or conditions.
  * @param without An array of tables the entities need to be excluded from (not have properties).
- * @param withoutProperties An array of table-properties pairs the entities need to not match (at least one different property).
+ * @param withoutProperties An array of {@link QueryPropertiesCondition} to check for entities, either as precise values or conditions.
  * @category Queries
  *
  * TODO: see if there is a way to handle type inference
  */
 export type QueryOptions<tables extends BaseTables | Tables = BaseTables> = {
-  with?: tables[keyof tables][]; // inside these tables
-  withProperties?: QueryMatchingProperties<tables[keyof tables]>[]; // with the specified properties for their associated tables
-  without?: tables[keyof tables][]; // not inside these tables
-  withoutProperties?: QueryMatchingProperties<tables[keyof tables]>[]; // without the specified properties for their associated tables
+  with?: Array<tables[keyof tables]>; // inside these tables
+  withProperties?: Array<QueryPropertiesCondition<tables[keyof tables]>>;
+  without?: Array<tables[keyof tables]>; // not inside these tables
+  withoutProperties?: Array<QueryPropertiesCondition<tables[keyof tables]>>;
+  matching?: Array<QueryMatchingCondition<tables[keyof tables]>>;
 };

@@ -1,8 +1,7 @@
 import type { QueryOptions, TableWatcherParams, WatcherOptions } from "@/queries/types";
 import type { BaseTables, Tables } from "@/tables/types";
-import { queries } from "@/lib/external/mud/queries";
 import { systems } from "@/lib/external/mud/systems";
-const { With, WithProperties, Without, WithoutProperties } = queries;
+import { queryToFragments } from "./utils";
 
 /**
  * Listen to all entities matching multiple conditions across tables.
@@ -54,19 +53,9 @@ export const $query = <tables extends BaseTables | Tables>(
     throw new Error("At least one callback has to be provided");
   }
 
-  const { with: inside, without: notInside, withProperties, withoutProperties } = query;
-  if (!inside && !withProperties) {
-    throw new Error("At least one `with` or `withProperties` condition needs to be provided");
-  }
-
   systems.defineSystem(
     world,
-    [
-      ...(inside?.map((fragment) => With(fragment)) ?? []),
-      ...(withProperties?.map((matching) => WithProperties(matching.table, { ...matching.properties })) ?? []),
-      ...(notInside?.map((table) => Without(table)) ?? []),
-      ...(withoutProperties?.map((matching) => WithoutProperties(matching.table, { ...matching.properties })) ?? []),
-    ],
+    queryToFragments(query),
     (update) => {
       onChange?.(update);
       if (update.type === "update") onUpdate?.(update);

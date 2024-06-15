@@ -12,6 +12,7 @@ import {
   createWorld,
   $query,
   createLocalTable,
+  createLocalBigIntTable,
   createLocalCoordTable,
   createWrapper,
   defaultEntity,
@@ -20,8 +21,8 @@ import {
   Type,
   TableUpdate,
   useQuery,
+  queryMatchingCondition,
   QueryOptions,
-  createLocalBigIntTable,
 } from "@/index"; // use `from "@primodiumxyz/reactive-tables"` to test the build
 
 // tests
@@ -822,7 +823,7 @@ describe("queries: should emit appropriate update events with the correct data",
     ).toEqual([A]);
   });
 
-  it("$query(), useQuery() (useQueryAllMatching)", () => {
+  it("$query(), useQuery()", () => {
     const { world, tables, entities, onChange: onChangeHook, aggregator: aggregatorHook } = preTest();
     const [player, A, B, C] = entities;
 
@@ -850,7 +851,7 @@ describe("queries: should emit appropriate update events with the correct data",
           properties: { totalWeight: BigInt(6) },
         },
       ],
-    } as const satisfies QueryOptions;
+    } as const satisfies QueryOptions<typeof tables>;
 
     const { result } = renderHook(() =>
       useQuery(
@@ -980,5 +981,50 @@ describe("queries: should emit appropriate update events with the correct data",
       expectedAggregatorItemE,
       expectedAggregatorItemF,
     ]);
+  });
+
+  it("complex query (matching)", () => {
+    const { tables, entities } = setup();
+    const [player, A, B, C] = entities;
+
+    // Prepare entities
+    tables.Position.set({ x: 10, y: 10, ...emptyData }, player);
+    tables.Position.set({ x: 5, y: 5, ...emptyData }, A);
+    tables.Position.set({ x: 10, y: 10, ...emptyData }, B);
+    tables.Position.set({ x: 15, y: 10, ...emptyData }, C);
+    tables.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6), ...emptyData }, player);
+    tables.Inventory.set({ items: [2, 3, 4, 5], weights: [2, 3, 4], totalWeight: BigInt(6), ...emptyData }, A);
+    tables.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3), ...emptyData }, B);
+
+    // Entities with at least 4 items in the Inventory table
+    expect(
+      query({
+        with: [tables.Inventory],
+        matching: [
+          // this is exactly the same syntax but with a wrapper function for type inference
+          queryMatchingCondition({
+            table: tables.Inventory,
+            where: ({ items }) => items.length > 3,
+          }),
+        ],
+      }).sort(),
+    ).toEqual([A]);
+
+    // Entities inside Position with x >= 10 and totalWeight === 6
+    expect(
+      query({
+        with: [tables.Position],
+        matching: [
+          queryMatchingCondition({
+            table: tables.Position,
+            where: ({ x }) => x >= 10,
+          }),
+          queryMatchingCondition({
+            table: tables.Inventory,
+            where: ({ totalWeight }) => totalWeight === BigInt(6),
+          }),
+        ],
+      }).sort(),
+    ).toEqual([player]);
   });
 });
