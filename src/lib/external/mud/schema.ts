@@ -440,6 +440,27 @@ export type TupleSplit<T, N extends number, O extends readonly any[] = readonly 
     ? TupleSplit<readonly [...R], N, readonly [...O, F]>
     : [O, T];
 
+type ArrayToStaticAbiType<abiType extends string> = abiType extends `${infer StaticAbiType}[]` ? StaticAbiType : never;
+export const arrayToStaticAbiType = <abiType extends ArrayAbiType>(abiType: abiType): ArrayToStaticAbiType<abiType> => {
+  return abiType.replace(arrayPattern, "") as ArrayToStaticAbiType<abiType>;
+};
+
+type ArrayAbiType = `${StaticAbiType}[]`;
+const arrayPattern = /\[\]$/;
+export const isArrayAbiType = (abiType: unknown): abiType is ArrayAbiType => {
+  return (
+    typeof abiType === "string" && arrayPattern.test(abiType) && isStaticAbiType(abiType.replace(arrayPattern, ""))
+  );
+};
+
+export const isStaticAbiType = (abiType: unknown): abiType is StaticAbiType => {
+  return staticAbiTypes.includes(abiType as StaticAbiType);
+};
+
+export const isDynamicAbiType = (abiType: unknown): abiType is DynamicAbiType => {
+  return dynamicAbiTypes.includes(abiType as DynamicAbiType);
+};
+
 /* -------------------------------------------------------------------------- */
 /*                                 CONVERSION                                 */
 /* -------------------------------------------------------------------------- */
