@@ -19,9 +19,7 @@ import {
   defaultEntity,
   query,
   Entity,
-  Properties,
   QueryOptions,
-  Schema,
   Type,
   TableUpdate,
   useQuery,
@@ -968,13 +966,7 @@ describe("queries: should emit appropriate update events with the correct data",
 
 describe("react: should work correctly in a react environment", () => {
   describe("no infinite render", () => {
-    const TestComponent = ({
-      onRender,
-      useHook,
-    }: {
-      onRender: () => void;
-      useHook: () => Entity[] | Properties<Schema>;
-    }) => {
+    const TestComponent = ({ onRender, useHook }: { onRender: () => void; useHook: () => unknown }) => {
       const res = useHook();
 
       useEffect(() => {
