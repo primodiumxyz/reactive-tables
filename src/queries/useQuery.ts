@@ -61,6 +61,7 @@ export const useQuery = <tables extends BaseTables | Tables>(
   const { with: inside, without: notInside, withProperties, withoutProperties } = options;
   const { onUpdate, onEnter, onExit, onChange } = callbacks ?? {};
 
+  const stableOptions = useDeepMemo(options);
   const queryFragments = useDeepMemo([
     ...(inside?.map((fragment) => With(fragment)) ?? []),
     ...(withProperties?.map((matching) => WithProperties(matching.table, { ...matching.properties })) ?? []),
@@ -120,7 +121,7 @@ export const useQuery = <tables extends BaseTables | Tables>(
       mounted.current = false;
       subscription.unsubscribe();
     };
-  }, [options, queryFragments]);
+  }, [stableOptions, queryFragments]);
 
   return [...new Set(entities)];
 };
