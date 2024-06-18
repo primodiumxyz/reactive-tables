@@ -218,7 +218,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
       return () => subscription.unsubscribe();
     }, [table, entity]);
 
-    return properties;
+    return properties ?? defaultProperties;
   }
 
   /* ---------------------------------- WATCH --------------------------------- */
