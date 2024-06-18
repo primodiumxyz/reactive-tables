@@ -47,6 +47,7 @@ export type {
 } from "@/queries";
 export type {
   BaseTable,
+  BaseTables,
   ContractTable,
   ContractTables,
   IndexedBaseTable,
