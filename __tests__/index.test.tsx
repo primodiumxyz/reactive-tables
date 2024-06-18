@@ -19,11 +19,12 @@ import {
   defaultEntity,
   query,
   Entity,
+  Properties,
+  QueryOptions,
+  Schema,
   Type,
   TableUpdate,
   useQuery,
-  QueryOptions,
-  Properties,
 } from "@/index"; // use `from "@primodiumxyz/reactive-tables"` to test the build
 
 // tests
@@ -967,7 +968,13 @@ describe("queries: should emit appropriate update events with the correct data",
 
 describe("react: should work correctly in a react environment", () => {
   describe("no infinite render", () => {
-    const TestComponent = ({ onRender, useHook }: { onRender: () => void; useHook: () => Entity[] | Properties }) => {
+    const TestComponent = ({
+      onRender,
+      useHook,
+    }: {
+      onRender: () => void;
+      useHook: () => Entity[] | Properties<Schema>;
+    }) => {
       const res = useHook();
 
       useEffect(() => {
