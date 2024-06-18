@@ -28,15 +28,15 @@ export type WatcherOptions<tables extends BaseTables | Tables> = {
  * @template PS The schema of the properties for all entities inside the table being watched.
  * @template M The metadata of the table.
  * @template T The type of the properties to match.
- * @param world The RECS World object (abstracted).
+ * @param world The RECS World object (abstracted and optional, if not provided will use the world in which the first provided table is registered).
  * @param table The BaseTable to watch for changes (abstracted).
  * @see {@link TableWatcherCallbacks}
  * @category Queries
  * @internal
  */
 export type TableWatcherOptions<PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = {
-  world: World;
   table: BaseTable<PS, M, T> | Table<PS, M, T>;
+  world?: World;
   // Opt in to any callback
 } & TableWatcherCallbacks<PS, M, T>;
 
@@ -44,7 +44,7 @@ export type TableMethodsWatcherOptions<
   PS extends Schema,
   M extends BaseTableMetadata = BaseTableMetadata,
   T = unknown,
-> = Omit<TableWatcherOptions<PS, M, T>, "world" | "table"> & { world?: World };
+> = Omit<TableWatcherOptions<PS, M, T>, "table">;
 
 /**
  * Defines the callbacks for a table watcher.

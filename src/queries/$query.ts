@@ -54,7 +54,8 @@ export const $query = <tables extends BaseTables | Tables>(
   }
 
   systems.defineSystem(
-    world,
+    // one will necessarily be defined, otherwise no positive fragment -> will throw
+    world ?? query.with?.[0].world ?? query.withProperties?.[0].table.world,
     queryToFragments(query),
     (update) => {
       onChange?.(update);

@@ -53,7 +53,7 @@ export const createTableWatcher = <PS extends Schema, M extends BaseTableMetadat
   }
 
   systems.defineTableSystem(
-    world,
+    world ?? table.world,
     table,
     (_update) => {
       const update = _update as TableUpdate<PS, M, T>;
