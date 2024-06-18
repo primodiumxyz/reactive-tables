@@ -195,15 +195,11 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
 
   /* ----------------------------- USE PROPERTIES ----------------------------- */
   // Hook to get the properties for an entity in real-time
-  function useProperties(entity?: Entity | undefined): Properties<PS, T> | undefined;
-  function useProperties(
-    entity: Entity | undefined,
-    defaultProperties?: PropertiesSansMetadata<PS, T>,
-  ): Properties<PS, T>;
-  function useProperties(entity?: Entity, defaultProperties?: PropertiesSansMetadata<PS, T>) {
-    entity = entity ?? defaultEntity;
+  function useProperties(entity?: Entity): Properties<PS, T> | undefined;
+  function useProperties(entity?: Entity, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
+  function useProperties(entity: Entity = defaultEntity, defaultProperties?: PropertiesSansMetadata<PS, T>) {
     const [properties, setProperties] = useState<Properties<PS, T> | PropertiesSansMetadata<PS, T> | undefined>(
-      defaultProperties,
+      getEntityProperties(table, entity) ?? defaultProperties,
     );
 
     useEffect(() => {
@@ -222,7 +218,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
       return () => subscription.unsubscribe();
     }, [table, entity]);
 
-    return properties ?? defaultProperties;
+    return properties;
   }
 
   /* ---------------------------------- WATCH --------------------------------- */
