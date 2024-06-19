@@ -8,7 +8,7 @@ import type { BaseTableMetadata, Schema } from "@/lib/external/mud/schema";
 import { mapObject, transformIterator } from "@/lib/external/mud/utils";
 import type { World } from "@/lib/external/mud/world";
 import { uuid } from "@/lib/external/uuid";
-import { DEFAULT_VERSION, LocalStorage } from "@/lib/persistence";
+import { createLocalStorageAdapter, DEFAULT_VERSION, type PersistentStorageAdapter } from "@/lib/persistence";
 
 /**
  * Defines the options for creating a table (especially useful for local tables).
@@ -22,13 +22,15 @@ import { DEFAULT_VERSION, LocalStorage } from "@/lib/persistence";
  * @param persist (optional) Whether the table should be persisted in local storage or not. Default: false.
  * @param version (optional) The version of the table, to use along persistence; when changed, it will reset properties for all entities (reset local storage state of the table).
  * Default: "0.0.0".
+ * @param storageAdapter (optional) The storage adapter to use for persistence. Default: {@link createLocalStorageAdapter}.
  */
-export type TableOptions<M extends BaseTableMetadata> = {
+export type TableOptions<M extends BaseTableMetadata = BaseTableMetadata> = {
   id: string; // default: uuid
-  metadata?: Partial<M>;
+  metadata?: M;
   indexed?: boolean;
   persist?: boolean;
   version?: string;
+  storageAdapter?: PersistentStorageAdapter;
 };
 
 /**
@@ -60,6 +62,7 @@ export const createTable = <PS extends Schema, M extends BaseTableMetadata, T = 
   const indexed = options?.indexed ?? false;
   const persist = options?.persist ?? false;
   const version = options?.version ?? DEFAULT_VERSION;
+  const storageAdapter = options?.storageAdapter ?? createLocalStorageAdapter();
 
   if (persist && typeof window === "undefined")
     throw new Error("Tables cannot be persisted in a non-browser environment");
@@ -79,7 +82,7 @@ export const createTable = <PS extends Schema, M extends BaseTableMetadata, T = 
   } as const satisfies BaseTableMetadata;
 
   // Create a new properties mapping or retrieve the last state from local storage
-  const persistedProperties = persist ? LocalStorage.getAllProperties(id, propertiesSchema, version) : undefined;
+  const persistedProperties = persist ? storageAdapter.getAllProperties(id, propertiesSchema, version) : undefined;
   const properties = (persistedProperties ?? mapObject(propertiesSchema, () => new Map())) as BaseTable<
     PS,
     typeof metadata,
@@ -100,12 +103,12 @@ export const createTable = <PS extends Schema, M extends BaseTableMetadata, T = 
     world,
     entities,
     update$,
-  };
+  } as const satisfies BaseTable<PS, typeof metadata, T>;
 
   const table = {
     ...baseTable,
-    ...createTableMethods(world, baseTable, persist, version),
-  } as const satisfies Table<PS, typeof metadata, T>;
+    ...createTableMethods<PS, typeof metadata, T>(world, baseTable, storageAdapter, persist, version),
+  };
 
   world.registerTable(table);
   if (indexed) return createIndexer(table);

@@ -25,6 +25,9 @@ import {
   Type,
   TableUpdate,
   useQuery,
+  PersistentStorageAdapter,
+  Schema,
+  TableProperties,
 } from "@/index"; // use `from "@primodiumxyz/reactive-tables"` to test the build
 
 // tests
@@ -40,6 +43,7 @@ import {
 } from "@test/utils";
 import mudConfig from "@test/contracts/mud.config";
 import { useEffect } from "react";
+import { BaseTableMetadata, getEntitySymbol } from "@/lib";
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONFIG                                   */
@@ -301,6 +305,59 @@ describe("local: create local table", () => {
     expect(nextTables.A.get()).toHaveProperty("timestamp", 123);
     expect(nextTables.B.get()).toHaveProperty("newBool", true);
     expect(nextTables.B.get()).toHaveProperty("array", [1, 2, 3]);
+  });
+
+  it("should be able to pass a custom storage adapter for persisted tables", async () => {
+    const entities = [padHex(toHex("entityA")), padHex(toHex("entityB"))] as Entity[];
+    const schemas = {
+      A: { value: Type.BigInt },
+      B: { x: Type.Number, y: Type.Number },
+    } as const;
+
+    const mockState = {
+      A: { value: new Map([[getEntitySymbol(entities[0]), BigInt(1)]]) } as TableProperties<(typeof schemas)["A"]>,
+      B: {
+        x: new Map([
+          [getEntitySymbol(entities[0]), 1],
+          [getEntitySymbol(entities[1]), 2],
+        ]),
+        y: new Map([
+          [getEntitySymbol(entities[0]), 3],
+          [getEntitySymbol(entities[1]), 4],
+        ]),
+      } as TableProperties<(typeof schemas)["B"]>,
+    };
+
+    const set = (tableId: string, entity: Entity, key: string, value: unknown) =>
+      // @ts-expect-error index types
+      mockState[tableId][key].set(getEntitySymbol(entity), value);
+
+    const adapter = {
+      getAllProperties: <PS extends Schema, T = unknown>(tableId: string) =>
+        mockState[tableId as keyof typeof mockState] as TableProperties<PS, BaseTableMetadata, T>,
+      setProperties: (table, properties, entity) => {
+        Object.entries(properties).forEach(([key, value]) => {
+          set(table.id, entity, key, value);
+        });
+      },
+      updateProperties: (table, properties, entity) => {
+        Object.entries(properties).forEach(([key, value]) => {
+          set(table.id, entity, key, value);
+        });
+      },
+    } as const satisfies PersistentStorageAdapter;
+
+    const world = createWorld();
+    const tables = {
+      A: createLocalBigIntTable(world, { id: "A", persist: true, storageAdapter: adapter }),
+      B: createLocalCoordTable(world, { id: "B", persist: true, storageAdapter: adapter }),
+    };
+
+    expect(tables.A.get(entities[0])).toHaveProperty("value", BigInt(1));
+    expect(tables.B.get(entities[0])).toHaveProperty("x", 1);
+    expect(tables.B.get(entities[0])).toHaveProperty("y", 3);
+    expect(tables.B.get(entities[1])).toHaveProperty("x", 2);
+    expect(tables.B.get(entities[1])).toHaveProperty("y", 4);
   });
 });
 

@@ -32,6 +32,8 @@ export type {
   PropertiesSansMetadata,
   Schema,
   StoreConfig,
+  PersistentStorageAdapter,
+  TableProperties,
   World,
 } from "@/lib";
 export { createWorld, namespaceWorld, Type } from "@/lib";

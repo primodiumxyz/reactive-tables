@@ -3,7 +3,7 @@ import type { Table } from "@/tables/types";
 import type { World } from "@/lib/external/mud/world";
 import {
   type BaseTableMetadata,
-  type OptionalSchema,
+  OptionalSchema,
   type Properties,
   type Schema,
   Type,
@@ -63,16 +63,16 @@ export const createLocalTable = <PS extends Schema, M extends BaseTableMetadata,
 
   // For persistent tables, we want schema types to be optional
   const adjustedPropertiesSchema = persist
-    ? (Object.fromEntries(
-        Object.entries(propertiesSchema).map(([key, type]) => [key, toOptionalType(type)]),
-      ) as OptionalSchema<PS>)
+    ? ({
+        ...Object.fromEntries(Object.entries(propertiesSchema).map(([key, type]) => [key, toOptionalType(type)])),
+      } as OptionalSchema<PS>)
     : propertiesSchema;
 
-  const table = createTable(world, adjustedPropertiesSchema, { ...options, id, metadata }) as unknown as Table<
-    typeof adjustedPropertiesSchema,
-    typeof metadata,
-    T
-  >;
+  const table = createTable(world, adjustedPropertiesSchema, {
+    ...options,
+    id,
+    metadata,
+  }) as unknown as Table<typeof adjustedPropertiesSchema, typeof metadata, T>;
 
   if (defaultProperties) {
     const currentProperties = table.get();

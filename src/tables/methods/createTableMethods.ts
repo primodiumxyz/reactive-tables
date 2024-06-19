@@ -10,7 +10,7 @@ import type { BaseTableMetadata, Properties, PropertiesSansMetadata, Schema } fr
 import { tableOperations } from "@/lib/external/mud/tables";
 import { queries } from "@/lib/external/mud/queries";
 import type { World } from "@/lib/external/mud/world";
-import { LocalStorage } from "@/lib/persistence";
+import { type PersistentStorageAdapter } from "@/lib/persistence";
 const {
   setEntity,
   removeEntity,
@@ -28,6 +28,7 @@ const { runQuery, defineQuery, useEntityQuery, With, WithProperties, WithoutProp
 export const createTableMethods = <PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
   world: World,
   table: BaseTable<PS, M, T>,
+  storageAdapter: PersistentStorageAdapter,
   persist?: boolean,
   version?: string,
 ): TableMethods<PS, M, T> => {
@@ -114,7 +115,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
       setEntity(table, entity, properties, options);
     }
 
-    if (options?.persist ?? persist) LocalStorage.setProperties(table, properties, entity, version);
+    if (options?.persist ?? persist) storageAdapter.setProperties(table, properties, entity, version);
   };
 
   /* ----------------------------------- GET ---------------------------------- */
@@ -185,7 +186,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
   const update = (properties: Partial<Properties<PS, T>>, entity?: Entity, options?: TableMutationOptions) => {
     entity = entity ?? defaultEntity;
     updateEntity(table, entity, properties, undefined, options);
-    if (persist) LocalStorage.updateProperties(table, properties, entity, version);
+    if (persist) storageAdapter.updateProperties(table, properties, entity, version);
   };
 
   /* ----------------------------------- HAS ---------------------------------- */

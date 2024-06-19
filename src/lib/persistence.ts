@@ -9,7 +9,7 @@ import { Type } from "@/lib/external/mud/schema";
 
 /**
  * {
- *   "RETA_tables_0x0000...127": {
+ *   "RETA_tables_0.0.0_Position": {
  *     x: {
  *       "0xabc...def": 10,
  *       "0x123...456": 5
@@ -20,7 +20,7 @@ import { Type } from "@/lib/external/mud/schema";
  *     },
  *     ...
  *   },
- *   "RETA_tables_Score": {
+ *   "RETA_tables_0.0.0_Score": {
  *     ...
  *   },
  * }
@@ -28,7 +28,11 @@ import { Type } from "@/lib/external/mud/schema";
 type Serialized = string | number | boolean | undefined;
 type Serializable = Serialized | Array<Serialized>;
 type StoredTable<PS extends Schema> = { [key in keyof PS]: { [entity: Entity]: Serializable; ["type"]: Type } };
-type TableProperties<PS extends Schema, M extends BaseTableMetadata, T = unknown> = BaseTable<PS, M, T>["properties"];
+export type TableProperties<
+  PS extends Schema,
+  M extends BaseTableMetadata = BaseTableMetadata,
+  T = unknown,
+> = BaseTable<PS, M, T>["properties"];
 
 /* -------------------------------------------------------------------------- */
 /*                                   STORAGE                                  */
@@ -188,8 +192,66 @@ const encodeValue = (type: Type, value: Primitive): Serializable | undefined => 
 /*                                   EXPORTS                                  */
 /* -------------------------------------------------------------------------- */
 
-export const LocalStorage = {
+/**
+ * An adapter to read/write properties for tables from/to a persistent storage.
+ *
+ * @property getAllProperties Get all properties for all entities for a specific table and version.
+ * @property setProperties Write properties for an entity inside a table.
+ * @property updateProperties Write partial properties for an entity inside a table.
+ * @see {@link createLocalStorageAdapter} for an example implementation.
+ * @category Adapter
+ */
+export type PersistentStorageAdapter = {
+  /**
+   * Get all properties for all entities for a specific table and version.
+   *
+   * @param tableId The id of the table to get properties for
+   * @param propertiesSchema The schema of the properties for the table
+   * @param version (optional) The version of the persisted state (default: "0.0.0")
+   * @returns The properties for all entities in the table, or undefined if the table is not found (never persisted)
+   * @category Adapter
+   */
+  getAllProperties: <PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
+    tableId: string,
+    propertiesSchema: PS,
+    version?: string,
+  ) => TableProperties<PS, M, T> | undefined;
+
+  /**
+   * Write properties for an entity inside a table.
+   *
+   * @param table The table to write properties for
+   * @param properties The properties to write for the provided entity
+   * @param entity The concerned entity
+   * @param version (optional) The version of the persisted state (default: "0.0.0")
+   * @category Adapter
+   */
+  setProperties: <PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
+    table: BaseTable<PS, M, T>,
+    properties: Properties<PS, T>,
+    entity: Entity,
+    version?: string,
+  ) => void;
+
+  /**
+   * Write partial properties for an entity inside a table.
+   *
+   * @param table The table to write properties for
+   * @param properties Some properties to write for the provided entity
+   * @param entity The concerned entity
+   * @param version (optional) The version of the persisted state (default: "0.0.0")
+   * @category Adapter
+   */
+  updateProperties: <PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
+    table: BaseTable<PS, M, T>,
+    properties: Partial<Properties<PS, T>>,
+    entity: Entity,
+    version?: string,
+  ) => void;
+};
+
+export const createLocalStorageAdapter = (): PersistentStorageAdapter => ({
   getAllProperties,
   setProperties,
   updateProperties,
-};
+});
