@@ -16,9 +16,6 @@ const { defineQuery } = queries;
  *
  * Note: See {@link QueryOptions} for more details on conditions criteria.
  *
- * Note: This hook will only trigger on changes after it's mounted, not on creation for all initial matching entities.
- *
- * @param store The TinyBase store containing the properties associated with contract tables.
  * @param options The {@link QueryOptions} object containing the conditions to match.
  * @param callbacks (optional) The {@link TableWatcherCallbacks} to trigger on changes. Including: onUpdate, onEnter, onExit, onChange.
  * These will trigger a {@link TableUpdate} object with the id of the updated table, the entity, the previous and new properties of the entity and the type of update.
@@ -96,6 +93,7 @@ export const useQuery = <tables extends BaseTables | Tables>(
       const enterTable = queryFragments.find(
         (fragment) => fragment.type === QueryFragmentType.With || fragment.type === QueryFragmentType.WithProperties,
       )!.table;
+
       query.matching.forEach((entity) => {
         const update = {
           table: enterTable,
@@ -110,6 +108,7 @@ export const useQuery = <tables extends BaseTables | Tables>(
     }
 
     mounted.current = true;
+
     return () => {
       mounted.current = false;
       subscription.unsubscribe();

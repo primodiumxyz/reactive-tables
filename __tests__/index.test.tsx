@@ -1,5 +1,7 @@
-import { describe, it, expect, assert } from "vitest";
+import { describe, it, expect, assert, vi } from "vitest";
 import { renderHook } from "@testing-library/react-hooks";
+import { render, waitFor } from "@testing-library/react";
+import React from "react";
 
 // libs
 import { createWorld as createRecsWorld, getComponentValue } from "@latticexyz/recs";
@@ -18,11 +20,11 @@ import {
   defaultEntity,
   query,
   Entity,
+  QueryOptions,
+  queryMatchingCondition,
   Type,
   TableUpdate,
   useQuery,
-  queryMatchingCondition,
-  QueryOptions,
 } from "@/index"; // use `from "@primodiumxyz/reactive-tables"` to test the build
 
 // tests
@@ -37,6 +39,7 @@ import {
   toBaseTable,
 } from "@test/utils";
 import mudConfig from "@test/contracts/mud.config";
+import { useEffect } from "react";
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONFIG                                   */
@@ -1143,5 +1146,100 @@ describe("queries: should emit appropriate update events with the correct data",
         ],
       }).sort(),
     ).toEqual([player]);
+  });
+});
+
+describe("react: should work correctly in a react environment", () => {
+  describe("no infinite render", () => {
+    const TestComponent = ({ onRender, useHook }: { onRender: () => void; useHook: () => unknown }) => {
+      const res = useHook();
+
+      useEffect(() => {
+        onRender();
+      }, [res]);
+
+      return null;
+    };
+
+    it("useQuery", async () => {
+      const { tables, entities } = setup();
+
+      const onRender = vi.fn();
+      const useHook = () => useQuery({ with: [tables.Position] });
+      render(<TestComponent onRender={onRender} useHook={useHook} />);
+
+      // 1: initial render
+      // 2: `setEntities` inside `useEffect`
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(2));
+      tables.Position.set({ x: 10, y: 10, ...emptyData }, entities[0]);
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(3));
+      tables.Position.remove(entities[0]);
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(4));
+    });
+
+    it("table.use", async () => {
+      const { tables, entities } = setup();
+
+      const onRender = vi.fn();
+      const useHook = () => tables.Position.use(entities[0]);
+      render(<TestComponent onRender={onRender} useHook={useHook} />);
+
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(1));
+      tables.Position.set({ x: 10, y: 10, ...emptyData }, entities[0]);
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(2));
+      tables.Position.set({ x: 10, y: 10, ...emptyData }, entities[1]);
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(2));
+    });
+
+    it("table.useAll", async () => {
+      const { tables, entities } = setup();
+
+      const onRender = vi.fn();
+      const useHook = () => tables.Position.useAll();
+      render(<TestComponent onRender={onRender} useHook={useHook} />);
+
+      // 1: initial render
+      // 2: `setEntities` inside `useEffect`
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(2));
+      tables.Position.set({ x: 10, y: 10, ...emptyData }, entities[0]);
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(3));
+      tables.Position.remove(entities[0]);
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(4));
+    });
+
+    it("table.useAllWith", async () => {
+      const { tables, entities } = setup();
+
+      const onRender = vi.fn();
+      const useHook = () => tables.Position.useAllWith({ x: 10, y: 10 });
+      render(<TestComponent onRender={onRender} useHook={useHook} />);
+
+      // 1: initial render
+      // 2: `setEntities` inside `useEffect`
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(2));
+      tables.Position.set({ x: 10, y: 10, ...emptyData }, entities[0]);
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(3));
+      tables.Position.update({ x: 0 }, entities[0]);
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(4));
+    });
+
+    it("table.useAllWithout", async () => {
+      const { tables, entities } = setup();
+
+      const onRender = vi.fn();
+      const useHook = () => tables.Position.useAllWithout({ x: 10, y: 10 });
+      render(<TestComponent onRender={onRender} useHook={useHook} />);
+
+      // 1: initial render
+      // 2: `setEntities` inside `useEffect`
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(2));
+      tables.Position.set({ x: 10, y: 10, ...emptyData }, entities[0]);
+      // not entering, should not trigger a render
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(2));
+      tables.Position.update({ x: 0 }, entities[0]);
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(3));
+      tables.Position.update({ x: 10 }, entities[0]);
+      await waitFor(() => expect(onRender).toHaveBeenCalledTimes(4));
+    });
   });
 });
