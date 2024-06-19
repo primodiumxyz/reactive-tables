@@ -49,7 +49,6 @@ export const createLocalTable = <PS extends Schema, M extends BaseTableMetadata,
     namespace: baseMetadata?.namespace ?? ("local" as const),
     globalName:
       baseMetadata?.globalName ?? baseMetadata?.namespace ? `${baseMetadata.namespace}__${id}` : `local__${id}`,
-    abiKeySchema: { entity: "bytes32" } as const,
   } as const satisfies BaseTableMetadata;
 
   return createTable(world, propertiesSchema, { ...options, id, metadata }) as unknown as Table<PS, typeof metadata, T>;

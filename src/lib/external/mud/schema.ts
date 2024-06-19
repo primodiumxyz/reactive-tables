@@ -61,7 +61,7 @@ export type BaseTableMetadata<M extends Metadata = Metadata> = M & {
   name: string;
   globalName: string;
   namespace?: string;
-  abiKeySchema: { [name: string]: StaticAbiType }; // local tables are given a default key schema as well for encoding/decoding entities
+  abiKeySchema?: { [name: string]: StaticAbiType };
 };
 
 export type ContractTablePropertiesSchema<tableDef extends ContractTableDef> = {
@@ -93,9 +93,11 @@ export type Properties<S extends Schema, T = unknown> = {
 };
 
 // Used to infer the TypeScript types from the RECS types (from abi)
-export type Keys<TKeySchema extends AbiKeySchema, T = unknown> = {
-  [key in keyof AbiToSchema<TKeySchema>]: MappedType<T>[AbiToSchema<TKeySchema>[key]];
-};
+export type Keys<TKeySchema extends AbiKeySchema | undefined, T = unknown> = TKeySchema extends AbiKeySchema
+  ? {
+      [key in keyof AbiToSchema<TKeySchema>]: MappedType<T>[AbiToSchema<TKeySchema>[key]];
+    }
+  : never;
 
 // Used to infer the TypeScript types from the RECS types (excluding metadata)
 export type PropertiesSansMetadata<S extends Schema, T = unknown> = {

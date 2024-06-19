@@ -49,7 +49,6 @@ export function createTable<PS extends Schema, M extends BaseTableMetadata, T = 
   options?: TableOptions<M>,
 ) {
   if (Object.keys(propertiesSchema).length === 0) throw new Error("Table properties schema must have at least one key");
-  const hasKeySchema = options?.metadata?.abiKeySchema && Object.keys(options.metadata.abiKeySchema).length > 0;
 
   // Native RECS entities iterator
   const entities = () =>
@@ -61,10 +60,6 @@ export function createTable<PS extends Schema, M extends BaseTableMetadata, T = 
     ...options?.metadata,
     name: options?.metadata?.name ?? id,
     globalName: options?.metadata?.globalName ?? id,
-    // generate abi types for the key schema in case none is provided
-    // this will help having a unified API for all tables, including local tables created with RECS types
-    // so we can use key methods on these as well
-    abiKeySchema: hasKeySchema ? options.metadata!.abiKeySchema! : ({ entity: "bytes32" } as const),
   } as const satisfies BaseTableMetadata;
 
   const properties = mapObject(propertiesSchema, () => new Map()) as BaseTable<PS, typeof metadata, T>["properties"];
