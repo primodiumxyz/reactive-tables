@@ -8,7 +8,7 @@ import type { BaseTableMetadata, Schema } from "@/lib/external/mud/schema";
 import { mapObject, transformIterator } from "@/lib/external/mud/utils";
 import type { World } from "@/lib/external/mud/world";
 import { uuid } from "@/lib/external/uuid";
-import { LocalStorage } from "@/lib/persistence";
+import { DEFAULT_VERSION, LocalStorage } from "@/lib/persistence";
 
 /**
  * Defines the options for creating a table (especially useful for local tables).
@@ -20,12 +20,15 @@ import { LocalStorage } from "@/lib/persistence";
  * @param metadata (optional) Any additional metadata to be associated with the table.
  * @param indexed (optional) Whether the table should be indexed or not. Default: false.
  * @param persist (optional) Whether the table should be persisted in local storage or not. Default: false.
+ * @param version (optional) The version of the table, to use along persistence; when changed, it will reset properties for all entities (reset local storage state of the table).
+ * Default: "0.0.0".
  */
 export type TableOptions<M extends BaseTableMetadata> = {
   id: string; // default: uuid
   metadata?: Partial<M>;
   indexed?: boolean;
   persist?: boolean;
+  version?: string;
 };
 
 /**
@@ -52,7 +55,12 @@ export const createTable = <PS extends Schema, M extends BaseTableMetadata, T = 
   options?: TableOptions<M>,
 ) => {
   if (Object.keys(propertiesSchema).length === 0) throw new Error("Table properties schema must have at least one key");
-  const { id, metadata: baseMetadata, indexed, persist } = options ?? { id: uuid(), indexed: false, persist: false };
+  const id = options?.id ?? uuid();
+  const baseMetadata = options?.metadata ?? {};
+  const indexed = options?.indexed ?? false;
+  const persist = options?.persist ?? false;
+  const version = options?.version ?? DEFAULT_VERSION;
+
   if (persist && typeof window === "undefined")
     throw new Error("Tables cannot be persisted in a non-browser environment");
   if (persist && !options?.id) throw new Error("You must provide an id for a table to be persisted");
@@ -71,8 +79,8 @@ export const createTable = <PS extends Schema, M extends BaseTableMetadata, T = 
   } as const satisfies BaseTableMetadata;
 
   // Create a new properties mapping or retrieve the last state from local storage
-  const persistedState = persist ? LocalStorage.getAllProperties(id, propertiesSchema) : undefined;
-  const properties = (persistedState ?? mapObject(propertiesSchema, () => new Map())) as BaseTable<
+  const persistedProperties = persist ? LocalStorage.getAllProperties(id, propertiesSchema, version) : undefined;
+  const properties = (persistedProperties ?? mapObject(propertiesSchema, () => new Map())) as BaseTable<
     PS,
     typeof metadata,
     T
@@ -96,7 +104,7 @@ export const createTable = <PS extends Schema, M extends BaseTableMetadata, T = 
 
   const table = {
     ...baseTable,
-    ...createTableMethods(world, baseTable, persist),
+    ...createTableMethods(world, baseTable, persist, version),
   } as const satisfies Table<PS, typeof metadata, T>;
 
   world.registerTable(table);

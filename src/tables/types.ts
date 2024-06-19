@@ -106,6 +106,7 @@ export type TableUpdate<PS extends Schema = Schema, M extends BaseTableMetadata 
 
 export type TableMutationOptions = {
   skipUpdateStream?: boolean;
+  persist?: boolean;
 };
 
 /* ---------------------------------- TABLE --------------------------------- */

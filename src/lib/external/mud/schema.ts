@@ -21,6 +21,14 @@ export type Schema = {
 };
 
 /**
+ * Defines an optional schema, where each property is a {@link Type.Optional}, possibly
+ * mapped from its required counterpart.
+ */
+export type OptionalSchema<S extends Schema> = {
+  [key in keyof S]: TypeToOptionalType[S[key]];
+};
+
+/**
  * Defines any additional metadata that can be attached to a {@link Table} or {@link BaseTable}.
  *
  * @category Schema
@@ -118,6 +126,7 @@ export type PropertiesSansMetadata<S extends Schema, T = unknown> = {
  */
 export enum Type {
   Boolean,
+  OptionalBoolean,
   Number,
   OptionalNumber,
   BigInt,
@@ -179,6 +188,7 @@ export type MappedType<T = unknown> = {
   [Type.StringArray]: string[];
   [Type.HexArray]: Hex[];
   [Type.EntityArray]: Entity[];
+  [Type.OptionalBoolean]: boolean;
   [Type.OptionalNumber]: number | undefined;
   [Type.OptionalBigInt]: bigint | undefined;
   [Type.OptionalString]: string | undefined;
@@ -207,8 +217,58 @@ export const OptionalTypes = [
   Type.OptionalStringArray,
   Type.OptionalHex,
   Type.OptionalHexArray,
+  Type.OptionalBoolean,
   Type.OptionalT,
 ];
+
+/**
+ * Helper type mapping from type to optional type.
+ */
+export type TypeToOptionalType = {
+  [Type.Entity]: Type.OptionalEntity;
+  [Type.EntityArray]: Type.OptionalEntityArray;
+  [Type.Number]: Type.OptionalNumber;
+  [Type.NumberArray]: Type.OptionalNumberArray;
+  [Type.BigInt]: Type.OptionalBigInt;
+  [Type.BigIntArray]: Type.OptionalBigIntArray;
+  [Type.String]: Type.OptionalString;
+  [Type.StringArray]: Type.OptionalStringArray;
+  [Type.Hex]: Type.OptionalHex;
+  [Type.HexArray]: Type.OptionalHexArray;
+  [Type.Boolean]: Type.OptionalBoolean;
+  [Type.T]: Type.OptionalT;
+  [Type.OptionalEntity]: Type.OptionalEntity;
+  [Type.OptionalEntityArray]: Type.OptionalEntityArray;
+  [Type.OptionalNumber]: Type.OptionalNumber;
+  [Type.OptionalNumberArray]: Type.OptionalNumberArray;
+  [Type.OptionalBigInt]: Type.OptionalBigInt;
+  [Type.OptionalBigIntArray]: Type.OptionalBigIntArray;
+  [Type.OptionalString]: Type.OptionalString;
+  [Type.OptionalStringArray]: Type.OptionalStringArray;
+  [Type.OptionalHex]: Type.OptionalHex;
+  [Type.OptionalHexArray]: Type.OptionalHexArray;
+  [Type.OptionalBoolean]: Type.OptionalBoolean;
+  [Type.OptionalT]: Type.OptionalT;
+};
+
+/**
+ * Helper function to convert from type to optional type.
+ */
+export const toOptionalType = (type: Type): TypeToOptionalType[Type] => {
+  if (type === Type.Entity || type === Type.OptionalEntity) return Type.OptionalEntity;
+  if (type === Type.EntityArray || type === Type.OptionalEntityArray) return Type.OptionalEntityArray;
+  if (type === Type.Number || type === Type.OptionalNumber) return Type.OptionalNumber;
+  if (type === Type.NumberArray || type === Type.OptionalNumberArray) return Type.OptionalNumberArray;
+  if (type === Type.BigInt || type === Type.OptionalBigInt) return Type.OptionalBigInt;
+  if (type === Type.BigIntArray || type === Type.OptionalBigIntArray) return Type.OptionalBigIntArray;
+  if (type === Type.String || type === Type.OptionalString) return Type.OptionalString;
+  if (type === Type.StringArray || type === Type.OptionalStringArray) return Type.OptionalStringArray;
+  if (type === Type.Hex || type === Type.OptionalHex) return Type.OptionalHex;
+  if (type === Type.HexArray || type === Type.OptionalHexArray) return Type.OptionalHexArray;
+  if (type === Type.Boolean || type === Type.OptionalBoolean) return Type.OptionalBoolean;
+  if (type === Type.T || type === Type.OptionalT) return Type.OptionalT;
+  return type;
+};
 
 /**
  * Defines the Solidity types for later conversion to TypeScript types.

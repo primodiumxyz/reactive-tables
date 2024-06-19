@@ -146,7 +146,7 @@ describe("setup: create wrapper", () => {
 });
 
 describe("local: create local table", () => {
-  it("should be able to create tables from local definitions passed during initialization", async () => {
+  it("should be able to create tables from local definitions", async () => {
     const world = createWorld();
     const tables = {
       A: createLocalCoordTable(world, { id: "A" }),
@@ -165,8 +165,105 @@ describe("local: create local table", () => {
   it("should be able to retrieve the state from local storage for a persisted table", async () => {
     const world = createWorld();
     const tables = {
-      A: createLocalBigIntTable(world, { id: "A", persist: true }),
-      B: createLocalTable(world, { bool: Type.Boolean, array: Type.EntityArray }, { id: "B", persist: true }),
+      A: createLocalBigIntTable(world, { id: "A", persist: true, version: "1.0.0" }),
+      B: createLocalTable(
+        world,
+        { bool: Type.Boolean, array: Type.EntityArray },
+        { id: "B", persist: true, version: "1.0.0" },
+      ),
+    };
+
+    tables.A.set({ value: BigInt(1) });
+    tables.B.set({ bool: true, array: [defaultEntity] });
+    tables.A.update({ value: BigInt(2) });
+
+    const nextWorld = createWorld();
+    const nextTables = {
+      A: createLocalBigIntTable(nextWorld, { id: "A", persist: true, version: "1.0.0" }),
+      B: createLocalTable(
+        nextWorld,
+        { bool: Type.Boolean, array: Type.EntityArray },
+        { id: "B", persist: true, version: "1.0.0" },
+      ),
+    };
+
+    expect(nextTables.A.get()).toHaveProperty("value", BigInt(2));
+    expect(nextTables.B.get()).toHaveProperty("bool", true);
+    expect(nextTables.B.get()).toHaveProperty("array", [defaultEntity]);
+  });
+
+  it("should be able to use versioning for persisted tables", async () => {
+    const entities = [padHex(toHex("entityA")), padHex(toHex("entityB"))] as Entity[];
+
+    const world = createWorld();
+    const tables = {
+      A: createLocalBigIntTable(world, { id: "A", persist: true, version: "2.0.0" }),
+      B: createLocalTable(
+        world,
+        { bool: Type.Boolean, array: Type.EntityArray },
+        { id: "B", persist: true, version: "2.0.0" },
+      ),
+    };
+
+    tables.A.set({ value: BigInt(1) });
+    tables.B.set({ bool: true, array: [entities[0]] });
+
+    // Create new tables with the same id but different version
+    const worldV2 = createWorld();
+    const tablesV2 = {
+      A: createLocalBigIntTable(worldV2, { id: "A", persist: true, version: "3.0.0" }),
+      B: createLocalTable(
+        worldV2,
+        { bool: Type.Boolean, array: Type.EntityArray },
+        { id: "B", persist: true, version: "3.0.0" },
+      ),
+    };
+
+    // The new tables should have undefined properties (persisted tables get their types converted to optional types)
+    expect(tablesV2.A.get()).toEqual({ value: undefined });
+    expect(tablesV2.B.get()).toEqual({ bool: undefined, array: undefined });
+
+    tablesV2.A.set({ value: BigInt(2) });
+    tablesV2.B.set({ bool: false, array: [entities[1]] });
+
+    // The old tables should still have the old properties
+    expect(tables.A.get()).toHaveProperty("value", BigInt(1));
+    expect(tables.B.get()).toHaveProperty("bool", true);
+    expect(tables.B.get()).toHaveProperty("array", [entities[0]]);
+
+    // The new tables should have the new properties
+    expect(tablesV2.A.get()).toHaveProperty("value", BigInt(2));
+    expect(tablesV2.B.get()).toHaveProperty("bool", false);
+    expect(tablesV2.B.get()).toHaveProperty("array", [entities[1]]);
+  });
+
+  it("should be able to set default properties for persisted tables", async () => {
+    const world = createWorld();
+    const tables = {
+      A: createLocalBigIntTable(world, { id: "A", persist: true, version: "4.0.0" }, { value: BigInt(1) }),
+      B: createLocalTable(
+        world,
+        { bool: Type.Boolean, array: Type.EntityArray },
+        { id: "B", persist: true, version: "4.0.0" },
+        { bool: true, array: [defaultEntity] },
+      ),
+    };
+
+    expect(tables.A.get()).toHaveProperty("value", BigInt(1));
+    expect(tables.B.get()).toHaveProperty("bool", true);
+    expect(tables.B.get()).toHaveProperty("array", [defaultEntity]);
+  });
+
+  it("should be able to handle a change in the properties schema for persisted tables", async () => {
+    const world = createWorld();
+    const tables = {
+      A: createLocalBigIntTable(world, { id: "A", persist: true, version: "5.0.0" }),
+      B: createLocalTable(
+        world,
+        { bool: Type.Boolean, array: Type.EntityArray },
+        { id: "B", persist: true, version: "5.0.0" },
+        { bool: true, array: [defaultEntity] },
+      ),
     };
 
     tables.A.set({ value: BigInt(1) });
@@ -174,13 +271,33 @@ describe("local: create local table", () => {
 
     const nextWorld = createWorld();
     const nextTables = {
-      A: createLocalBigIntTable(nextWorld, { id: "A", persist: true }),
-      B: createLocalTable(nextWorld, { bool: Type.Boolean, array: Type.EntityArray }, { id: "B", persist: true }),
+      // Add new property
+      A: createLocalTable(
+        nextWorld,
+        { value: Type.BigInt, timestamp: Type.Number },
+        { id: "A", persist: true, version: "5.0.0" },
+      ),
+      // Change property name (remove+add) and type of existing property
+      B: createLocalTable(
+        nextWorld,
+        { newBool: Type.Boolean, array: Type.NumberArray },
+        { id: "B", persist: true, version: "5.0.0" },
+      ),
     };
 
     expect(nextTables.A.get()).toHaveProperty("value", BigInt(1));
-    expect(nextTables.B.get()).toHaveProperty("bool", true);
-    expect(nextTables.B.get()).toHaveProperty("array", [defaultEntity]);
+    expect(nextTables.A.get()).toHaveProperty("timestamp", undefined);
+    expect(nextTables.B.get()).toHaveProperty("newBool", undefined);
+    // type changed so it's set to undefined
+    expect(nextTables.B.get()).toHaveProperty("array", undefined);
+
+    nextTables.A.set({ value: BigInt(2), timestamp: 123 });
+    nextTables.B.set({ newBool: true, array: [1, 2, 3] });
+
+    expect(nextTables.A.get()).toHaveProperty("value", BigInt(2));
+    expect(nextTables.A.get()).toHaveProperty("timestamp", 123);
+    expect(nextTables.B.get()).toHaveProperty("newBool", true);
+    expect(nextTables.B.get()).toHaveProperty("array", [1, 2, 3]);
   });
 });
 

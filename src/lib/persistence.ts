@@ -25,57 +25,85 @@ import { Type } from "@/lib/external/mud/schema";
  *   },
  * }
  */
+type Serialized = string | number | boolean | undefined;
 type Serializable = Serialized | Array<Serialized>;
-type Serialized = string | number | boolean;
-type StoredTable<PS extends Schema> = { [key in keyof PS]: { [entity: Entity]: Serialized } };
+type StoredTable<PS extends Schema> = { [key in keyof PS]: { [entity: Entity]: Serializable; ["type"]: Type } };
+type TableProperties<PS extends Schema, M extends BaseTableMetadata, T = unknown> = BaseTable<PS, M, T>["properties"];
 
 /* -------------------------------------------------------------------------- */
 /*                                   STORAGE                                  */
 /* -------------------------------------------------------------------------- */
 
-const LOCAL_STORAGE_KEY = "RETA";
-const PREFIX = `${LOCAL_STORAGE_KEY}_tables_`;
-const getStorageKey = (tableId: string) => `${PREFIX}${tableId}`;
+export const DEFAULT_VERSION = "0.0.0";
 
-const getStoredTable = <PS extends Schema>(tableId: string) => {
-  const storageKey = getStorageKey(tableId);
+const LOCAL_STORAGE_KEY = "RETA";
+const TABLES_PREFIX = `${LOCAL_STORAGE_KEY}_tables_`;
+const getStorageKey = (tableId: string, version?: string) => `${TABLES_PREFIX}${tableId}_${version ?? DEFAULT_VERSION}`;
+
+// Get all properties stored for a table at a specific version
+const getStoredTable = <PS extends Schema>(tableId: string, version?: string) => {
+  const storageKey = getStorageKey(tableId, version);
   const storedTable = localStorage.getItem(storageKey);
 
   return { storedTable: storedTable ? (JSON.parse(storedTable) as StoredTable<PS>) : undefined, storageKey };
 };
 
-const setStoredTable = <PS extends Schema, T>(
-  table: BaseTable<PS, BaseTableMetadata, T>,
+// Store the properties for a table at a specific version
+const setStoredTable = <PS extends Schema>(
+  tableId: string,
   storedTable: StoredTable<PS>,
+  version?: string,
   storageKey?: string,
 ): void => {
-  localStorage.setItem(storageKey ?? getStorageKey(table.id), JSON.stringify(storedTable));
+  localStorage.setItem(storageKey ?? getStorageKey(tableId, version), JSON.stringify(storedTable));
 };
 
 /* -------------------------------------------------------------------------- */
 /*                                   METHODS                                  */
 /* -------------------------------------------------------------------------- */
 
-// Get properties for an entity inside a stored table.
-const getProperties = <PS extends Schema, M extends BaseTableMetadata, T>(
-  table: BaseTable<PS, M, T>,
+// Get all properties for all entities inside a table.
+const getAllProperties = <PS extends Schema, M extends BaseTableMetadata, T = unknown>(
+  tableId: string,
   propertiesSchema: PS,
-  entity: Entity,
-): Properties<PS, T> | undefined => {
-  const { storedTable } = getStoredTable<PS>(table.id);
+  version?: string,
+): TableProperties<PS, M, T> | undefined => {
+  const { storedTable } = getStoredTable<PS>(tableId, version);
   if (!storedTable) return undefined;
 
-  const properties = Object.keys(propertiesSchema).reduce(
+  const changedKeys: (keyof PS)[] = [];
+
+  const allProperties = Object.keys(propertiesSchema).reduce(
     (acc, key) => {
-      const entityValue = storedTable[key as keyof PS][entity];
-      const decodedEntityValue = decodeValue<PS, T>(propertiesSchema, key, entityValue);
-      acc[key as keyof PS] = decodedEntityValue;
+      const properties = new Map<EntitySymbol, MappedType<T>[PS[keyof PS]]>();
+      const storedProperties = storedTable[key as keyof PS];
+
+      if (storedProperties) {
+        Object.entries(storedProperties).forEach(([entity, value]) => {
+          const decodedValue = decodeValue<PS, T>(propertiesSchema, key, value);
+          const type = storedProperties["type"];
+          if (type === propertiesSchema[key]) {
+            properties.set(getEntitySymbol(entity as Entity), decodedValue);
+            // if the type of the stored property is different from the schema (new/removed key, same name but different type)
+          } else {
+            changedKeys.push(key as keyof PS);
+          }
+        });
+      }
+
+      acc[key as keyof PS] = properties;
       return acc;
     },
-    {} as Properties<PS, T>,
+    {} as TableProperties<PS, M, T>,
   );
 
-  return Object.keys(properties).length ? properties : undefined;
+  if (changedKeys.length > 0) {
+    console.warn(
+      `Table "${tableId}" has schema changes for keys: ${changedKeys.join(", ")}. Properties state might be incomplete, as values for these keys will be undefined.`,
+    );
+  }
+
+  return allProperties;
 };
 
 // Set properties for an entity inside a table.
@@ -83,20 +111,26 @@ const setProperties = <PS extends Schema, M extends BaseTableMetadata, T>(
   table: BaseTable<PS, M, T>,
   properties: Properties<PS, T>,
   entity: Entity,
+  version?: string,
 ): void => {
-  const { storedTable: _storedTable, storageKey } = getStoredTable<PS>(table.id);
-  const storedTable = _storedTable ?? ({} as StoredTable<PS>);
+  const { storedTable, storageKey } = getStoredTable<PS>(table.id, version);
+  console.log(table.metadata.name, properties);
 
   const updatedStoredTable = Object.keys(properties).reduce(
-    (acc, key) => {
-      const encodedValue = encodeValue(table.propertiesSchema[key], properties[key]);
-      acc[key as keyof PS] = { ...storedTable[key as keyof PS], [entity]: encodedValue };
+    (acc, _key) => {
+      const key = _key as keyof PS;
+      const type = table.propertiesSchema[key];
+      const encodedValue = encodeValue(type, properties[key]);
+
+      acc[key] = storedTable
+        ? { ...storedTable[key], [entity]: encodedValue }
+        : { [entity]: encodedValue, ["type"]: table.propertiesSchema[key] };
       return acc;
     },
     { ...storedTable } as StoredTable<PS>,
   );
 
-  setStoredTable(table, updatedStoredTable, storageKey);
+  setStoredTable(table.id, updatedStoredTable, version, storageKey);
 };
 
 // Update some properties for an entity inside a table.
@@ -104,47 +138,25 @@ const updateProperties = <PS extends Schema, M extends BaseTableMetadata, T>(
   table: BaseTable<PS, M, T>,
   properties: Partial<Properties<PS, T>>,
   entity: Entity,
+  version?: string,
 ): void => {
-  const { storedTable, storageKey } = getStoredTable<PS>(table.id);
+  const { storedTable, storageKey } = getStoredTable<PS>(table.id, version);
   if (!storedTable) throw new Error(`Table "${table.id}" not found in local storage`);
 
+  // We can safely used `storedTable` keys as we're not supposed to update properties that were never set
   const updatedStoredTable = Object.keys(storedTable).reduce(
-    (acc, key) => {
-      const value = properties[key as keyof PS];
-      const encodedValue = value
-        ? encodeValue(table.propertiesSchema[key], properties[key] as Primitive)
-        : storedTable[key as keyof PS][entity];
-      acc[key as keyof PS] = { ...storedTable[key as keyof PS], [entity]: encodedValue };
+    (acc, _key) => {
+      const key = _key as keyof PS;
+      const type = table.propertiesSchema[key];
+      const encodedValue = properties[key] ? encodeValue(type, properties[key]) : storedTable[key][entity];
+
+      acc[key] = { ...storedTable[key], [entity]: encodedValue };
       return acc;
     },
     { ...storedTable } as StoredTable<PS>,
   );
 
-  setStoredTable(table, updatedStoredTable, storageKey);
-};
-
-// Get all properties for all entities inside a table.
-const getAllProperties = <PS extends Schema, M extends BaseTableMetadata, T = unknown>(
-  tableId: string,
-  propertiesSchema: PS,
-): BaseTable<PS, M, T>["properties"] | undefined => {
-  const { storedTable } = getStoredTable<PS>(tableId);
-  if (!storedTable) return undefined;
-
-  return Object.keys(propertiesSchema).reduce(
-    (acc, key) => {
-      const properties = new Map<EntitySymbol, MappedType<T>[PS[keyof PS]]>();
-
-      Object.entries(storedTable[key as keyof PS]).forEach(([entity, value]) => {
-        const decodedValue = decodeValue<PS, T>(propertiesSchema, key, value);
-        properties.set(getEntitySymbol(entity as Entity), decodedValue);
-      });
-
-      acc[key as keyof PS] = properties;
-      return acc;
-    },
-    {} as BaseTable<PS, M, T>["properties"],
-  );
+  setStoredTable(table.id, updatedStoredTable, version, storageKey);
 };
 
 /* -------------------------------------------------------------------------- */
@@ -178,7 +190,6 @@ const encodeValue = (type: Type, value: Primitive): Serializable | undefined => 
 
 export const LocalStorage = {
   getAllProperties,
-  getProperties,
   setProperties,
   updateProperties,
 };

@@ -1,7 +1,14 @@
 import { createTable, type TableOptions } from "@/tables/core/createTable";
 import type { Table } from "@/tables/types";
 import type { World } from "@/lib/external/mud/world";
-import { type BaseTableMetadata, type Schema, Type, type Properties } from "@/lib/external/mud/schema";
+import {
+  type BaseTableMetadata,
+  type OptionalSchema,
+  type Properties,
+  type Schema,
+  Type,
+  toOptionalType,
+} from "@/lib/external/mud/schema";
 import { uuid } from "@/lib/external/uuid";
 
 /**
@@ -41,7 +48,7 @@ export const createLocalTable = <PS extends Schema, M extends BaseTableMetadata,
   options?: TableOptions<M>,
   defaultProperties?: Properties<PS, T>,
 ) => {
-  const { id, metadata: baseMetadata } = options ?? { id: uuid() };
+  const { id, metadata: baseMetadata, persist } = options ?? { id: uuid(), persist: false };
 
   const metadata = {
     ...baseMetadata,
@@ -54,12 +61,35 @@ export const createLocalTable = <PS extends Schema, M extends BaseTableMetadata,
     abiKeySchema: { entity: "bytes32" } as const,
   } as const satisfies BaseTableMetadata;
 
-  const table = createTable(world, propertiesSchema, { ...options, id, metadata }) as unknown as Table<
-    PS,
+  // For persistent tables, we want schema types to be optional
+  const adjustedPropertiesSchema = persist
+    ? (Object.fromEntries(
+        Object.entries(propertiesSchema).map(([key, type]) => [key, toOptionalType(type)]),
+      ) as OptionalSchema<PS>)
+    : propertiesSchema;
+
+  const table = createTable(world, adjustedPropertiesSchema, { ...options, id, metadata }) as unknown as Table<
+    typeof adjustedPropertiesSchema,
     typeof metadata,
     T
   >;
-  if (defaultProperties) table.set(defaultProperties);
+
+  if (defaultProperties) {
+    const currentProperties = table.get();
+    // If currentProperties are undefined, we just set the default properties
+    // If only some of the values are undefined (after a schema change), only set the default value for those
+    const properties = Object.entries(defaultProperties).reduce(
+      (acc, [key, value]) => {
+        acc[key as keyof PS] = currentProperties?.[key] ?? value;
+        return acc;
+      },
+      {} as Properties<PS, T>,
+    );
+
+    // defaultProperties DON'T get written to local storage, as they are only a placeholder for new entities;
+    // if changing defaultProperties, you'd expect uninitialized entities to get the new default value, not retrieve the old one as a definitive value
+    table.set(properties, undefined, { persist: false });
+  }
 
   return table;
 };
@@ -77,9 +107,9 @@ export type LocalNumberTable = ReturnType<typeof createLocalNumberTable>;
 export const createLocalNumberTable = <M extends BaseTableMetadata>(
   world: World,
   options?: TableOptions<M>,
-  // defaultProperties?: Properties<{ value: Type.Number }>,
+  defaultProperties?: Properties<{ value: Type.Number }>,
 ) => {
-  return createLocalTable(world, { value: Type.Number }, options);
+  return createLocalTable(world, { value: Type.Number }, options, defaultProperties);
 };
 
 /**
@@ -95,9 +125,9 @@ export type LocalBigIntTable = ReturnType<typeof createLocalBigIntTable>;
 export const createLocalBigIntTable = <M extends BaseTableMetadata>(
   world: World,
   options?: TableOptions<M>,
-  // defaultProperties?: Properties<{ value: Type.BigInt }>,
+  defaultProperties?: Properties<{ value: Type.BigInt }>,
 ) => {
-  return createLocalTable(world, { value: Type.BigInt }, options);
+  return createLocalTable(world, { value: Type.BigInt }, options, defaultProperties);
 };
 
 /**
@@ -113,9 +143,9 @@ export type LocalStringTable = ReturnType<typeof createLocalStringTable>;
 export const createLocalStringTable = <M extends BaseTableMetadata>(
   world: World,
   options?: TableOptions<M>,
-  // defaultProperties?: Properties<{ value: Type.String }>,
+  defaultProperties?: Properties<{ value: Type.String }>,
 ) => {
-  return createLocalTable(world, { value: Type.String }, options);
+  return createLocalTable(world, { value: Type.String }, options, defaultProperties);
 };
 
 /**
@@ -131,9 +161,9 @@ export type LocalCoordTable = ReturnType<typeof createLocalCoordTable>;
 export const createLocalCoordTable = <M extends BaseTableMetadata>(
   world: World,
   options?: TableOptions<M>,
-  // defaultProperties?: Properties<{ x: Type.Number; y: Type.Number }>,
+  defaultProperties?: Properties<{ x: Type.Number; y: Type.Number }>,
 ) => {
-  return createLocalTable(world, { x: Type.Number, y: Type.Number }, options);
+  return createLocalTable(world, { x: Type.Number, y: Type.Number }, options, defaultProperties);
 };
 
 /**
@@ -149,9 +179,9 @@ export type LocalBoolTable = ReturnType<typeof createLocalBoolTable>;
 export const createLocalBoolTable = <M extends BaseTableMetadata>(
   world: World,
   options?: TableOptions<M>,
-  // defaultProperties?: Properties<{ value: Type.Boolean }>,
+  defaultProperties?: Properties<{ value: Type.Boolean }>,
 ) => {
-  return createLocalTable(world, { value: Type.Boolean }, options);
+  return createLocalTable(world, { value: Type.Boolean }, options, defaultProperties);
 };
 
 /**
@@ -167,7 +197,7 @@ export type LocalEntityTable = ReturnType<typeof createLocalEntityTable>;
 export const createLocalEntityTable = <M extends BaseTableMetadata>(
   world: World,
   options?: TableOptions<M>,
-  // defaultProperties?: Properties<{ value: Type.Entity }>,
+  defaultProperties?: Properties<{ value: Type.Entity }>,
 ) => {
-  return createLocalTable(world, { value: Type.Entity }, options);
+  return createLocalTable(world, { value: Type.Entity }, options, defaultProperties);
 };
