@@ -168,6 +168,8 @@ describe("local: create local table", () => {
 /*                                    SYNC                                    */
 /* -------------------------------------------------------------------------- */
 
+const min = (a = BigInt(0), b = BigInt(0)) => (a < b ? a : b);
+
 describe("sync: should properly sync similar properties to RECS tables", () => {
   it("sync via RPC", async () => {
     const { tables, syncToRecs, entities } = setup({ startSync: true });
@@ -188,11 +190,16 @@ describe("sync: should properly sync similar properties to RECS tables", () => {
     let synced = false;
     while (!synced) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      const lastProcessed = tables.SyncStatus.get()?.lastBlockNumberProcessed;
+      const lastProcessed = min(
+        // RETA
+        tables.SyncStatus.get()?.lastBlockNumberProcessed,
+        // RECS
+        getComponentValue(recsComponents.SyncProgress, singletonEntity)?.lastBlockNumberProcessed,
+      );
       synced = lastProcessed ? lastProcessed >= blockNumber : false;
     }
 
-    // Ignore tables not registered in RECS (e.g. SyncSource)
+    // Ignore tables not registered in RECS (e.g. SyncStatus)
     const registryKeys = Object.keys(tables).filter((key) =>
       Object.keys(recsComponents).includes(key),
     ) as (keyof typeof tables)[];
