@@ -1,4 +1,4 @@
-import type { BaseTable } from "@/tables/types";
+import type { BaseTable, IndexedBaseTable } from "@/tables/types";
 import { type Entity, type EntitySymbol, getEntityHex, getEntitySymbol } from "@/lib/external/mud/entity";
 import type { Schema, BaseTableMetadata, Properties } from "@/lib/external/mud/schema";
 import { tableOperations } from "@/lib/external/mud/tables";
@@ -22,9 +22,7 @@ import { tableOperations } from "@/lib/external/mud/tables";
  */
 export const createIndexer = <S extends Schema, M extends BaseTableMetadata, T = unknown>(
   table: BaseTable<S, M, T>,
-): BaseTable<S, M, T> & {
-  getEntitiesWithProperties: (properties: Properties<S, T>) => Set<Entity>;
-} => {
+): IndexedBaseTable<S, M, T> => {
   const propertiesToEntities = new Map<string, Set<EntitySymbol>>();
 
   function getEntitiesWithProperties(properties: Properties<S, T>) {

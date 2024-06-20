@@ -24,8 +24,10 @@ const {
   hasEntity,
   getEntityProperties,
   entityPropertiesEqual,
+  entityPropertiesWhere,
   getTableEntities,
   getEntitiesWithProperties,
+  getEntitiesWhere,
   toUpdateStream,
 } = tableOperations;
 
@@ -40,6 +42,7 @@ export enum QueryFragmentType {
   WithProperties,
   Without,
   WithoutProperties,
+  MatchingProperties,
   ProxyRead,
   ProxyExpand,
 }
@@ -66,6 +69,12 @@ export type WithoutPropertiesQueryFragment<T extends Schema> = {
   properties: Partial<Properties<T>>;
 };
 
+export type MatchingPropertiesQueryFragment<T extends Schema> = {
+  type: QueryFragmentType.MatchingProperties;
+  table: BaseTable<T>;
+  where: (properties: Properties<T>) => boolean;
+};
+
 export type ProxyReadQueryFragment = {
   type: QueryFragmentType.ProxyRead;
   table: BaseTable<{ properties: Type.Entity }>;
@@ -83,6 +92,7 @@ export type QueryFragment<T extends Schema = Schema> =
   | WithPropertiesQueryFragment<T>
   | WithoutQueryFragment<T>
   | WithoutPropertiesQueryFragment<T>
+  | MatchingPropertiesQueryFragment<T>
   | ProxyReadQueryFragment
   | ProxyExpandQueryFragment;
 
@@ -90,7 +100,8 @@ export type EntityQueryFragment<T extends Schema = Schema> =
   | WithQueryFragment<T>
   | WithPropertiesQueryFragment<T>
   | WithoutQueryFragment<T>
-  | WithoutPropertiesQueryFragment<T>;
+  | WithoutPropertiesQueryFragment<T>
+  | MatchingPropertiesQueryFragment<T>;
 
 export type SettingQueryFragment = ProxyReadQueryFragment | ProxyExpandQueryFragment;
 
@@ -208,6 +219,27 @@ const _queries = () => {
   };
 
   /**
+   * Create a {@link MatchingPropertiesQueryFragment}
+   *
+   * @example
+   * Query for all entities with a `Position` where `x` is greater than `y`.
+   *
+   * ```
+   * runQuery([MatchingProperties(Position, (properties) => properties.x > properties.y)]);
+   * ```
+   *
+   * @param table BaseTable this query fragment refers to.
+   * @param where A function that passes the properties to check for more complex conditions.
+   * @returns query fragment to be used in {@link runQuery} or {@link defineQuery}.
+   */
+  const MatchingProperties = <T extends Schema>(
+    table: BaseTable<T>,
+    where: (properties: Properties<T>) => boolean,
+  ): MatchingPropertiesQueryFragment<T> => {
+    return { type: QueryFragmentType.MatchingProperties, table, where };
+  };
+
+  /**
    * Create a {@link ProxyReadQueryFragment}.
    *
    * @remarks
@@ -279,6 +311,11 @@ const _queries = () => {
       return !entityPropertiesEqual(fragment.properties, getEntityProperties(fragment.table, entity));
     }
 
+    if (fragment.type === QueryFragmentType.MatchingProperties) {
+      // Entity must match the given properties condition
+      return entityPropertiesWhere(fragment.table, entity, fragment.where);
+    }
+
     throw new Error("Unknown query fragment");
   };
 
@@ -291,7 +328,11 @@ const _queries = () => {
   const isPositiveFragment = <T extends Schema>(
     fragment: QueryFragment<T>,
   ): fragment is WithQueryFragment<T> | WithPropertiesQueryFragment<T> => {
-    return fragment.type === QueryFragmentType.With || fragment.type == QueryFragmentType.WithProperties;
+    return (
+      fragment.type === QueryFragmentType.With ||
+      fragment.type == QueryFragmentType.WithProperties ||
+      fragment.type == QueryFragmentType.MatchingProperties
+    );
   };
 
   /**
@@ -328,7 +369,7 @@ const _queries = () => {
    * @param fragment Fragment that was used in the query pass check.
    * @returns True if the result is breaking pass state, else false.
    */
-  const isBreakingPassState = (passes: boolean, fragment: EntityQueryFragment<Schema>) => {
+  const isBreakingPassState = <T extends Schema>(passes: boolean, fragment: EntityQueryFragment<T>) => {
     return (passes && isPositiveFragment(fragment)) || (!passes && isNegativeFragment(fragment));
   };
 
@@ -430,7 +471,12 @@ const _queries = () => {
         entities =
           fragment.type === QueryFragmentType.With
             ? new Set([...getTableEntities(fragment.table)])
-            : getEntitiesWithProperties(fragment.table, fragment.properties);
+            : fragment.type === QueryFragmentType.WithProperties
+              ? getEntitiesWithProperties(fragment.table, fragment.properties)
+              : // technically this can be the only fragment in the query, and this would consider _only_ entities
+                // that are inside the table implicitly
+                // so this is forbidden (without any With/WithProperties) at the API level
+                getEntitiesWhere(fragment.table, fragment.where);
 
         // Add entity's children up to the specified depth if proxy expand is active
         if (proxyExpand && proxyExpand.depth > 0) {
@@ -680,6 +726,7 @@ const _queries = () => {
     WithProperties,
     Without,
     WithoutProperties,
+    MatchingProperties,
     ProxyRead,
     ProxyExpand,
     runQuery,

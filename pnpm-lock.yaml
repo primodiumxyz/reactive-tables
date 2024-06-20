@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@latticexyz/common':
-        specifier: 2.0.9
-        version: 2.0.9(typescript@5.5.0-beta)(zod@3.23.8)
       '@latticexyz/protocol-parser':
         specifier: 2.0.9
         version: 2.0.9(typescript@5.5.0-beta)(zod@3.23.8)
@@ -45,6 +42,9 @@ importers:
         specifier: 2.9.20
         version: 2.9.20(typescript@5.5.0-beta)(zod@3.23.8)
     devDependencies:
+      '@latticexyz/common':
+        specifier: 2.0.9
+        version: 2.0.9(typescript@5.5.0-beta)(zod@3.23.8)
       '@latticexyz/recs':
         specifier: 2.0.9
         version: 2.0.9(typescript@5.5.0-beta)(zod@3.23.8)
