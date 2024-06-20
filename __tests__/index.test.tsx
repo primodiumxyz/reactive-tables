@@ -171,7 +171,7 @@ describe("local: create local table", () => {
 const min = (a = BigInt(0), b = BigInt(0)) => (a < b ? a : b);
 
 describe("sync: should properly sync similar properties to RECS tables", () => {
-  it("sync via RPC", async () => {
+  it.only("sync via RPC", async () => {
     const { tables, syncToRecs, entities } = setup({ startSync: true });
     const { recsComponents } = await syncToRecs();
     const player = entities[0];
@@ -196,6 +196,14 @@ describe("sync: should properly sync similar properties to RECS tables", () => {
         // RECS
         (getComponentValue(recsComponents.SyncProgress, singletonEntity)?.lastBlockNumberProcessed || BigInt(0)) +
           BigInt(1), // when live sync kicks in, `lastBlockNumberProcessed` is the last block processed during historical sync, so 1 block behind
+      );
+      console.log(
+        "reta",
+        tables.SyncStatus.get()?.lastBlockNumberProcessed,
+        "recs",
+        getComponentValue(recsComponents.SyncProgress, singletonEntity)?.lastBlockNumberProcessed,
+        "block",
+        blockNumber,
       );
 
       synced = lastProcessed >= blockNumber;
