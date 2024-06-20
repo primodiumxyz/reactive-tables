@@ -40,16 +40,11 @@ export const createSync = <tableDefs extends ContractTableDefs>({
     });
 
     const pendingLogs: StorageAdapterLog[] = [];
-    const storePendingLogs = (log: StorageAdapterLog) => {
-      console.log("storing log at block", log.blockNumber);
-      pendingLogs.push(log);
-    };
+    const storePendingLogs = (log: StorageAdapterLog) => pendingLogs.push(log);
     const processPendingLogs = () =>
       pendingLogs.forEach((log, index) => {
-        console.log("processing pending log", log.blockNumber);
         storageAdapter(log);
-        tables.SyncStatus.set({
-          step: SyncStep.Syncing,
+        tables.SyncStatus.update({
           message: "Processing pending logs",
           progress: index / pendingLogs.length,
           lastBlockNumberProcessed: log.blockNumber ?? BigInt(0),
@@ -82,7 +77,6 @@ export const createSync = <tableDefs extends ContractTableDefs>({
         processPendingLogs();
         // now we're truly up to date
         triggerUpdateStream();
-        console.log("completed, processing pending logs", blockNumber);
       },
     });
 

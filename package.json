@@ -30,7 +30,7 @@
     "sort-package-json": "npx sort-package-json package.json",
     "test": "vitest __tests__/index.test.ts --run",
     "test:benchmarks": "vitest __tests__/benchmark --run",
-    "test:verbose": "DEBUG=primodium:* vitest > testLogs.txt",
+    "test:verbose": "DEBUG=primodium:* vitest __tests__/index.test.ts > testLogs.txt",
     "test:watch": "vitest __tests__/index.test.ts"
   },
   "lint-staged": {
