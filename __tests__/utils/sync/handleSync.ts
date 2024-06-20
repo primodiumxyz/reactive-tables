@@ -13,6 +13,7 @@ export const hydrateFromRpc = (tables: LocalSyncTables, sync: SyncType, onSync: 
 
   sync.start(
     (index, blockNumber, progress) => {
+      console.log("syncing block", blockNumber.toString());
       onProgress?.(index, blockNumber, progress);
       SyncStatus.update({
         progress,
@@ -21,9 +22,12 @@ export const hydrateFromRpc = (tables: LocalSyncTables, sync: SyncType, onSync: 
 
       if (progress === 1) {
         onComplete?.(blockNumber);
-        SyncStatus.update({
-          step: SyncStep.Complete,
-          message: "DONE",
+        console.log("updated sync status to live", blockNumber);
+        SyncStatus.set({
+          step: SyncStep.Live,
+          message: "Subscribed to RPC",
+          progress: 1,
+          lastBlockNumberProcessed: blockNumber,
         });
       }
     },
@@ -45,19 +49,8 @@ export const subToRpc = (tables: LocalSyncTables, sync: SyncType) => {
   const { SyncStatus } = tables;
   sync.start(
     (_, blockNumber) => {
-      const historicalSyncComplete = SyncStatus.get()?.step === SyncStep.Complete;
-
-      if (historicalSyncComplete) {
-        SyncStatus.set({
-          step: SyncStep.Live,
-          message: "Subscribed to RPC",
-          progress: 1,
-          lastBlockNumberProcessed: blockNumber,
-        });
-      }
-
       console.log(
-        historicalSyncComplete ? "Syncing updates on block:" : "Storing logs for block:",
+        SyncStatus.get()?.step === SyncStep.Live ? "Syncing updates on block:" : "Storing logs for block:",
         blockNumber.toString(),
       );
     },

@@ -171,7 +171,7 @@ describe("local: create local table", () => {
 const min = (a = BigInt(0), b = BigInt(0)) => (a < b ? a : b);
 
 describe("sync: should properly sync similar properties to RECS tables", () => {
-  it("sync via RPC", async () => {
+  it.only("sync via RPC", async () => {
     const { tables, syncToRecs, entities } = setup({ startSync: true });
     const { recsComponents } = await syncToRecs();
     const player = entities[0];
@@ -196,9 +196,13 @@ describe("sync: should properly sync similar properties to RECS tables", () => {
         // RECS
         getComponentValue(recsComponents.SyncProgress, singletonEntity)?.lastBlockNumberProcessed,
       );
+      console.log("reta", tables.SyncStatus.get()?.lastBlockNumberProcessed);
+      console.log("recs", getComponentValue(recsComponents.SyncProgress, singletonEntity)?.lastBlockNumberProcessed);
+      console.log("waiting for block", blockNumber);
 
-      synced = lastProcessed ? lastProcessed >= blockNumber : false;
+      synced = lastProcessed >= blockNumber;
     }
+    // await new Promise((resolve) => setTimeout(resolve, 5000));
 
     // Ignore tables not registered in RECS (e.g. SyncStatus)
     const registryKeys = Object.keys(tables).filter((key) =>
@@ -230,7 +234,11 @@ describe("sync: should properly sync similar properties to RECS tables", () => {
         if (!(key in table) || key === "__lastSyncedAtBlock") {
           expect(recsComp[key as keyof typeof recsComp]).toBeUndefined();
         } else {
-          expect(table[key as keyof typeof table]).toEqual(recsComp[key as keyof typeof recsComp]);
+          const reta = table[key as keyof typeof table];
+          const recs = recsComp[key as keyof typeof recsComp];
+          expect(table[key as keyof typeof table], `received reta ${reta} and recs ${recs}`).toEqual(
+            recsComp[key as keyof typeof recsComp],
+          );
         }
       }
 

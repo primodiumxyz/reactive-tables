@@ -40,9 +40,13 @@ export const createSync = <tableDefs extends ContractTableDefs>({
     });
 
     const pendingLogs: StorageAdapterLog[] = [];
-    const storePendingLogs = (log: StorageAdapterLog) => pendingLogs.push(log);
+    const storePendingLogs = (log: StorageAdapterLog) => {
+      console.log("storing log at block", log.blockNumber);
+      pendingLogs.push(log);
+    };
     const processPendingLogs = () =>
       pendingLogs.forEach((log, index) => {
+        console.log("processing pending log", log.blockNumber);
         storageAdapter(log);
         tables.SyncStatus.set({
           step: SyncStep.Syncing,
@@ -61,11 +65,9 @@ export const createSync = <tableDefs extends ContractTableDefs>({
       }),
       // During historical sync, store all incoming blocks to process them after it's complete
       // Then, process logs directly
-      writer: tables.SyncStatus.get()?.step === SyncStep.Complete ? storageAdapter : storePendingLogs,
+      writer: (logs) =>
+        tables.SyncStatus.get()?.step === SyncStep.Live ? storageAdapter(logs) : storePendingLogs(logs),
     });
-
-    unsubs.push(historicalRpcSync.unsubscribe);
-    unsubs.push(liveRpcSync.unsubscribe);
 
     // start live sync
     subToRpc(tables, liveRpcSync);
@@ -73,15 +75,19 @@ export const createSync = <tableDefs extends ContractTableDefs>({
     hydrateFromRpc(tables, historicalRpcSync, {
       ...onSync,
       // Once historical sync is complete, process blocks that went in during historical sync, trigger the update stream
-      // only after then will SyncStatus.step be updated to SyncStep.Complete so it starts directly processing blocks
+      // and set SyncStatus.step to SyncStep.Live so it starts directly processing blocks
       complete: (blockNumber) => {
         onComplete?.(blockNumber);
         // process blocks that went in during historical sync
         processPendingLogs();
         // now we're truly up to date
         triggerUpdateStream();
+        console.log("completed, processing pending logs", blockNumber);
       },
     });
+
+    unsubs.push(historicalRpcSync.unsubscribe);
+    unsubs.push(liveRpcSync.unsubscribe);
   };
 
   return { start: startSync, unsubscribe: () => unsubs.forEach((unsub) => unsub()) };

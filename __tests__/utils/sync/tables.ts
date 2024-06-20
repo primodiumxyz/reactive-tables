@@ -4,7 +4,6 @@ import { Type, World } from "@/lib";
 export enum SyncStep {
   Syncing,
   Error,
-  Complete,
   Live,
 }
 
