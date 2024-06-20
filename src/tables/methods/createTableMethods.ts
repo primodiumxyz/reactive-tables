@@ -10,6 +10,7 @@ import type { BaseTableMetadata, Properties, PropertiesSansMetadata, Schema } fr
 import { tableOperations } from "@/lib/external/mud/tables";
 import { queries } from "@/lib/external/mud/queries";
 import type { World } from "@/lib/external/mud/world";
+import { type PersistentStorageAdapter } from "@/lib/persistence";
 const {
   setEntity,
   removeEntity,
@@ -27,6 +28,9 @@ const { runQuery, defineQuery, useEntityQuery, With, WithProperties, WithoutProp
 export const createTableMethods = <PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown>(
   world: World,
   table: BaseTable<PS, M, T>,
+  storageAdapter: PersistentStorageAdapter,
+  persist?: boolean,
+  version?: string,
 ): TableMethods<PS, M, T> => {
   const paused: Map<Entity, boolean> = new Map();
   const blocked: Map<Entity, boolean> = new Map();
@@ -110,6 +114,8 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
     } else {
       setEntity(table, entity, properties, options);
     }
+
+    if (options?.persist ?? persist) storageAdapter.setProperties(table, properties, entity, version);
   };
 
   /* ----------------------------------- GET ---------------------------------- */
@@ -180,6 +186,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
   const update = (properties: Partial<Properties<PS, T>>, entity?: Entity, options?: TableMutationOptions) => {
     entity = entity ?? defaultEntity;
     updateEntity(table, entity, properties, undefined, options);
+    if (persist) storageAdapter.updateProperties(table, properties, entity, version);
   };
 
   /* ----------------------------------- HAS ---------------------------------- */
@@ -195,15 +202,11 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
 
   /* ----------------------------- USE PROPERTIES ----------------------------- */
   // Hook to get the properties for an entity in real-time
-  function useProperties(entity?: Entity | undefined): Properties<PS, T> | undefined;
-  function useProperties(
-    entity: Entity | undefined,
-    defaultProperties?: PropertiesSansMetadata<PS, T>,
-  ): Properties<PS, T>;
-  function useProperties(entity?: Entity, defaultProperties?: PropertiesSansMetadata<PS, T>) {
-    entity = entity ?? defaultEntity;
+  function useProperties(entity?: Entity): Properties<PS, T> | undefined;
+  function useProperties(entity?: Entity, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
+  function useProperties(entity: Entity = defaultEntity, defaultProperties?: PropertiesSansMetadata<PS, T>) {
     const [properties, setProperties] = useState<Properties<PS, T> | PropertiesSansMetadata<PS, T> | undefined>(
-      defaultProperties,
+      getEntityProperties(table, entity) ?? defaultProperties,
     );
 
     useEffect(() => {

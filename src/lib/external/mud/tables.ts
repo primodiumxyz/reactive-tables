@@ -244,6 +244,23 @@ const _tableOperations = () => {
   };
 
   /**
+   * Check if the given properties match a given condition.
+   *
+   * @param properties Properties to check against the condition.
+   * @param where Condition to check against the properties.
+   * @returns True if the properties match the condition, else false.
+   */
+  const entityPropertiesWhere = <S extends Schema, M extends BaseTableMetadata, T = unknown>(
+    table: BaseTable<S, M, T>,
+    entity: Entity,
+    where: (properties: Properties<S, T>) => boolean,
+  ): boolean => {
+    const properties = getEntityProperties(table, entity);
+    if (!properties) return false;
+    return where(properties);
+  };
+
+  /**
    * Util to create a tuple of a table and properties with matching schema.
    * (Used to enforce Typescript type safety.)
    *
@@ -283,6 +300,27 @@ const _tableOperations = () => {
     for (const entity of getTableEntities(table)) {
       const recProperties = getEntityProperties(table, entity);
       if (entityPropertiesEqual(properties, recProperties)) {
+        entities.add(entity);
+      }
+    }
+
+    return entities;
+  };
+
+  /**
+   * Get a set of entities that have properties matching some condition in the given table.
+   *
+   * @param table {@link createTable BaseTable} to get entities with the given properties from.
+   * @param where Condition to check against the properties.
+   * @returns Set with {@link Entity Records} with the given table properties.
+   */
+  const getEntitiesWhere = <S extends Schema, T = unknown>(
+    table: BaseTable<S, BaseTableMetadata, T>,
+    where: (properties: Properties<S, T>) => boolean,
+  ): Set<Entity> => {
+    const entities = new Set<Entity>();
+    for (const entity of getTableEntities(table)) {
+      if (entityPropertiesWhere(table, entity, where)) {
         entities.add(entity);
       }
     }
@@ -386,8 +424,10 @@ const _tableOperations = () => {
     getEntityProperties,
     getEntityPropertiesStrict,
     entityPropertiesEqual,
+    entityPropertiesWhere,
     withProperties,
     getEntitiesWithProperties,
+    getEntitiesWhere,
     getTableEntities,
     toUpdate,
     toUpdateStream,

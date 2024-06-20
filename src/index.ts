@@ -6,7 +6,7 @@ export * from "@/createWrapper";
 export * from "@/tables/core/createLocalTable";
 
 // Queries: global (filtering keys and callbacks), query (direct query returning Entity[]), useQuery (React hook returning Entity[] with callbacks)
-export { $query, query, useQuery } from "@/queries";
+export { queryMatchingCondition, queryPropertiesCondition, $query, query, useQuery } from "@/queries";
 
 /* -------------------------------- CONSTANTS ------------------------------- */
 export { defaultEntity, localProperties, metadataProperties } from "@/lib";
@@ -32,6 +32,8 @@ export type {
   PropertiesSansMetadata,
   Schema,
   StoreConfig,
+  PersistentStorageAdapter,
+  TableProperties,
   World,
 } from "@/lib";
 export { createWorld, namespaceWorld, Type } from "@/lib";
@@ -39,13 +41,15 @@ export { createWorld, namespaceWorld, Type } from "@/lib";
 export type { StorageAdapter } from "@/adapter";
 export type {
   QueryOptions,
-  QueryMatchingProperties,
+  QueryMatchingCondition,
+  QueryPropertiesCondition,
   TableWatcherCallbacks,
   TableWatcherOptions,
   WatcherOptions,
 } from "@/queries";
 export type {
   BaseTable,
+  BaseTables,
   ContractTable,
   ContractTables,
   IndexedBaseTable,
