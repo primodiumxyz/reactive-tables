@@ -2,9 +2,9 @@ import { waitForTransactionReceipt } from "viem/actions";
 import { ContractFunctionArgs, ContractFunctionName, Hex, encodeFunctionData } from "viem";
 
 import { Entity, ContractTable } from "@/index";
+import { resourceToHex } from "@/utils";
 
 import { networkConfig } from "@test/utils/networkConfig";
-import { resourceToHex } from "@latticexyz/common";
 const IWorldAbi = networkConfig.worldContract.abi;
 
 // Call a bunch of random functions with semirandom args related to provided tables

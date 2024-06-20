@@ -1,11 +1,10 @@
-import { hexToResource, spliceHex } from "@latticexyz/common";
 import { type Hex, size } from "viem";
 import { Write } from "@primodiumxyz/sync-stack";
 
 import { decodePropertiesArgs } from "@/adapter/decodeProperties";
 import type { StorageAdapterLog } from "@/adapter/types";
 import type { ContractTable, ContractTables } from "@/tables/types";
-import { resourceToLabel } from "@/lib/external/mud/common";
+import { hexToResource, resourceToLabel, spliceHex } from "@/lib/external/mud/common";
 import { hexKeyTupleToEntity } from "@/lib/external/mud/entity";
 import type { Properties } from "@/lib/external/mud/schema";
 import type { ContractTableDef, ContractTableDefs } from "@/lib/definitions";

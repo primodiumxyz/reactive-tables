@@ -1,5 +1,4 @@
 import { concatHex } from "viem";
-import { isDynamicAbiType, isStaticAbiType } from "@latticexyz/schema-type/internal";
 import {
   decodeDynamicField,
   decodeStaticField,
@@ -8,7 +7,6 @@ import {
   staticDataLength,
   type ValueArgs,
 } from "@latticexyz/protocol-parser/internal";
-import { readHex } from "@latticexyz/common";
 import {
   type StaticPrimitiveType,
   type DynamicPrimitiveType,
@@ -17,7 +15,14 @@ import {
 } from "@latticexyz/schema-type/internal";
 import { type Hex } from "viem";
 
-import type { AbiPropertiesSchema, AbiToSchema, Properties } from "@/lib/external/mud/schema";
+import { readHex } from "@/lib/external/mud/common";
+import {
+  type AbiPropertiesSchema,
+  type AbiToSchema,
+  isDynamicAbiType,
+  isStaticAbiType,
+  type Properties,
+} from "@/lib/external/mud/schema";
 
 // Modified from https://github.com/latticexyz/mud/blob/ade94a7fa761070719bcd4b4dac6cb8cc7783c3b/packages/protocol-parser/src/decodePropertiesArgs.ts#L8
 

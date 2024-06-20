@@ -16,3 +16,4 @@ export * from "@/lib/external/uuid";
 export * from "@/lib/constants";
 export * from "@/lib/debug";
 export * from "@/lib/definitions";
+export * from "@/lib/persistence";
