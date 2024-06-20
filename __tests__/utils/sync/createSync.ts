@@ -42,14 +42,14 @@ export const createSync = <tableDefs extends ContractTableDefs>({
     const pendingLogs: StorageAdapterLog[] = [];
     const storePendingLogs = (log: StorageAdapterLog) => pendingLogs.push(log);
     const processPendingLogs = () =>
-      pendingLogs.forEach((log) => {
+      pendingLogs.forEach((log, index) => {
+        storageAdapter(log);
         tables.SyncStatus.set({
           step: SyncStep.Syncing,
           message: "Processing pending logs",
-          progress: 0,
+          progress: index / pendingLogs.length,
           lastBlockNumberProcessed: log.blockNumber ?? BigInt(0),
         });
-        storageAdapter(log);
       });
 
     // Sync incoming blocks

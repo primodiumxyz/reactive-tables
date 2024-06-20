@@ -196,6 +196,7 @@ describe("sync: should properly sync similar properties to RECS tables", () => {
         // RECS
         getComponentValue(recsComponents.SyncProgress, singletonEntity)?.lastBlockNumberProcessed,
       );
+
       synced = lastProcessed ? lastProcessed >= blockNumber : false;
     }
 
