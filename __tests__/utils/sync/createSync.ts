@@ -24,7 +24,7 @@ export const createSync = <tableDefs extends ContractTableDefs>({
 
   const unsubs: (() => void)[] = [];
   const startSync = async () => {
-    // Create RPC sync from the latest block synced from the indexer (or initial block) up to the latest block
+    // Create RPC sync from the initial block up to the latest block
     const latestBlockNumber = await publicClient.getBlockNumber();
 
     // Sync all blocks from the initial block to the latest block

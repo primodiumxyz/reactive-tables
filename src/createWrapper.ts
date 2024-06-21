@@ -88,7 +88,7 @@ export type WrapperResult<config extends StoreConfig, extraTableDefs extends Con
  * ```
  *
  * @example
- * This example waits for the sync with the indexer to be done before reacting to updates on tables.
+ * This example waits for some sync to be done before reacting to updates on tables.
  *
  * ```ts
  * const SyncProgress = createLocalTable(world, { progress: Type.Number, status: Type.Number }, { id: "SyncProgress" });

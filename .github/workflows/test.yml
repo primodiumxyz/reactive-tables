@@ -27,9 +27,6 @@ jobs:
       - name: Start Foundry Node
         run: pnpm dev:node &
 
-      - name: Deploy Indexer
-        run: pnpm dev:indexer &
-
       - name: Sleep for 120 seconds
         run: sleep 120
 

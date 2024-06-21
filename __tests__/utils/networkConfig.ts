@@ -31,10 +31,7 @@ export type NetworkConfig = {
 const worlds = worldsJson as Partial<Record<string, { address: Address; blockNumber?: number }>>;
 
 // Chain
-const chain = {
-  ...mudFoundry,
-  indexerUrl: "http://localhost:3001",
-};
+const chain = mudFoundry;
 
 // World
 const worldAddress = worlds[chain.id]?.address;
