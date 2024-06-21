@@ -39,7 +39,6 @@
     "package.json": "pnpm sort-package-json"
   },
   "dependencies": {
-    "@latticexyz/common": "2.0.9",
     "@latticexyz/protocol-parser": "2.0.9",
     "@latticexyz/schema-type": "2.0.9",
     "@latticexyz/store": "2.0.9",
@@ -53,6 +52,7 @@
     "viem": "2.9.20"
   },
   "devDependencies": {
+    "@latticexyz/common": "2.0.9",
     "@latticexyz/recs": "2.0.9",
     "@latticexyz/store-sync": "2.0.9",
     "@latticexyz/world": "2.0.9",

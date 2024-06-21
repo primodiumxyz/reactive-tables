@@ -14,15 +14,20 @@ import {
   createWorld,
   $query,
   createLocalTable,
+  createLocalBigIntTable,
   createLocalCoordTable,
   createWrapper,
   defaultEntity,
   query,
   Entity,
   QueryOptions,
+  queryMatchingCondition,
   Type,
   TableUpdate,
   useQuery,
+  PersistentStorageAdapter,
+  Schema,
+  TableProperties,
 } from "@/index"; // use `from "@primodiumxyz/reactive-tables"` to test the build
 
 // tests
@@ -38,6 +43,7 @@ import {
 } from "@test/utils";
 import mudConfig from "@test/contracts/mud.config";
 import { useEffect } from "react";
+import { BaseTableMetadata, getEntitySymbol } from "@/lib";
 
 /* -------------------------------------------------------------------------- */
 /*                                   CONFIG                                   */
@@ -147,7 +153,7 @@ describe("setup: create wrapper", () => {
 });
 
 describe("local: create local table", () => {
-  it("should be able to create tables from local definitions passed during initialization", async () => {
+  it("should be able to create tables from local definitions", async () => {
     const world = createWorld();
     const tables = {
       A: createLocalCoordTable(world, { id: "A" }),
@@ -161,6 +167,197 @@ describe("local: create local table", () => {
     expect(tables.A.get()).toHaveProperty("y", 1);
     expect(tables.B.get()).toHaveProperty("bool", true);
     expect(tables.B.get()).toHaveProperty("array", [defaultEntity]);
+  });
+
+  it("should be able to retrieve the state from local storage for a persisted table", async () => {
+    const world = createWorld();
+    const tables = {
+      A: createLocalBigIntTable(world, { id: "A", persist: true, version: "1.0.0" }),
+      B: createLocalTable(
+        world,
+        { bool: Type.Boolean, array: Type.EntityArray },
+        { id: "B", persist: true, version: "1.0.0" },
+      ),
+    };
+
+    tables.A.set({ value: BigInt(1) });
+    tables.B.set({ bool: true, array: [defaultEntity] });
+    tables.A.update({ value: BigInt(2) });
+
+    const nextWorld = createWorld();
+    const nextTables = {
+      A: createLocalBigIntTable(nextWorld, { id: "A", persist: true, version: "1.0.0" }),
+      B: createLocalTable(
+        nextWorld,
+        { bool: Type.Boolean, array: Type.EntityArray },
+        { id: "B", persist: true, version: "1.0.0" },
+      ),
+    };
+
+    expect(nextTables.A.get()).toHaveProperty("value", BigInt(2));
+    expect(nextTables.B.get()).toHaveProperty("bool", true);
+    expect(nextTables.B.get()).toHaveProperty("array", [defaultEntity]);
+  });
+
+  it("should be able to use versioning for persisted tables", async () => {
+    const entities = [padHex(toHex("entityA")), padHex(toHex("entityB"))] as Entity[];
+
+    const world = createWorld();
+    const tables = {
+      A: createLocalBigIntTable(world, { id: "A", persist: true, version: "2.0.0" }),
+      B: createLocalTable(
+        world,
+        { bool: Type.Boolean, array: Type.EntityArray },
+        { id: "B", persist: true, version: "2.0.0" },
+      ),
+    };
+
+    tables.A.set({ value: BigInt(1) });
+    tables.B.set({ bool: true, array: [entities[0]] });
+
+    // Create new tables with the same id but different version
+    const worldV2 = createWorld();
+    const tablesV2 = {
+      A: createLocalBigIntTable(worldV2, { id: "A", persist: true, version: "3.0.0" }),
+      B: createLocalTable(
+        worldV2,
+        { bool: Type.Boolean, array: Type.EntityArray },
+        { id: "B", persist: true, version: "3.0.0" },
+      ),
+    };
+
+    // The new tables should have undefined properties (persisted tables get their types converted to optional types)
+    expect(tablesV2.A.get()).toEqual({ value: undefined });
+    expect(tablesV2.B.get()).toEqual({ bool: undefined, array: undefined });
+
+    tablesV2.A.set({ value: BigInt(2) });
+    tablesV2.B.set({ bool: false, array: [entities[1]] });
+
+    // The old tables should still have the old properties
+    expect(tables.A.get()).toHaveProperty("value", BigInt(1));
+    expect(tables.B.get()).toHaveProperty("bool", true);
+    expect(tables.B.get()).toHaveProperty("array", [entities[0]]);
+
+    // The new tables should have the new properties
+    expect(tablesV2.A.get()).toHaveProperty("value", BigInt(2));
+    expect(tablesV2.B.get()).toHaveProperty("bool", false);
+    expect(tablesV2.B.get()).toHaveProperty("array", [entities[1]]);
+  });
+
+  it("should be able to set default properties for persisted tables", async () => {
+    const world = createWorld();
+    const tables = {
+      A: createLocalBigIntTable(world, { id: "A", persist: true, version: "4.0.0" }, { value: BigInt(1) }),
+      B: createLocalTable(
+        world,
+        { bool: Type.Boolean, array: Type.EntityArray },
+        { id: "B", persist: true, version: "4.0.0" },
+        { bool: true, array: [defaultEntity] },
+      ),
+    };
+
+    expect(tables.A.get()).toHaveProperty("value", BigInt(1));
+    expect(tables.B.get()).toHaveProperty("bool", true);
+    expect(tables.B.get()).toHaveProperty("array", [defaultEntity]);
+  });
+
+  it("should be able to handle a change in the properties schema for persisted tables", async () => {
+    const world = createWorld();
+    const tables = {
+      A: createLocalBigIntTable(world, { id: "A", persist: true, version: "5.0.0" }),
+      B: createLocalTable(
+        world,
+        { bool: Type.Boolean, array: Type.EntityArray },
+        { id: "B", persist: true, version: "5.0.0" },
+        { bool: true, array: [defaultEntity] },
+      ),
+    };
+
+    tables.A.set({ value: BigInt(1) });
+    tables.B.set({ bool: true, array: [defaultEntity] });
+
+    const nextWorld = createWorld();
+    const nextTables = {
+      // Add new property
+      A: createLocalTable(
+        nextWorld,
+        { value: Type.BigInt, timestamp: Type.Number },
+        { id: "A", persist: true, version: "5.0.0" },
+      ),
+      // Change property name (remove+add) and type of existing property
+      B: createLocalTable(
+        nextWorld,
+        { newBool: Type.Boolean, array: Type.NumberArray },
+        { id: "B", persist: true, version: "5.0.0" },
+      ),
+    };
+
+    expect(nextTables.A.get()).toHaveProperty("value", BigInt(1));
+    expect(nextTables.A.get()).toHaveProperty("timestamp", undefined);
+    expect(nextTables.B.get()).toHaveProperty("newBool", undefined);
+    // type changed so it's set to undefined
+    expect(nextTables.B.get()).toHaveProperty("array", undefined);
+
+    nextTables.A.set({ value: BigInt(2), timestamp: 123 });
+    nextTables.B.set({ newBool: true, array: [1, 2, 3] });
+
+    expect(nextTables.A.get()).toHaveProperty("value", BigInt(2));
+    expect(nextTables.A.get()).toHaveProperty("timestamp", 123);
+    expect(nextTables.B.get()).toHaveProperty("newBool", true);
+    expect(nextTables.B.get()).toHaveProperty("array", [1, 2, 3]);
+  });
+
+  it("should be able to pass a custom storage adapter for persisted tables", async () => {
+    const entities = [padHex(toHex("entityA")), padHex(toHex("entityB"))] as Entity[];
+    const schemas = {
+      A: { value: Type.BigInt },
+      B: { x: Type.Number, y: Type.Number },
+    } as const;
+
+    const mockState = {
+      A: { value: new Map([[getEntitySymbol(entities[0]), BigInt(1)]]) } as TableProperties<(typeof schemas)["A"]>,
+      B: {
+        x: new Map([
+          [getEntitySymbol(entities[0]), 1],
+          [getEntitySymbol(entities[1]), 2],
+        ]),
+        y: new Map([
+          [getEntitySymbol(entities[0]), 3],
+          [getEntitySymbol(entities[1]), 4],
+        ]),
+      } as TableProperties<(typeof schemas)["B"]>,
+    };
+
+    const set = (tableId: string, entity: Entity, key: string, value: unknown) =>
+      // @ts-expect-error index types
+      mockState[tableId][key].set(getEntitySymbol(entity), value);
+
+    const adapter = {
+      getAllProperties: <PS extends Schema, T = unknown>(tableId: string) =>
+        mockState[tableId as keyof typeof mockState] as TableProperties<PS, BaseTableMetadata, T>,
+      setProperties: (table, properties, entity) => {
+        Object.entries(properties).forEach(([key, value]) => {
+          set(table.id, entity, key, value);
+        });
+      },
+      updateProperties: (table, properties, entity) => {
+        Object.entries(properties).forEach(([key, value]) => {
+          set(table.id, entity, key, value);
+        });
+      },
+    } as const satisfies PersistentStorageAdapter;
+
+    const world = createWorld();
+    const tables = {
+      A: createLocalBigIntTable(world, { id: "A", persist: true, storageAdapter: adapter }),
+      B: createLocalCoordTable(world, { id: "B", persist: true, storageAdapter: adapter }),
+    };
+
+    expect(tables.A.get(entities[0])).toHaveProperty("value", BigInt(1));
+    expect(tables.B.get(entities[0])).toHaveProperty("x", 1);
+    expect(tables.B.get(entities[0])).toHaveProperty("y", 3);
+    expect(tables.B.get(entities[1])).toHaveProperty("x", 2);
+    expect(tables.B.get(entities[1])).toHaveProperty("y", 4);
   });
 });
 
@@ -820,7 +1017,7 @@ describe("queries: should emit appropriate update events with the correct data",
     ).toEqual([A]);
   });
 
-  it("$query(), useQuery() (useQueryAllMatching)", () => {
+  it("$query(), useQuery()", () => {
     const { world, tables, entities, onChange: onChangeHook, aggregator: aggregatorHook } = preTest();
     const [player, A, B, C] = entities;
 
@@ -978,6 +1175,51 @@ describe("queries: should emit appropriate update events with the correct data",
       expectedAggregatorItemE,
       expectedAggregatorItemF,
     ]);
+  });
+
+  it("complex query (matching)", () => {
+    const { tables, entities } = setup();
+    const [player, A, B, C] = entities;
+
+    // Prepare entities
+    tables.Position.set({ x: 10, y: 10, ...emptyData }, player);
+    tables.Position.set({ x: 5, y: 5, ...emptyData }, A);
+    tables.Position.set({ x: 10, y: 10, ...emptyData }, B);
+    tables.Position.set({ x: 15, y: 10, ...emptyData }, C);
+    tables.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(6), ...emptyData }, player);
+    tables.Inventory.set({ items: [2, 3, 4, 5], weights: [2, 3, 4], totalWeight: BigInt(6), ...emptyData }, A);
+    tables.Inventory.set({ items: [1, 2, 3], weights: [1, 2, 3], totalWeight: BigInt(3), ...emptyData }, B);
+
+    // Entities with at least 4 items in the Inventory table
+    expect(
+      query({
+        with: [tables.Inventory],
+        matching: [
+          // this is exactly the same syntax but with a wrapper function for type inference
+          queryMatchingCondition({
+            table: tables.Inventory,
+            where: ({ items }) => items.length > 3,
+          }),
+        ],
+      }).sort(),
+    ).toEqual([A]);
+
+    // Entities inside Position with x >= 10 and totalWeight === 6
+    expect(
+      query({
+        with: [tables.Position],
+        matching: [
+          queryMatchingCondition({
+            table: tables.Position,
+            where: ({ x }) => x >= 10,
+          }),
+          queryMatchingCondition({
+            table: tables.Inventory,
+            where: ({ totalWeight }) => totalWeight === BigInt(6),
+          }),
+        ],
+      }).sort(),
+    ).toEqual([player]);
   });
 });
 

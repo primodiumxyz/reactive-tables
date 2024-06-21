@@ -9,6 +9,12 @@ export {
   // symbol <-> entity
   getEntityHex,
   getEntitySymbol,
+  // MUD common
+  hexToResource,
+  resourceToLabel,
+  resourceToHex,
+  readHex,
+  spliceHex,
   // Convert ABI types to TypeScript understandable types
   schemaAbiTypeToRecsType,
   // Other schema utilities
@@ -23,7 +29,14 @@ export {
 } from "@/lib";
 
 // Schema types
-export type { MappedType, SchemaAbiType, SchemaToPrimitives, StaticAbiType } from "@/lib";
+export type {
+  MappedType,
+  SchemaAbiType,
+  SchemaToPrimitives,
+  StaticAbiType,
+  // MUD common
+  ResourceLabel,
+} from "@/lib";
 
 export {
   // Schema utilities

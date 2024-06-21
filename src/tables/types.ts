@@ -47,6 +47,11 @@ export type IndexedBaseTable<
 > = BaseTable<PS, M, T> & {
   getEntitiesWithProperties: (properties: Properties<PS, T>) => Set<Entity>;
 };
+export type IndexedTable<
+  PS extends Schema = Schema,
+  M extends BaseTableMetadata = BaseTableMetadata,
+  T = unknown,
+> = IndexedBaseTable<PS, M, T> & TableMethods<PS, M, T>;
 
 /* ---------------------------------- BASE ---------------------------------- */
 export interface BaseTables {
@@ -101,6 +106,7 @@ export type TableUpdate<PS extends Schema = Schema, M extends BaseTableMetadata 
 
 export type TableMutationOptions = {
   skipUpdateStream?: boolean;
+  persist?: boolean;
 };
 
 /* ---------------------------------- TABLE --------------------------------- */
