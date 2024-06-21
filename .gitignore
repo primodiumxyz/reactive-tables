@@ -34,4 +34,6 @@ dist-ssr
 .eslintcache
 .vercel
 
+# Test files
 testLogs.txt
+tsconfig.vitest-temp.json

@@ -33,11 +33,10 @@ export type ContractTables<tableDefs extends Record<string, ContractTableDef>> =
   [name in keyof tableDefs]: ContractTable<tableDefs[name]>;
 };
 
-export type ContractTable<
-  tableDef extends ContractTableDef = ContractTableDef,
-  PS extends ContractTablePropertiesSchema<tableDef> = ContractTablePropertiesSchema<tableDef>,
-  // KS extends ContractTableKeySchema<tableDef> = ContractTableKeySchema<tableDef>,
-> = Table<PS, ContractTableMetadata<tableDef>>;
+export type ContractTable<tableDef extends ContractTableDef = ContractTableDef> = Table<
+  ContractTablePropertiesSchema<tableDef>,
+  ContractTableMetadata<tableDef>
+>;
 
 /* --------------------------------- INDEXED -------------------------------- */
 export type IndexedBaseTable<

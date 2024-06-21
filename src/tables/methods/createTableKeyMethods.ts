@@ -33,31 +33,31 @@ export const createTableKeyMethods = <PS extends Schema, M extends BaseTableMeta
     defaultProperties?: PropertiesSansMetadata<PS, T>,
   ): Properties<PS, T>;
   function getWithKeys(keys?: Keys<M["abiKeySchema"], T>, defaultProperties?: PropertiesSansMetadata<PS, T>) {
-    const entity = keys ? encodeEntity(abiKeySchema, keys) : defaultEntity;
+    const entity = keys && abiKeySchema ? encodeEntity(abiKeySchema, keys) : defaultEntity;
     return get(entity, defaultProperties);
   }
 
   // Check if an entity exists inside the table using its keys
   const hasWithKeys = (keys?: Keys<M["abiKeySchema"], T>) => {
-    const entity = keys ? encodeEntity(abiKeySchema, keys) : defaultEntity;
+    const entity = keys && abiKeySchema ? encodeEntity(abiKeySchema, keys) : defaultEntity;
     return has(entity);
   };
 
   // Use (hook) the properties of an entity using its keys
   const useWithKeys = (keys?: Keys<M["abiKeySchema"], T>, defaultProperties?: PropertiesSansMetadata<PS, T>) => {
-    const entity = keys ? encodeEntity(abiKeySchema, keys) : defaultEntity;
+    const entity = keys && abiKeySchema ? encodeEntity(abiKeySchema, keys) : defaultEntity;
     return use(entity, defaultProperties);
   };
 
   // Set the properties of an entity using its keys
   const setWithKeys = (properties: Properties<PS, T>, keys: Keys<M["abiKeySchema"], T>) => {
-    const entity = keys ? encodeEntity(abiKeySchema, keys) : defaultEntity;
+    const entity = keys && abiKeySchema ? encodeEntity(abiKeySchema, keys) : defaultEntity;
     return set(properties, entity);
   };
 
   // Get the keys properties of an entity using its entity
   const getEntityKeys = (entity: Entity) => {
-    return decodeEntity(abiKeySchema, entity) as unknown as Keys<M["abiKeySchema"], T>;
+    return (abiKeySchema ? decodeEntity(abiKeySchema, entity) : {}) as unknown as Keys<M["abiKeySchema"], T>;
   };
 
   return {
