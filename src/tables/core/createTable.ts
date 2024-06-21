@@ -16,7 +16,7 @@ import { createLocalStorageAdapter, DEFAULT_VERSION, type PersistentStorageAdapt
  * @template PS The schema of the properties for all entities inside the table.
  * @template M The type of any provided metadata for the table.
  * @template T The type of the properties to match.
- * @param id The unique identifier for the table, usually—but not necessarily— a human-readable and descriptive name.
+ * @param id (optional) The unique identifier for the table, usually—but not necessarily—a human-readable and descriptive name.
  * @param metadata (optional) Any additional metadata to be associated with the table.
  * @param indexed (optional) Whether the table should be indexed or not. Default: false.
  * @param persist (optional) Whether the table should be persisted in local storage or not. Default: false.
@@ -25,7 +25,7 @@ import { createLocalStorageAdapter, DEFAULT_VERSION, type PersistentStorageAdapt
  * @param storageAdapter (optional) The storage adapter to use for persistence. Default: {@link createLocalStorageAdapter}.
  */
 export type TableOptions<M extends BaseTableMetadata = BaseTableMetadata, P extends boolean = false> = {
-  id: string; // default: uuid
+  id?: string; // default: uuid
   metadata?: M;
   indexed?: boolean;
   persist?: P;

@@ -69,6 +69,7 @@ export type BaseTableMetadata<M extends Metadata = Metadata> = M & {
   name: string;
   globalName: string;
   namespace: string;
+  abiKeySchema?: { [name: string]: StaticAbiType };
 };
 
 export type ContractTablePropertiesSchema<tableDef extends ContractTableDef> = {
