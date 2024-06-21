@@ -11,6 +11,8 @@ import {
 } from "@/lib/external/mud/schema";
 import { uuid } from "@/lib/external/uuid";
 
+type AdjustedPropertiesSchema<PS extends Schema, P extends boolean> = P extends true ? OptionalSchema<PS> : PS;
+
 /**
  * Creates a local table with the specified properties schema, options and metadata.
  *
@@ -42,24 +44,28 @@ import { uuid } from "@/lib/external/uuid";
  * ```
  * @category Creation
  */
-export const createLocalTable = <PS extends Schema, M extends BaseTableMetadata, T = unknown>(
+export const createLocalTable = <
+  PS extends Schema,
+  M extends BaseTableMetadata,
+  P extends boolean = false,
+  T = unknown,
+>(
   world: World,
   propertiesSchema: PS,
-  options?: TableOptions<M>,
+  options: TableOptions<M, P> = { id: uuid(), persist: false as P },
   defaultProperties?: Properties<PS, T>,
-) => {
-  const { id, metadata: baseMetadata, persist } = options ?? { id: uuid(), persist: false };
+): Table<AdjustedPropertiesSchema<PS, P>, M, T> => {
+  const id = options.id ?? uuid();
+  const baseMetadata = options.metadata;
+  const persist = options.persist ?? false;
 
   const metadata = {
     ...baseMetadata,
     name: id,
     namespace: baseMetadata?.namespace ?? ("local" as const),
     globalName:
-      baseMetadata?.globalName ?? baseMetadata?.namespace
-        ? (`${baseMetadata.namespace}__${id}` as const)
-        : (`local__${id}` as const),
-    abiKeySchema: { entity: "bytes32" } as const,
-  } as const satisfies BaseTableMetadata;
+      baseMetadata?.globalName ?? baseMetadata?.namespace ? `${baseMetadata.namespace}__${id}` : `local__${id}`,
+  } as M;
 
   // For persistent tables, we want schema types to be optional
   const adjustedPropertiesSchema = persist
@@ -72,7 +78,7 @@ export const createLocalTable = <PS extends Schema, M extends BaseTableMetadata,
     ...options,
     id,
     metadata,
-  }) as unknown as Table<typeof adjustedPropertiesSchema, typeof metadata, T>;
+  }) as unknown as Table<AdjustedPropertiesSchema<PS, P>, M, T>;
 
   if (defaultProperties) {
     const currentProperties = table.get();
@@ -83,7 +89,7 @@ export const createLocalTable = <PS extends Schema, M extends BaseTableMetadata,
         acc[key as keyof PS] = currentProperties?.[key] ?? value;
         return acc;
       },
-      {} as Properties<PS, T>,
+      {} as Properties<AdjustedPropertiesSchema<PS, P>, T>,
     );
 
     // defaultProperties DON'T get written to local storage, as they are only a placeholder for new entities;
@@ -104,9 +110,9 @@ export type LocalNumberTable = ReturnType<typeof createLocalNumberTable>;
  * This is a shorthand for creating a local table with a single number property.
  * @see {@link createLocalTable}
  */
-export const createLocalNumberTable = <M extends BaseTableMetadata>(
+export const createLocalNumberTable = <M extends BaseTableMetadata, P extends boolean = false>(
   world: World,
-  options?: TableOptions<M>,
+  options?: TableOptions<M, P>,
   defaultProperties?: Properties<{ value: Type.Number }>,
 ) => {
   return createLocalTable(world, { value: Type.Number }, options, defaultProperties);
@@ -122,9 +128,9 @@ export type LocalBigIntTable = ReturnType<typeof createLocalBigIntTable>;
  * This is a shorthand for creating a local table with a single BigInt property.
  * @see {@link createLocalTable}
  */
-export const createLocalBigIntTable = <M extends BaseTableMetadata>(
+export const createLocalBigIntTable = <M extends BaseTableMetadata, P extends boolean = false>(
   world: World,
-  options?: TableOptions<M>,
+  options?: TableOptions<M, P>,
   defaultProperties?: Properties<{ value: Type.BigInt }>,
 ) => {
   return createLocalTable(world, { value: Type.BigInt }, options, defaultProperties);
@@ -140,9 +146,9 @@ export type LocalStringTable = ReturnType<typeof createLocalStringTable>;
  * This is a shorthand for creating a local table with a single string property.
  * @see {@link createLocalTable}
  */
-export const createLocalStringTable = <M extends BaseTableMetadata>(
+export const createLocalStringTable = <M extends BaseTableMetadata, P extends boolean = false>(
   world: World,
-  options?: TableOptions<M>,
+  options?: TableOptions<M, P>,
   defaultProperties?: Properties<{ value: Type.String }>,
 ) => {
   return createLocalTable(world, { value: Type.String }, options, defaultProperties);
@@ -158,9 +164,9 @@ export type LocalCoordTable = ReturnType<typeof createLocalCoordTable>;
  * This is a shorthand for creating a local table with number properties for coordinates, specifically `x` and `y`.
  * @see {@link createLocalTable}
  */
-export const createLocalCoordTable = <M extends BaseTableMetadata>(
+export const createLocalCoordTable = <M extends BaseTableMetadata, P extends boolean = false>(
   world: World,
-  options?: TableOptions<M>,
+  options?: TableOptions<M, P>,
   defaultProperties?: Properties<{ x: Type.Number; y: Type.Number }>,
 ) => {
   return createLocalTable(world, { x: Type.Number, y: Type.Number }, options, defaultProperties);
@@ -176,9 +182,9 @@ export type LocalBoolTable = ReturnType<typeof createLocalBoolTable>;
  * This is a shorthand for creating a local table with a single boolean property.
  * @see {@link createLocalTable}
  */
-export const createLocalBoolTable = <M extends BaseTableMetadata>(
+export const createLocalBoolTable = <M extends BaseTableMetadata, P extends boolean = false>(
   world: World,
-  options?: TableOptions<M>,
+  options?: TableOptions<M, P>,
   defaultProperties?: Properties<{ value: Type.Boolean }>,
 ) => {
   return createLocalTable(world, { value: Type.Boolean }, options, defaultProperties);
@@ -194,9 +200,9 @@ export type LocalEntityTable = ReturnType<typeof createLocalEntityTable>;
  * This is a shorthand for creating a local table with a single entity property.
  * @see {@link createLocalTable}
  */
-export const createLocalEntityTable = <M extends BaseTableMetadata>(
+export const createLocalEntityTable = <M extends BaseTableMetadata, P extends boolean = false>(
   world: World,
-  options?: TableOptions<M>,
+  options?: TableOptions<M, P>,
   defaultProperties?: Properties<{ value: Type.Entity }>,
 ) => {
   return createLocalTable(world, { value: Type.Entity }, options, defaultProperties);
