@@ -5,7 +5,7 @@ import { decodePropertiesArgs } from "@/adapter/decodeProperties";
 import type { StorageAdapterLog } from "@/adapter/types";
 import type { ContractTable, ContractTables } from "@/tables/types";
 import { hexToResource, resourceToLabel, spliceHex } from "@/lib/external/mud/common";
-import { hexKeyTupleToEntity } from "@/lib/external/mud/entity";
+import { type Entity, hexKeyTupleToEntity } from "@/lib/external/mud/entity";
 import type { Properties } from "@/lib/external/mud/schema";
 import type { ContractTableDef, ContractTableDefs } from "@/lib/definitions";
 import { debug } from "@/lib/debug";
@@ -33,16 +33,38 @@ export const createStorageAdapter = <tableDefs extends ContractTableDefs = Contr
     return { entity, table };
   };
 
+  const skipIfMoreRecentState = <tableDef extends ContractTableDef>(
+    log: StorageAdapterLog,
+    table: ContractTable<tableDef>,
+    entity: Entity,
+  ) => {
+    const properties = table.get(entity);
+    const isMoreRecent = properties && properties.__lastSyncedAtBlock > (log.blockNumber || BigInt(0));
+
+    if (isMoreRecent) {
+      debug("skipping update as table state is more recent for this entity", {
+        namespace: table.metadata.namespace,
+        name: table.metadata.name,
+        entity,
+        properties,
+      });
+
+      return true;
+    }
+
+    return false;
+  };
+
   const storageAdapter = Write.toCustom({
     /* ----------------------------------- SET ---------------------------------- */
     set: (log) => {
       const processed = processLog(log);
-
       if (!processed) return;
+
       const { entity, table } = processed;
+      if (skipIfMoreRecentState(log, table, entity)) return;
 
       const properties = decodePropertiesArgs(table.metadata.abiPropertiesSchema, log.args);
-
       debug("setting properties", {
         namespace: table.metadata.namespace,
         name: table.metadata.name,
@@ -66,7 +88,9 @@ export const createStorageAdapter = <tableDefs extends ContractTableDefs = Contr
     updateStatic: (log) => {
       const processed = processLog(log);
       if (!processed) return;
+
       const { entity, table } = processed;
+      if (skipIfMoreRecentState(log, table, entity)) return;
 
       const previousProperties = table.get(entity);
       const previousStaticData = previousProperties?.__staticData ?? ("0x" as Hex);
@@ -101,7 +125,9 @@ export const createStorageAdapter = <tableDefs extends ContractTableDefs = Contr
     updateDynamic: (log) => {
       const processed = processLog(log);
       if (!processed) return;
+
       const { entity, table } = processed;
+      if (skipIfMoreRecentState(log, table, entity)) return;
 
       const previousProperties = table.get(entity);
       const previousDynamicData = previousProperties?.__dynamicData ?? ("0x" as Hex);
@@ -137,7 +163,9 @@ export const createStorageAdapter = <tableDefs extends ContractTableDefs = Contr
     delete: (log) => {
       const processed = processLog(log);
       if (!processed) return;
+
       const { entity, table } = processed;
+      if (skipIfMoreRecentState(log, table, entity)) return;
 
       debug("deleting properties", {
         namespace: table.metadata.namespace,
