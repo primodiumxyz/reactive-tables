@@ -118,7 +118,6 @@ const setProperties = <PS extends Schema, M extends BaseTableMetadata, T>(
   version?: string,
 ): void => {
   const { storedTable, storageKey } = getStoredTable<PS>(table.id, version);
-  console.log(table.metadata.name, properties);
 
   const updatedStoredTable = Object.keys(properties).reduce(
     (acc, _key) => {
@@ -182,7 +181,7 @@ const decodeValue = <PS extends Schema = Schema, T = unknown>(
       : value) as Properties<PS, T>[typeof key];
 
 const encodeValue = (type: Type, value: Primitive): Serializable | undefined => {
-  if (!value) return undefined;
+  if (value === undefined || value === null) return undefined;
   if (isBigIntType(type)) return value.toString();
   if (isBigIntArrayType(type)) return (value as Array<bigint>).map((v) => v.toString());
   return value as Serializable;
