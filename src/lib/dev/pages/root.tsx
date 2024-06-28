@@ -6,9 +6,11 @@ import { NavButton } from "@/lib/dev/components/nav-button";
 export const RootPage = () => {
   return (
     <div className="flex flex-col gap-4 w-full min-h-[100vh]">
-      <div>
+      <div className="flex">
         <NavButton to="/">Home</NavButton>
         <NavButton to="/tables">Tables</NavButton>
+        <span className="flex-1" />
+        <NavButton to="/config">Config</NavButton>
         {/* <NavButton
           to="/actions"
           className={({ isActive }) =>
@@ -36,7 +38,7 @@ export const RootPage = () => {
           </NavButton>
         ) : null} */}
       </div>
-      <div className="flex-1 px-2 overflow-auto">
+      <div className="px-2">
         <Outlet />
       </div>
     </div>

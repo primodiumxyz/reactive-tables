@@ -7,4 +7,11 @@ body {
   @apply bg-base-black;
   @apply text-base-50;
   margin: 0;
+  /* scrollbar */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+::-webkit-scrollbar {
+  display: none;
 }

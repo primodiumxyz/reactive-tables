@@ -2,7 +2,7 @@ import React from "react";
 import { createMemoryRouter, createRoutesFromElements, Route, RouterProvider } from "react-router-dom";
 import "tailwindcss/tailwind.css";
 
-import { HomePage, RootPage, TablesPage } from "@/lib/dev/pages";
+import { SettingsPage, HomePage, RootPage, TablesPage } from "@/lib/dev/pages";
 import { RouteError, TableData } from "@/lib/dev/components";
 import { CONTAINER_ID } from "@/lib/dev/config/constants";
 import type { VisualizerOptions } from "@/lib/dev/config/types";
@@ -18,6 +18,7 @@ const router = createMemoryRouter(
       <Route path="tables" element={<TablesPage />}>
         <Route path=":id" element={<TableData />} />
       </Route>
+      <Route path="config" element={<SettingsPage />} />
       {/* <Route path="components" element={<ComponentsPage />}>
         <Route path=":id" element={<ComponentData />} />
       </Route> */}
@@ -52,7 +53,7 @@ export const render = async <tables extends Tables>(options: VisualizerOptions<t
     const getEntity = (index: number) => padHex(toHex(index));
     for (let i = 0; i < 100; i++) {
       options.tables.Inventory.set(
-        { items: [1, 3, 5, 3, 3, 3, 3, 4, 5], weights: [1, 3], totalWeight: BigInt(4) },
+        { items: [1, 3, 5, 3, 3, 3, 3, 4, 5], weights: [i, 3], totalWeight: BigInt(4) },
         getEntity(i),
       );
     }
