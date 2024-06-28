@@ -1,4 +1,5 @@
 import type { ContractTable, Table, Tables } from "@/tables/types";
+import type { Hex, PublicClient } from "viem";
 
 export type VisualizerOptions<tables extends Tables> = {
   tables: {
@@ -8,4 +9,6 @@ export type VisualizerOptions<tables extends Tables> = {
         ? Table<PS, M, T>
         : never;
   };
+  publicClient?: PublicClient;
+  worldAddress?: Hex;
 };

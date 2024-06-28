@@ -7,7 +7,6 @@ import { RouteError, TableData } from "@/lib/dev/components";
 import { CONTAINER_ID } from "@/lib/dev/config/constants";
 import type { VisualizerOptions } from "@/lib/dev/config/types";
 import type { Tables } from "@/tables/types";
-import { padHex, toHex } from "viem";
 
 const router = createMemoryRouter(
   createRoutesFromElements(
@@ -50,13 +49,6 @@ export const render = async <tables extends Tables>(options: VisualizerOptions<t
     );
 
     document.body.appendChild(rootElement);
-    const getEntity = (index: number) => padHex(toHex(index));
-    for (let i = 0; i < 100; i++) {
-      options.tables.Inventory.set(
-        { items: [1, 3, 5, 3, 3, 3, 3, 4, 5], weights: [i, 3], totalWeight: BigInt(4) },
-        getEntity(i),
-      );
-    }
 
     return () => {
       root.unmount();
