@@ -1,52 +1,65 @@
 import React from "react";
 import { useParams } from "react-router-dom";
 
+import { Type } from "@/lib/external/mud/schema";
 import { serialize } from "@/lib/dev/utils";
 import { useVisualizer } from "@/lib/dev/config/context";
+import { twMerge } from "tailwind-merge";
 
 export const TableData = () => {
   const { tables } = useVisualizer();
 
   const { id: idParam } = useParams();
   const table = Object.values(tables).find((table) => table.id === idParam);
-  const entities = useEntityQuery([Has(table)]);
+  const entities = table?.useAll() ?? [];
+
+  const copyToClipboard = (content: string) => {
+    navigator.clipboard.writeText(content);
+  };
 
   if (!table) {
     console.warn(`Table with id ${idParam} not found`);
     return null;
   }
 
-  // key here is useful to force a re-render on table changes,
-  // otherwise state hangs around from previous render during navigation (entities)
-  // return isStoreComponent(table) ? (
-  //   <StoreComponentDataTable key={table.id} table={table} />
-  // ) : (
-  //   <ComponentDataTable key={table.id} table={table} />
-  // );
-
   return (
-    <table className="w-full -mx-1">
-      <thead className="sticky top-0 z-10 bg-slate-800 text-left">
-        <tr className="text-amber-200/80 font-mono">
-          <th className="px-1 pt-1.5 font-normal">entity</th>
-          {Object.keys(table.schema).map((name) => (
-            <th key={name} className="px-1 pt-1.5 font-normal">
+    <table className="w-full">
+      <thead className="sticky top-0 z-10 bg-base-950 text-left">
+        <tr className="font-mono font-thin">
+          <th className="px-4 font-normal text-sm">entity</th>
+          {Object.keys(table.propertiesSchema).map((name) => (
+            <th key={name} className="px-4 font-normal text-sm">
               {name}
             </th>
           ))}
         </tr>
       </thead>
-      <tbody className="font-mono text-xs">
-        {entities.map((entity) => {
-          const value = getComponentValueStrict(table, entity);
+      <tbody className=" bg-base-700 font-mono text-xs">
+        {entities.map((entity, index) => {
+          const properties = table.get(entity);
+          if (!properties) {
+            console.warn(`Entity ${entity} not found in table ${table.id}`);
+            return null;
+          }
+
           return (
-            <tr key={entity}>
-              <td className="px-1 whitespace-nowrap overflow-hidden text-ellipsis">{entity}</td>
-              {Object.keys(table.schema).map((name) => {
-                const fieldValue = value[name];
+            <tr key={entity} className={twMerge("h-2", index % 2 === 0 ? "bg-base-900" : "bg-base-800")}>
+              <td
+                className="px-1 whitespace-nowrap overflow-auto hover:bg-base-700 cursor-pointer"
+                onClick={() => copyToClipboard(entity)}
+              >
+                {entity}
+              </td>
+              {Object.keys(table.propertiesSchema).map((name) => {
+                const fieldValue = properties[name];
+
                 return (
-                  <td key={name} className="px-1 whitespace-nowrap overflow-hidden text-ellipsis">
-                    {table.schema[name] === Type.T
+                  <td
+                    key={name}
+                    className="px-1 whitespace-nowrap max-w-96 overflow-auto hover:bg-base-600 cursor-pointer"
+                    onClick={() => copyToClipboard(serialize(fieldValue))}
+                  >
+                    {table.propertiesSchema[name] === Type.T
                       ? serialize(fieldValue)
                       : Array.isArray(fieldValue)
                         ? fieldValue.map(String).join(", ")

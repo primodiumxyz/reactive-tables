@@ -1,10 +1,21 @@
 import React, { createContext, useContext, type ReactNode } from "react";
 
 import type { VisualizerOptions } from "@/lib/dev/config/types";
+import type { Tables } from "@/tables/types";
 
-const VisualizerContext = createContext<VisualizerOptions | null>(null);
+const createVisualizerContext = <tables extends Tables>() => {
+  return createContext<VisualizerOptions<tables> | null>(null);
+};
 
-export const VisualizerProvider = ({ children, value }: { children: ReactNode; value: VisualizerOptions }) => {
+const VisualizerContext = createVisualizerContext();
+
+export const VisualizerProvider = <tables extends Tables>({
+  children,
+  value,
+}: {
+  children: ReactNode;
+  value: VisualizerOptions<tables>;
+}) => {
   const currentValue = useContext(VisualizerContext);
   if (currentValue) throw new Error("VisualizerProvider can only be used once");
 

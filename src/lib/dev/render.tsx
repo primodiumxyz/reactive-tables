@@ -4,9 +4,10 @@ import "tailwindcss/tailwind.css";
 
 import { HomePage, RootPage, TablesPage } from "@/lib/dev/pages";
 import { RouteError, TableData } from "@/lib/dev/components";
+import { CONTAINER_ID } from "@/lib/dev/config/constants";
 import type { VisualizerOptions } from "@/lib/dev/config/types";
-
-const containerId = "RETA_DEV_VISUALIZER";
+import type { Tables } from "@/tables/types";
+import { padHex, toHex } from "viem";
 
 const router = createMemoryRouter(
   createRoutesFromElements(
@@ -24,8 +25,8 @@ const router = createMemoryRouter(
   ),
 );
 
-export const render = async (options: VisualizerOptions): Promise<() => void> => {
-  if (document.getElementById(containerId)) {
+export const render = async <tables extends Tables>(options: VisualizerOptions<tables>): Promise<() => void> => {
+  if (document.getElementById(CONTAINER_ID)) {
     console.warn("Dev visualizer is already mounted");
     return () => {};
   }
@@ -36,18 +37,25 @@ export const render = async (options: VisualizerOptions): Promise<() => void> =>
     const { VisualizerProvider } = await import("./config/context");
 
     const rootElement = document.createElement("div");
-    rootElement.id = containerId;
+    rootElement.id = CONTAINER_ID;
 
     const root = ReactDOM.createRoot(rootElement);
     root.render(
       <React.StrictMode>
         <VisualizerProvider value={options}>
-          <RouterProvider router={router} />;
+          <RouterProvider router={router} />
         </VisualizerProvider>
       </React.StrictMode>,
     );
 
     document.body.appendChild(rootElement);
+    const getEntity = (index: number) => padHex(toHex(index));
+    for (let i = 0; i < 100; i++) {
+      options.tables.Inventory.set(
+        { items: [1, 3, 5, 3, 3, 3, 3, 4, 5], weights: [1, 3], totalWeight: BigInt(4) },
+        getEntity(i),
+      );
+    }
 
     return () => {
       root.unmount();

@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply font-sans;
+  @apply bg-base-black;
+  @apply text-base-50;
+  margin: 0;
+}

@@ -9,7 +9,8 @@
   "type": "module",
   "exports": {
     ".": "./dist/index.js",
-    "./utils": "./dist/utils.js"
+    "./utils": "./dist/utils.js",
+    "./dev": "./dist/dev.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -27,11 +28,11 @@
     "lint:fix": "eslint --cache --fix",
     "prepare": "husky install",
     "sort-package-json": "npx sort-package-json package.json",
-    "test": "vitest __tests__/index.test.ts --run",
+    "test": "vitest __tests__/index.test.tsx --run",
     "test:benchmarks": "vitest __tests__/benchmark --run",
     "test:types": "vitest --typecheck.only --run",
     "test:verbose": "DEBUG=primodium:* vitest __tests__/index.test.ts > testLogs.txt",
-    "test:watch": "vitest __tests__/index.test.ts"
+    "test:watch": "vitest __tests__/index.test.tsx"
   },
   "lint-staged": {
     "*.{ts,tsx}": "eslint --cache --fix",
@@ -63,6 +64,7 @@
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^7.5.0",
     "@typescript-eslint/parser": "^7.5.0",
+    "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.19",
     "concurrently": "^8.2.2",
     "eslint": "^8.29.0",

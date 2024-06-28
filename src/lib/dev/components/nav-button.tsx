@@ -1,11 +1,11 @@
 import React, { type ButtonHTMLAttributes, type DetailedHTMLProps } from "react";
 import { type To, useLocation, useResolvedPath, useNavigate } from "react-router-dom";
+import { twMerge } from "tailwind-merge";
 
 type ButtonProps = DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>;
 
-type Props = Omit<ButtonProps, "className"> & {
+type Props = ButtonProps & {
   to: To;
-  className?: string | ((args: { isActive: boolean }) => string);
 };
 
 export const NavButton = ({ to, className, type, onClick, ...buttonProps }: Props) => {
@@ -24,7 +24,11 @@ export const NavButton = ({ to, className, type, onClick, ...buttonProps }: Prop
   return (
     <button
       type={type || "button"}
-      className={typeof className === "function" ? className({ isActive }) : className}
+      className={twMerge(
+        "border-none px-4 py-1 text-sm bg-base-950 text-base-50 hover:bg-base-850 cursor-pointer",
+        isActive && "bg-base-800",
+        className,
+      )}
       onClick={(event) => {
         navigate(to);
         onClick?.(event);
