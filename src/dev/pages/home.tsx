@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 
+import { StorageAdapterData } from "@/dev/components";
 import { useVisualizer } from "@/dev/lib/context";
 
 export const HomePage = () => {
   const { publicClient, worldAddress } = useVisualizer();
-
   const [latestBlockNumber, setLatestBlockNumber] = useState<bigint | undefined>(undefined);
 
   useEffect(() => {
@@ -35,11 +35,15 @@ export const HomePage = () => {
           <span className="text-base-500">Latest block</span>
           <span>{latestBlockNumber?.toString() ?? "unknown"}</span>
         </div>
-        <div className="flex gap-4">
-          <span className="text-base-500">World</span>
-          <span>{worldAddress}</span>
-        </div>
+        {!!worldAddress && (
+          <div className="flex gap-4">
+            <span className="text-base-500">World</span>
+            <span>{worldAddress}</span>
+          </div>
+        )}
       </div>
+      <h1 className="font-bold text-base-500 uppercase text-xs">Storage adapter</h1>
+      <StorageAdapterData limit={10} filters={false} />
     </div>
   );
 };

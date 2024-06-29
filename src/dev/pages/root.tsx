@@ -12,7 +12,7 @@ export const RootPage = () => {
   const adapterUpdatesIndex = useRef(0);
 
   useEffect(() => {
-    const subscription = adapterUpdate$.subscribe((update) => {
+    const adapterSub = adapterUpdate$.subscribe((update) => {
       StorageAdapterUpdateTable.set(
         {
           tableName: update.table.metadata.name,
@@ -25,7 +25,7 @@ export const RootPage = () => {
       );
     });
 
-    return () => subscription.unsubscribe();
+    return () => adapterSub.unsubscribe();
   }, [adapterUpdate$]);
 
   return (

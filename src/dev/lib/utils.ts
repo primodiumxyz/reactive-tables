@@ -16,7 +16,7 @@ export const serialize = (obj: any) => {
 export const stringifyProperties = <PS extends Schema, T = unknown>(
   properties: Properties<PS, T>,
   propertiesSchema: PS,
-) => {
+): Record<string, string> => {
   return Object.fromEntries(
     Object.keys(propertiesSchema).map((name) => {
       const fieldValue = properties[name];
@@ -35,7 +35,7 @@ export const stringifyProperties = <PS extends Schema, T = unknown>(
 export const useCopyCell = () => {
   const [copiedCell, setCopiedCell] = useState<string | null>(null);
   const copyToClipboard = (content: string | Record<string, string>, cellId: string) => {
-    navigator.clipboard.writeText(JSON.stringify(content));
+    navigator.clipboard.writeText(content instanceof Object ? JSON.stringify(content) : content);
     setCopiedCell(cellId);
   };
 

@@ -22,7 +22,6 @@ const App = () => {
           worldAddress: networkConfig.worldAddress,
         },
       });
-      console.log(tables.ResourceAccess);
 
       const sync = createSync({
         contractTables: tables,
@@ -43,7 +42,7 @@ const App = () => {
         walletClient: createWalletClient({ chain: mudFoundry, transport: http() }),
         latestBlock$: new Observable(),
         storedBlockLogs$: new Observable(),
-        worldAddress: "0x123",
+        worldAddress: networkConfig.worldAddress,
         worldAbi: [],
         write$: new Observable(),
       });
