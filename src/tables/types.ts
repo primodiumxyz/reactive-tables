@@ -296,6 +296,32 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    */
   useAllWithout: (properties: Partial<Properties<PS, T>>) => Entity[];
 
+  // useAllMatching
+  /**
+   * Get all entities in the table matching a specific condition with a React hook.
+   *
+   * @param where The condition to match.
+   * @returns All entities currently inside the table matching the specified condition, updated whenever data changes
+   * within the table.
+   * @example
+   * This example retrieves all entities in the "Player" table with a score of more than 100.
+   *
+   * ```ts
+   * const players = tables.Player.useAllMatching((properties) => properties.score > 100);
+   * console.log(players);
+   * // -> []
+   *
+   * tables.Player.set({ name: "Alice", score: 200 }, recordA);
+   * console.log(players);
+   * // -> [recordA]
+   *
+   * tables.Player.update({ score: 50 }, recordA);
+   * console.log(players);
+   * // -> []
+   * ```
+   */
+  useAllMatching: (where: (properties: Properties<PS, T>) => boolean) => Entity[];
+
   /**
    * Remove an entity from the table.
    *

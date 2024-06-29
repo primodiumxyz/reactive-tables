@@ -19,7 +19,7 @@ const {
   hasEntity,
   isTableUpdate: _isTableUpdate,
 } = tableOperations;
-const { runQuery, defineQuery, useEntityQuery, With, WithProperties, WithoutProperties } = queries;
+const { runQuery, defineQuery, useEntityQuery, With, WithProperties, WithoutProperties, MatchingProperties } = queries;
 
 /* -------------------------------------------------------------------------- */
 /*                               ATTACH METHODS                               */
@@ -166,6 +166,13 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
     return [...entities];
   };
 
+  // Hook to get all entities matching arbitrary conditions
+  const useAllMatching = (where: (properties: Properties<PS, T>) => boolean) => {
+    // @ts-expect-error TODO: fix weird typing issue
+    const entities = useEntityQuery([With(table), MatchingProperties(table, where)]);
+    return [...entities];
+  };
+
   /* --------------------------------- REMOVE --------------------------------- */
   // Remove an entity from the table (delete its properties)
   const remove = (entity?: Entity) => {
@@ -253,7 +260,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
   };
 
   // Add hooks only if not in a node environment
-  const hookMethods = { useAll, useAllWith, useAllWithout, use: useProperties };
+  const hookMethods = { useAll, useAllWith, useAllWithout, useAllMatching, use: useProperties };
   if (typeof window === "undefined") {
     Object.keys(hookMethods).forEach((key) => {
       hookMethods[key as keyof typeof hookMethods] = () => {
