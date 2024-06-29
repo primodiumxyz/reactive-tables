@@ -167,8 +167,8 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
   };
 
   // Hook to get all entities matching arbitrary conditions
-  const useAllMatching = (where: (properties: Properties<PS, T>) => boolean) => {
-    const whereMemoized = useMemo(() => where, []);
+  const useAllMatching = (where: (properties: Properties<PS, T>) => boolean, deps?: unknown[]) => {
+    const whereMemoized = useMemo(() => where, deps ?? []);
     // @ts-expect-error TODO: fix weird typing issue
     const entities = useEntityQuery([With(table), MatchingProperties(table, whereMemoized)]);
     return [...entities];
