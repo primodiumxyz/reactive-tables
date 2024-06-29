@@ -1,5 +1,5 @@
 import { Subject, filter, map } from "rxjs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { createTableKeyMethods } from "@/tables/methods/createTableKeyMethods";
 import { createTableWatcher } from "@/tables/methods/createTableWatcher";
@@ -168,8 +168,9 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
 
   // Hook to get all entities matching arbitrary conditions
   const useAllMatching = (where: (properties: Properties<PS, T>) => boolean) => {
+    const whereMemoized = useMemo(() => where, []);
     // @ts-expect-error TODO: fix weird typing issue
-    const entities = useEntityQuery([With(table), MatchingProperties(table, where)]);
+    const entities = useEntityQuery([With(table), MatchingProperties(table, whereMemoized)]);
     return [...entities];
   };
 

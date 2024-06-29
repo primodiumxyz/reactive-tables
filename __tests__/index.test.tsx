@@ -803,7 +803,7 @@ describe("methods: should set and return intended properties", () => {
       const { result } = renderHook(() => tables.Position.useAllWithout(targetPos));
 
       // Update the position for all entities (not to the target position)
-      entities.map(async (entity) => {
+      entities.forEach(async (entity) => {
         let args = getRandomArgs();
         while (args.x === targetPos.x && args.y === targetPos.y) {
           args = getRandomArgs();
