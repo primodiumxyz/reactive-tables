@@ -170,7 +170,3 @@ export const createWrapper = <
 
   return { world, tables, tableDefs, storageAdapter, triggerUpdateStream };
 };
-
-// TODO:
-// - C: put storage adapter only in its own tab; on home, track tx related to world and display their impacted table + block + local time
-// - D: add "actions" tab with just all transactions with their data? see how it is in mud dev tools
