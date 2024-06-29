@@ -3,9 +3,8 @@ import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
 import type { Table } from "@/tables";
-import { NavButton } from "@/lib/dev/components";
-import { useVisualizer } from "@/lib/dev/config/context";
-import { SettingsTable } from "@/lib/dev/config/settings";
+import { NavButton, SearchInput } from "@/dev/components";
+import { useVisualizer } from "@/dev/lib/context";
 
 export const TablesPage = () => {
   const { id: idParam } = useParams();
@@ -18,7 +17,6 @@ export const TablesPage = () => {
 
   const navigate = useNavigate();
   const detailsRef = useRef<HTMLDetailsElement>(null);
-  const search = SettingsTable.use()?.filter ?? "";
 
   useEffect(() => {
     if (idParam !== selectedTable.id) {
@@ -81,22 +79,7 @@ export const TablesPage = () => {
               </div>
             </div>
           </details>
-          <div className="flex items-center gap-4 h-6">
-            Search
-            <input
-              type="text"
-              className="min-w-64 border-none bg-base-800 text-base-500 px-2 py-1"
-              placeholder="Search"
-              value={search}
-              onChange={(e) => SettingsTable.update({ filter: e.target.value })}
-            />
-            <button
-              className="border-none px-2 py-1 bg-base-800 text-base-150 hover:bg-base-700 cursor-pointer"
-              onClick={() => SettingsTable.update({ filter: "" })}
-            >
-              clear
-            </button>
-          </div>
+          <SearchInput />
           <div className="text-xs text-base-500">Click on a cell to copy its content</div>
         </div>
       )}

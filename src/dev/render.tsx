@@ -3,10 +3,10 @@ import { createMemoryRouter, createRoutesFromElements, Route, RouterProvider } f
 import "tailwindcss/tailwind.css";
 
 import type { Tables } from "@/tables/types";
-import { SettingsPage, HomePage, RootPage, TablesPage } from "@/lib/dev/pages";
-import { RouteError, TableData } from "@/lib/dev/components";
-import { CONTAINER_ID } from "@/lib/dev/config/constants";
-import type { VisualizerOptions } from "@/lib/dev/config/types";
+import { ConfigPage, HomePage, RootPage, TablesPage, StorageAdapterPage } from "@/dev/pages";
+import { RouteError, TableData } from "@/dev/components";
+import { CONTAINER_ID } from "@/dev/lib/constants";
+import type { VisualizerOptions } from "@/dev/lib/types";
 import type { ContractTableDefs, StoreConfig } from "@/lib/definitions";
 
 const router = createMemoryRouter(
@@ -18,7 +18,8 @@ const router = createMemoryRouter(
       <Route path="tables" element={<TablesPage />}>
         <Route path=":id" element={<TableData />} />
       </Route>
-      <Route path="config" element={<SettingsPage />} />
+      <Route path="storage-adapter" element={<StorageAdapterPage />} />
+      <Route path="config" element={<ConfigPage />} />
       {/* <Route path="components" element={<ComponentsPage />}>
         <Route path=":id" element={<ComponentData />} />
       </Route> */}
@@ -41,7 +42,7 @@ export const render = async <
   try {
     const React = await import("react");
     const ReactDOM = await import("react-dom/client");
-    const { VisualizerProvider } = await import("./config/context");
+    const { VisualizerProvider } = await import("./lib/context");
 
     const rootElement = document.createElement("div");
     rootElement.id = CONTAINER_ID;

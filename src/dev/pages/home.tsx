@@ -1,12 +1,11 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
-import { useVisualizer } from "@/lib/dev/config/context";
-import { EventsData } from "@/lib/dev/components";
+import { useVisualizer } from "@/dev/lib/context";
 
 export const HomePage = () => {
   const { publicClient, worldAddress } = useVisualizer();
 
-  const [latestBlockNumber, setLatestBlockNumber] = React.useState<bigint | undefined>(undefined);
+  const [latestBlockNumber, setLatestBlockNumber] = useState<bigint | undefined>(undefined);
 
   useEffect(() => {
     if (!publicClient) return;
@@ -41,8 +40,6 @@ export const HomePage = () => {
           <span>{worldAddress}</span>
         </div>
       </div>
-      <h1 className="font-bold text-base-500 uppercase text-xs">Storage adapter</h1>
-      <EventsData />
     </div>
   );
 };

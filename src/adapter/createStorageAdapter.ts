@@ -9,7 +9,7 @@ import { hexToResource, resourceToLabel, spliceHex } from "@/lib/external/mud/co
 import { type Entity, hexKeyTupleToEntity } from "@/lib/external/mud/entity";
 import type { Properties } from "@/lib/external/mud/schema";
 import type { ContractTableDef, ContractTableDefs } from "@/lib/definitions";
-import type { StorageAdapterUpdate } from "@/lib/dev/config/types";
+import type { StorageAdapterUpdate } from "@/dev/lib/types";
 import { debug } from "@/lib/debug";
 
 export const createStorageAdapter = <tableDefs extends ContractTableDefs = ContractTableDefs>({

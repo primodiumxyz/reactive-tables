@@ -3,15 +3,15 @@ import { useParams } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
 import type { Table } from "@/tables";
-import { stringifyProperties, useCopyCell } from "@/lib/dev/utils";
-import { useVisualizer } from "@/lib/dev/config/context";
-import { SettingsTable } from "@/lib/dev/config/settings";
+import { stringifyProperties, useCopyCell } from "@/dev/lib/utils";
+import { useVisualizer } from "@/dev/lib/context";
+import { ConfigTable } from "@/dev/lib/store";
 
 export const TableData = () => {
   const { contractTables, otherTables } = useVisualizer();
   const { id: idParam } = useParams();
   const { getCellAttributes } = useCopyCell();
-  const settings = SettingsTable.use();
+  const config = ConfigTable.use();
 
   const table = Object.values({ ...contractTables, ...otherTables }).find((table) => table.id === idParam) as Table;
   const entities = table?.useAll() ?? [];
@@ -36,17 +36,17 @@ export const TableData = () => {
         </thead>
         <tbody className="font-mono text-xs">
           {entities.map((entity, index) => {
-            const properties = table.get(entity);
-            if (!properties) {
+            const _properties = table.get(entity);
+            if (!_properties) {
               console.warn(`Entity ${entity} not found in table ${table.id}`);
               return null;
             }
 
+            const properties = stringifyProperties(_properties, table.propertiesSchema);
+
             if (
-              settings?.filter &&
-              [...Object.values(properties).concat(entity)].every(
-                (value) => !String(value).includes(settings.filter as string),
-              )
+              config?.filter &&
+              [...Object.values(properties).concat(entity)].every((value) => !value.includes(config.filter as string))
             ) {
               return null;
             }
@@ -54,9 +54,9 @@ export const TableData = () => {
             return (
               <tr key={entity} className={twMerge("h-2", index % 2 === 0 ? "bg-base-900" : "bg-base-800")}>
                 <td {...getCellAttributes(entity, entity, "max-w-[500px]")}>
-                  {settings?.shrinkEntities ? entity.slice(0, 8) + "..." + entity.slice(-6) : entity}
+                  {config?.shrinkEntities ? entity.slice(0, 8) + "..." + entity.slice(-6) : entity}
                 </td>
-                {Object.entries(stringifyProperties(properties, table.propertiesSchema)).map(([key, value]) => {
+                {Object.entries(properties).map(([key, value]) => {
                   return (
                     <td key={key} {...getCellAttributes(value, `${index}-${key}`, "max-w-[600px] whitespace-normal")}>
                       {value ?? <span className="text-base-500">✖️</span>}

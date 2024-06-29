@@ -1,18 +1,19 @@
 import React, { createContext, useContext, type ReactNode } from "react";
 
 import type { Tables } from "@/tables/types";
-import type { VisualizerOptions } from "@/lib/dev/config/types";
+import type { VisualizerOptions } from "@/dev/lib/types";
 import type { ContractTableDefs, StoreConfig } from "@/lib/definitions";
 
-const createVisualizerContext = <
-  config extends StoreConfig,
-  extraTableDefs extends ContractTableDefs | undefined,
-  otherDevTables extends Tables | undefined,
->() => {
-  return createContext<VisualizerOptions<config, extraTableDefs, otherDevTables> | null>(null);
-};
+/* -------------------------------------------------------------------------- */
+/*                                 VISUALIZER                                 */
+/* -------------------------------------------------------------------------- */
 
-const VisualizerContext = createVisualizerContext();
+type VisualizerContextType<
+  config extends StoreConfig = StoreConfig,
+  extraTableDefs extends ContractTableDefs | undefined = ContractTableDefs | undefined,
+  otherDevTables extends Tables | undefined = Tables | undefined,
+> = VisualizerOptions<config, extraTableDefs, otherDevTables>;
+const VisualizerContext = createContext<VisualizerContextType | null>(null);
 
 export const VisualizerProvider = <
   config extends StoreConfig,
@@ -23,7 +24,7 @@ export const VisualizerProvider = <
   value,
 }: {
   children: ReactNode;
-  value: VisualizerOptions<config, extraTableDefs, otherDevTables>;
+  value: VisualizerContextType<config, extraTableDefs, otherDevTables>;
 }) => {
   const currentValue = useContext(VisualizerContext);
   if (currentValue) throw new Error("VisualizerProvider can only be used once");

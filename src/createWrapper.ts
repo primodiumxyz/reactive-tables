@@ -155,9 +155,9 @@ export const createWrapper = <
   // - this allows us to visualize the entire lifecycle of a table, including during sync
   const devVisualizer = devTools?.visualizer;
   const adapterUpdate$ = devVisualizer ? new Subject<StorageAdapterUpdate>() : undefined;
-  devVisualizer
-    ? createDevVisualizer({ ...devTools, mudConfig, contractTables: tables, adapterUpdate$: adapterUpdate$! })
-    : () => {};
+  if (devVisualizer) {
+    createDevVisualizer({ ...devTools, mudConfig, world, contractTables: tables, adapterUpdate$: adapterUpdate$! });
+  }
 
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create storage adapter (custom writer, see @primodiumxyz/sync-stack)
@@ -172,8 +172,5 @@ export const createWrapper = <
 };
 
 // TODO:
-// - A: find a way to return unmount although it's async here; maybe just some world.registerDisposer?
-// seems like the best abstracted way anyway
-// - B: create a wrapper with dev tools in `main.tsx` now that the logic changed
 // - C: put storage adapter only in its own tab; on home, track tx related to world and display their impacted table + block + local time
 // - D: add "actions" tab with just all transactions with their data? see how it is in mud dev tools
