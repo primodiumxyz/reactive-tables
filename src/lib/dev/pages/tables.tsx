@@ -2,14 +2,17 @@ import React, { useEffect, useRef } from "react";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
+import type { Table } from "@/tables";
 import { NavButton } from "@/lib/dev/components";
 import { useVisualizer } from "@/lib/dev/config/context";
 import { SettingsTable } from "@/lib/dev/config/settings";
 
 export const TablesPage = () => {
   const { id: idParam } = useParams();
-  const { tables: _tables } = useVisualizer();
-  const tables = Object.values(_tables).sort((a, b) => a.metadata.name.localeCompare(b.metadata.name));
+  const { contractTables, otherTables } = useVisualizer();
+  const tables = Object.values({ ...contractTables, ...otherTables }).sort((a, b) =>
+    a.metadata.name.localeCompare(b.metadata.name),
+  ) as Table[];
 
   const selectedTable = tables.find((table) => table.id === idParam) ?? tables[0];
 

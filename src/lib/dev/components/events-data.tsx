@@ -1,83 +1,22 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
-import { storeEventsAbi } from "@latticexyz/store";
 
-import type { StorageAdapterLog } from "@/adapter";
-import { decodePropertiesArgs } from "@/adapter/decodeProperties";
-import type { ContractTable } from "@/tables";
-import { hexKeyTupleToEntity, hexToResource } from "@/utils";
 import { useVisualizer } from "@/lib/dev/config/context";
-import { serialize } from "@/lib/dev/utils";
-
-const getProperties = (log: StorageAdapterLog, table?: ContractTable) => {
-  if (table) {
-    const propertiesSchema = table.metadata.abiPropertiesSchema;
-
-    if (log.eventName === "Store_SetRecord") {
-      const properties = decodePropertiesArgs(propertiesSchema, log.args);
-      return serialize({
-        ...properties,
-        __staticData: log.args.staticData,
-        __encodedLengths: log.args.encodedLengths,
-        __dynamicData: log.args.dynamicData,
-        __lastSyncedAtBlock: log.blockNumber,
-      });
-    }
-
-    if (log.eventName === "Store_SpliceStaticData") {
-      return JSON.stringify({ start: log.args.start, data: log.args.data });
-    }
-
-    if (log.eventName === "Store_SpliceDynamicData") {
-      return JSON.stringify({
-        start: log.args.start,
-        deleteCount: log.args.deleteCount,
-        encodedLengths: log.args.encodedLengths,
-        data: log.args.data,
-      });
-    }
-  } else {
-    if (log.eventName === "Store_SetRecord")
-      return JSON.stringify({
-        staticData: log.args.staticData,
-        encodedLengths: log.args.encodedLengths,
-        dynamicData: log.args.dynamicData,
-      });
-
-    if (log.eventName === "Store_SpliceStaticData")
-      return JSON.stringify({ start: log.args.start, data: log.args.data });
-
-    if (log.eventName === "Store_SpliceDynamicData")
-      return JSON.stringify({
-        start: log.args.start,
-        deleteCount: log.args.deleteCount,
-        encodedLengths: log.args.encodedLengths,
-        data: log.args.data,
-      });
-  }
-};
+import { stringifyProperties, useCopyCell } from "@/lib/dev/utils";
+import type { StorageAdapterUpdate } from "@/lib/dev/config/types";
 
 export const EventsData = () => {
-  const { tables, publicClient, worldAddress } = useVisualizer();
-  const [logs, setLogs] = React.useState<StorageAdapterLog[]>([]);
+  const { adapterUpdate$ } = useVisualizer();
+  const { getCellAttributes } = useCopyCell();
+  const [updates, setUpdates] = useState<StorageAdapterUpdate[]>([]);
 
   useEffect(() => {
-    let unwatch: () => void | undefined;
-    const initWatcher = async () => {
-      if (!publicClient || !worldAddress) return;
+    const subscription = adapterUpdate$.subscribe((update) => {
+      setUpdates((prev) => [update, ...prev]);
+    });
 
-      unwatch = publicClient.watchContractEvent({
-        address: worldAddress,
-        abi: storeEventsAbi,
-        onLogs: (logs) => {
-          setLogs((prevLogs) => [...logs, ...prevLogs].slice(0, 1000) as StorageAdapterLog[]);
-        },
-      });
-    };
-
-    initWatcher();
-    return () => unwatch?.();
-  }, [publicClient, worldAddress]);
+    return () => subscription.unsubscribe();
+  }, [adapterUpdate$]);
 
   return (
     <div className="overflow-auto max-h-[calc(100vh-28px-16px-68px-16px-24px-48px)]">
@@ -91,18 +30,22 @@ export const EventsData = () => {
           </tr>
         </thead>
         <tbody className="font-mono text-xs">
-          {logs.length > 0 ? (
-            logs.map((log, index) => {
-              const table = Object.values(tables).find((table) => table.id === log.args.tableId) as unknown as
-                | ContractTable
-                | undefined;
+          {updates.length > 0 ? (
+            updates.map((update, index) => {
+              const properties = stringifyProperties(update.properties, update.table.propertiesSchema);
 
               return (
                 <tr key={index} className={twMerge("h-2", index % 2 === 0 ? "bg-base-900" : "bg-base-800")}>
-                  <td className="px-1 whitespace-nowrap overflow-auto">{log.blockNumber?.toString() ?? "unknown"}</td>
-                  <td className="px-1 whitespace-nowrap overflow-auto">{hexToResource(log.args.tableId).name}</td>
-                  <td className="px-1 whitespace-nowrap overflow-auto">{hexKeyTupleToEntity(log.args.keyTuple)}</td>
-                  <td className="px-1 whitespace-nowrap overflow-auto">{getProperties(log, table)}</td>
+                  <td {...getCellAttributes(update.blockNumber?.toString() ?? "unknown", `${index}-blockNumber`)}>
+                    {update.blockNumber?.toString() ?? "unknown"}
+                  </td>
+                  <td {...getCellAttributes(update.table.metadata.name, `${index}-table`)}>
+                    {update.table.metadata.name}
+                  </td>
+                  <td {...getCellAttributes(update.entity, `${index}-entity`, "max-w-[500px]")}>{update.entity}</td>
+                  <td {...getCellAttributes(properties, `${index}-properties`, "max-w-[600px]")}>
+                    {JSON.stringify(properties)}
+                  </td>
                 </tr>
               );
             })

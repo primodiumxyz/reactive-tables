@@ -1,35 +1,20 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useParams } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
-import { Type } from "@/lib/external/mud/schema";
-import { serialize } from "@/lib/dev/utils";
+import type { Table } from "@/tables";
+import { stringifyProperties, useCopyCell } from "@/lib/dev/utils";
 import { useVisualizer } from "@/lib/dev/config/context";
 import { SettingsTable } from "@/lib/dev/config/settings";
 
 export const TableData = () => {
-  const { tables } = useVisualizer();
+  const { contractTables, otherTables } = useVisualizer();
   const { id: idParam } = useParams();
+  const { getCellAttributes } = useCopyCell();
   const settings = SettingsTable.use();
 
-  const table = Object.values(tables).find((table) => table.id === idParam);
+  const table = Object.values({ ...contractTables, ...otherTables }).find((table) => table.id === idParam) as Table;
   const entities = table?.useAll() ?? [];
-
-  const [copiedCell, setCopiedCell] = React.useState<string | null>(null);
-  const copyToClipboard = (content: string, cellId: string) => {
-    navigator.clipboard.writeText(content);
-    setCopiedCell(cellId);
-  };
-
-  useEffect(() => {
-    if (copiedCell) {
-      const timer = setTimeout(() => {
-        setCopiedCell(null);
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [copiedCell]);
 
   if (!table) {
     console.warn(`Table with id ${idParam} not found`);
@@ -68,36 +53,13 @@ export const TableData = () => {
 
             return (
               <tr key={entity} className={twMerge("h-2", index % 2 === 0 ? "bg-base-900" : "bg-base-800")}>
-                <td
-                  className={twMerge(
-                    "px-1 whitespace-nowrap overflow-auto hover:bg-base-700 cursor-pointer",
-                    copiedCell === entity && "bg-green-light hover:bg-green-light",
-                  )}
-                  onClick={() => copyToClipboard(entity, entity)}
-                >
+                <td {...getCellAttributes(entity, entity, "max-w-[500px]")}>
                   {settings?.shrinkEntities ? entity.slice(0, 8) + "..." + entity.slice(-6) : entity}
                 </td>
-                {Object.keys(table.propertiesSchema).map((name) => {
-                  const fieldValue = properties[name];
-
+                {Object.entries(stringifyProperties(properties, table.propertiesSchema)).map(([key, value]) => {
                   return (
-                    <td
-                      key={name}
-                      className={twMerge(
-                        "px-1 whitespace-nowrap max-w-96 overflow-auto hover:bg-base-600 cursor-pointer",
-                        copiedCell === `${index}-${name}` && "bg-green-light hover:bg-green-light",
-                      )}
-                      onClick={() => copyToClipboard(serialize(fieldValue), `${index}-${name}`)}
-                    >
-                      {!fieldValue ? (
-                        <span className="text-base-500">✖️</span>
-                      ) : table.propertiesSchema[name] === Type.T ? (
-                        serialize(fieldValue)
-                      ) : Array.isArray(fieldValue) ? (
-                        fieldValue.map(String).join(", ")
-                      ) : (
-                        String(fieldValue)
-                      )}
+                    <td key={key} {...getCellAttributes(value, `${index}-${key}`, "max-w-[600px] whitespace-normal")}>
+                      {value ?? <span className="text-base-500">✖️</span>}
                     </td>
                   );
                 })}

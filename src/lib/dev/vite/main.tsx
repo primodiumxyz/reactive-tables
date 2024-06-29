@@ -1,39 +1,45 @@
 import React, { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-// import "./index.css";
 
 import { createWrapper } from "@/createWrapper";
-import { createDevVisualizer } from "@/lib/dev";
 import mudConfig from "@test/contracts/mud.config";
-import worlds from "@test/contracts/worlds.json";
 
-import { createPublicClient, createWalletClient, Hex, http, padHex, toHex } from "viem";
+import { createWalletClient, http } from "viem";
 import { Observable } from "rxjs";
 import { mudFoundry } from "@latticexyz/common/chains";
+import { createLocalSyncTables, createSync, networkConfig } from "@test/utils";
 
 const App = () => {
-  const { tables } = createWrapper({ mudConfig });
-  tables.Counter.properties;
-
-  // TODO(TEMP)
-  const getEntity = (index: number) => padHex(toHex(index));
-  for (let i = 0; i < 100; i++) {
-    tables.Inventory.set({ items: [1, 3, 5, 3, 3, 3, 3, 4, 5], weights: [i, 3], totalWeight: BigInt(4) }, getEntity(i));
-  }
-  const publicClient = createPublicClient({ chain: mudFoundry, transport: http(), pollingInterval: 1_000 });
-  const worldAddress = (worlds[mudFoundry.id]?.["address"] ?? "0x") as Hex;
-
   useEffect(() => {
     let unmount: () => void | undefined;
     const open = async () => {
       // unmount = await createDevVisualizer({ tables });
+      const { tables, tableDefs, storageAdapter, triggerUpdateStream, world } = createWrapper({
+        mudConfig,
+        devTools: {
+          visualizer: true,
+          publicClient: networkConfig.publicClient,
+          worldAddress: networkConfig.worldAddress,
+        },
+      });
+      console.log(tables.ResourceAccess);
+
+      const sync = createSync({
+        contractTables: tables,
+        localTables: createLocalSyncTables(world),
+        tableDefs,
+        storageAdapter,
+        triggerUpdateStream,
+        networkConfig,
+      });
+      sync.start();
+      world.registerDisposer(sync.unsubscribe);
 
       // TODO(TEMP)
-      unmount = await createDevVisualizer({ tables, publicClient, worldAddress });
       const { mount: mountDevTools } = await import("@latticexyz/dev-tools");
       mountDevTools({
         config: mudConfig,
-        publicClient: createPublicClient({ chain: mudFoundry, transport: http() }),
+        publicClient: networkConfig.publicClient,
         walletClient: createWalletClient({ chain: mudFoundry, transport: http() }),
         latestBlock$: new Observable(),
         storedBlockLogs$: new Observable(),
@@ -45,7 +51,7 @@ const App = () => {
 
     open();
     return () => unmount?.();
-  }, [tables]);
+  }, []);
 
   return null;
 };

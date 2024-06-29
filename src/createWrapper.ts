@@ -1,8 +1,10 @@
 import { storeToV1 } from "@latticexyz/store/config/v2";
 import { resolveConfig } from "@latticexyz/store/internal";
+import { Subject } from "rxjs";
 
-import { createContractTables, type ContractTables } from "@/tables";
+import { createContractTables, type Tables, type ContractTables } from "@/tables";
 import { createStorageAdapter, type StorageAdapter } from "@/adapter";
+import { createDevVisualizer, type DevTools, type StorageAdapterUpdate } from "@/dev";
 import {
   createWorld,
   storeTableDefs,
@@ -22,12 +24,18 @@ import {
  * @param world (optional) The RECS world object, used for creating tables and entities. If not provided, will create one and return it.
  * @param otherTableDefs (optional) Custom definitions to generate tables for as well.
  * @param shouldSkipUpdateStream (optional) Whether to skip the initial update stream (most likely to trigger it afterwards).
+ * @param devTools (optional) The {@link DevTools} options for the dev visualizer, without contract tables which are created here.
  */
-export type WrapperOptions<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
+export type WrapperOptions<
+  config extends StoreConfig,
+  extraTableDefs extends ContractTableDefs | undefined,
+  extraDevTables extends Tables | undefined,
+> = {
   mudConfig: config;
   world?: World;
   otherTableDefs?: extraTableDefs;
   shouldSkipUpdateStream?: () => boolean;
+  devTools?: DevTools<extraDevTables>;
 };
 
 /**
@@ -113,12 +121,17 @@ export type WrapperResult<config extends StoreConfig, extraTableDefs extends Con
  * ```
  * @category Creation
  */
-export const createWrapper = <config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined>({
+export const createWrapper = <
+  config extends StoreConfig,
+  extraTableDefs extends ContractTableDefs | undefined,
+  extraDevTables extends Tables | undefined,
+>({
   mudConfig,
   world: _world,
   otherTableDefs,
   shouldSkipUpdateStream,
-}: WrapperOptions<config, extraTableDefs>): WrapperResult<config, extraTableDefs> => {
+  devTools,
+}: WrapperOptions<config, extraTableDefs, extraDevTables>): WrapperResult<config, extraTableDefs> => {
   const world = _world ?? createWorld();
 
   /* ------------------------------- DEFINITIONS ------------------------------ */
@@ -134,10 +147,33 @@ export const createWrapper = <config extends StoreConfig, extraTableDefs extends
   // Create contract tables from the definitions (define metadata, create read/write methods, queries, and listeners APIs)
   const tables = createContractTables({ world, tableDefs });
 
+  /* ----------------------------------- DEV ---------------------------------- */
+  // Create dev visualizer for debugging and monitoring
+  // `adapterUpdate$` will trigger an update every time a log is processed to provide
+  // the complete properties update to the visualizer, for two reasons:
+  // - we need the entire tables lifecycle to provide precise properties to the dev tools
+  // - this allows us to visualize the entire lifecycle of a table, including during sync
+  const devVisualizer = devTools?.visualizer;
+  const adapterUpdate$ = devVisualizer ? new Subject<StorageAdapterUpdate>() : undefined;
+  devVisualizer
+    ? createDevVisualizer({ ...devTools, mudConfig, contractTables: tables, adapterUpdate$: adapterUpdate$! })
+    : () => {};
+
   /* ---------------------------------- SYNC ---------------------------------- */
   // Create storage adapter (custom writer, see @primodiumxyz/sync-stack)
   // as well as a function to trigger update stream on all entities for all tables (e.g. after completing sync)
-  const { storageAdapter, triggerUpdateStream } = createStorageAdapter({ tables, shouldSkipUpdateStream });
+  const { storageAdapter, triggerUpdateStream } = createStorageAdapter({
+    tables,
+    shouldSkipUpdateStream,
+    adapterUpdate$,
+  });
 
   return { world, tables, tableDefs, storageAdapter, triggerUpdateStream };
 };
+
+// TODO:
+// - A: find a way to return unmount although it's async here; maybe just some world.registerDisposer?
+// seems like the best abstracted way anyway
+// - B: create a wrapper with dev tools in `main.tsx` now that the logic changed
+// - C: put storage adapter only in its own tab; on home, track tx related to world and display their impacted table + block + local time
+// - D: add "actions" tab with just all transactions with their data? see how it is in mud dev tools

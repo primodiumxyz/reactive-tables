@@ -2,11 +2,12 @@ import React from "react";
 import { createMemoryRouter, createRoutesFromElements, Route, RouterProvider } from "react-router-dom";
 import "tailwindcss/tailwind.css";
 
+import type { Tables } from "@/tables/types";
 import { SettingsPage, HomePage, RootPage, TablesPage } from "@/lib/dev/pages";
 import { RouteError, TableData } from "@/lib/dev/components";
 import { CONTAINER_ID } from "@/lib/dev/config/constants";
 import type { VisualizerOptions } from "@/lib/dev/config/types";
-import type { Tables } from "@/tables/types";
+import type { ContractTableDefs, StoreConfig } from "@/lib/definitions";
 
 const router = createMemoryRouter(
   createRoutesFromElements(
@@ -25,7 +26,13 @@ const router = createMemoryRouter(
   ),
 );
 
-export const render = async <tables extends Tables>(options: VisualizerOptions<tables>): Promise<() => void> => {
+export const render = async <
+  config extends StoreConfig,
+  extraTableDefs extends ContractTableDefs | undefined,
+  otherDevTables extends Tables | undefined,
+>(
+  options: VisualizerOptions<config, extraTableDefs, otherDevTables>,
+): Promise<() => void> => {
   if (document.getElementById(CONTAINER_ID)) {
     console.warn("Dev visualizer is already mounted");
     return () => {};
