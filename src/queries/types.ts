@@ -122,9 +122,10 @@ export type QueryMatchingCondition<table extends BaseTable = BaseTable, T = unkn
  *
  * @template tables A registry of {@link Table}, including the tables involved in the query.
  * @param with An array of tables the entities need to be included in (have properties).
- * @param withProperties An array of {@link QueryPropertiesCondition} to check for entities, either as precise values or conditions.
+ * @param withProperties An array of {@link QueryPropertiesCondition properties} to check for entities.
  * @param without An array of tables the entities need to be excluded from (not have properties).
- * @param withoutProperties An array of {@link QueryPropertiesCondition} to check for entities, either as precise values or conditions.
+ * @param withoutProperties An array of {@link QueryPropertiesCondition properties} to check for entities.
+ * @param matching An array of {@link QueryMatchingCondition arbitrary conditions} to check for entities.
  * @category Queries
  *
  * TODO: see if there is a way to handle type inference
