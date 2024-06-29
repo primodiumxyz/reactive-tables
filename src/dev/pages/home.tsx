@@ -43,7 +43,7 @@ export const HomePage = () => {
         )}
       </div>
       <h1 className="font-bold text-base-500 uppercase text-xs">Storage adapter</h1>
-      <StorageAdapterData limit={10} filters={false} />
+      <StorageAdapterData limit={10} />
     </div>
   );
 };

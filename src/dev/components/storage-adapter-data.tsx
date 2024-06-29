@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { Dispatch, SetStateAction, useMemo } from "react";
 import { twMerge } from "tailwind-merge";
 
 import type { Entity } from "@/lib/external/mud/entity";
@@ -8,19 +8,24 @@ import { StorageAdapterUpdateTable } from "@/dev/lib/store";
 import type { StorageAdapterUpdateFormatted } from "@/dev/lib/types";
 import { Properties, Schema } from "@/lib";
 
-export const StorageAdapterData = (props: { limit?: number; filters?: boolean }) => {
-  const { limit = 100, filters = true } = props;
+export type UpdateTableQueryOptions = {
+  blockNumber?: bigint;
+  tableName?: string;
+  entity?: Entity;
+  properties?: string;
+};
+
+type StorageAdapterDataProps = {
+  queryOptions?: UpdateTableQueryOptions;
+  setQueryOptions?: Dispatch<SetStateAction<UpdateTableQueryOptions>>;
+  limit?: number;
+};
+
+export const StorageAdapterData = (props: StorageAdapterDataProps) => {
+  const { queryOptions, setQueryOptions, limit = 100 } = props;
   const { getCellAttributes } = useCopyCell();
 
-  const [queryOptions, setQueryOptions] = useState<
-    Partial<{
-      blockNumber: bigint;
-      tableName: string;
-      entity: Entity;
-      properties: string;
-    }>
-  >({});
-  const filteredEntities = filters
+  const filteredEntities = queryOptions
     ? StorageAdapterUpdateTable.useAllMatching(
         ({ blockNumber, tableName, tablePropertiesSchema, entity, properties }) => {
           const {
@@ -28,7 +33,7 @@ export const StorageAdapterData = (props: { limit?: number; filters?: boolean })
             tableName: queryTableName,
             entity: queryEntity,
             properties: queryProperties,
-          } = queryOptions;
+          } = queryOptions ?? {};
           return (
             (queryBlockNumber ? blockNumber === queryBlockNumber : true) &&
             (queryTableName ? tableName.includes(queryTableName) : true) &&
@@ -46,7 +51,8 @@ export const StorageAdapterData = (props: { limit?: number; filters?: boolean })
   const allEntities = StorageAdapterUpdateTable.useAll();
 
   const updates = useMemo(() => {
-    const entities = filters && Object.values(queryOptions).some((option) => option) ? filteredEntities : allEntities;
+    const entities =
+      queryOptions && Object.values(queryOptions).some((option) => option) ? filteredEntities : allEntities;
 
     return entities
       .slice(entities.length - limit)
@@ -64,7 +70,7 @@ export const StorageAdapterData = (props: { limit?: number; filters?: boolean })
             <th className="px-4 font-normal text-sm">properties</th>
           </tr>
         </thead>
-        {filters && (
+        {!!queryOptions && !!setQueryOptions && (
           <thead className="sticky top-[22px] z-10 bg-base-950 text-left">
             <tr className="font-mono font-thin">
               <th className="min-w-32">
