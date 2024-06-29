@@ -836,6 +836,26 @@ describe("methods: should set and return intended properties", () => {
       tables.Position.remove(entities[2]);
       expect(result.current).toEqual(entities.slice(3));
     });
+
+    it("table.useAllMatching()", () => {
+      const { tables, entities } = setup();
+      assert(tables);
+
+      const { result } = renderHook(() => tables.Position.useAllMatching((properties) => properties.x > 10));
+
+      // Update the position for all entities
+      entities.forEach((entity) => {
+        tables.Position.set({ x: 10, y: 10, ...emptyData }, entity);
+      });
+      expect(result.current).toEqual([]);
+
+      // Update the position for a few entities
+      tables.Position.set({ x: 15, y: 10, ...emptyData }, entities[0]);
+      expect(result.current).toEqual([entities[0]]);
+
+      tables.Position.set({ x: 10, y: 10, ...emptyData }, entities[1]);
+      expect(result.current).toEqual([entities[0]]);
+    });
   });
 
   /* ---------------------------------- KEYS ---------------------------------- */
