@@ -136,7 +136,7 @@ export const QueryPage = () => {
           }}
         />
         {negativeFragments.length > 0 && (
-          <div className="mt-2 grid grid-cols-[min-content_min-content_1fr_auto] gap-x-4 gap-y-1 col-span-2">
+          <div className="mt-2 grid grid-cols-[min-content_min-content_1fr_auto] gap-x-4 gap-y-1 col-span-2 min-w-[600px]">
             {negativeFragments.map((fragment, index) => (
               <QueryFragmentRow
                 key={index}

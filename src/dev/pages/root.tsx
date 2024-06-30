@@ -34,6 +34,7 @@ export const RootPage = () => {
         <NavButton to="/">Home</NavButton>
         <NavButton to="/tables">Tables</NavButton>
         <NavButton to="/storage-adapter">Storage adapter</NavButton>
+        <NavButton to="/entities">Entities</NavButton>
         <NavButton to="/query">Query</NavButton>
         <span className="flex-1" />
         <NavButton to="/config">Config</NavButton>

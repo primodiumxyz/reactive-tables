@@ -3,7 +3,7 @@ import { createMemoryRouter, createRoutesFromElements, Route, RouterProvider } f
 import "tailwindcss/tailwind.css";
 
 import type { Tables } from "@/tables/types";
-import { ConfigPage, HomePage, QueryPage, RootPage, TablesPage, StorageAdapterPage } from "@/dev/pages";
+import { ConfigPage, EntitiesPage, HomePage, QueryPage, RootPage, TablesPage, StorageAdapterPage } from "@/dev/pages";
 import { RouteError, TableData } from "@/dev/components";
 import { CONTAINER_ID } from "@/dev/lib/constants";
 import type { VisualizerOptions } from "@/dev/lib/types";
@@ -13,17 +13,13 @@ const router = createMemoryRouter(
   createRoutesFromElements(
     <Route path="/" element={<RootPage />} errorElement={<RouteError />}>
       <Route index element={<HomePage />} />
-      {/* <Route path="actions" element={<ActionsPage />} /> */}
-      {/* <Route path="events" element={<EventsPage />} /> */}
       <Route path="tables" element={<TablesPage />}>
         <Route path=":id" element={<TableData />} />
       </Route>
       <Route path="storage-adapter" element={<StorageAdapterPage />} />
+      <Route path="entities" element={<EntitiesPage />} />
       <Route path="query" element={<QueryPage />} />
       <Route path="config" element={<ConfigPage />} />
-      {/* <Route path="components" element={<ComponentsPage />}>
-        <Route path=":id" element={<ComponentData />} />
-      </Route> */}
     </Route>,
   ),
 );

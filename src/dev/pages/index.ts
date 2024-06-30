@@ -1,4 +1,5 @@
 export { ConfigPage } from "@/dev/pages/config";
+export { EntitiesPage } from "@/dev/pages/entities";
 export { HomePage } from "@/dev/pages/home";
 export { QueryPage } from "@/dev/pages/query";
 export { RootPage } from "@/dev/pages/root";
