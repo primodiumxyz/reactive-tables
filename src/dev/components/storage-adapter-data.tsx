@@ -4,9 +4,8 @@ import { twMerge } from "tailwind-merge";
 import type { Entity } from "@/lib/external/mud/entity";
 import { FilterInput } from "@/dev/components/filter-input";
 import { stringifyProperties, useCopyCell } from "@/dev/lib/utils";
-import { StorageAdapterUpdateTable } from "@/dev/lib/store";
+import { StorageAdapterUpdateTable, StorageAdapterUpdateTableProperties } from "@/dev/lib/store";
 import type { StorageAdapterUpdateFormatted } from "@/dev/lib/types";
-import { Properties, Schema } from "@/lib";
 
 export type UpdateTableQueryOptions = {
   blockNumber?: bigint;
@@ -27,7 +26,9 @@ export const StorageAdapterData = (props: StorageAdapterDataProps) => {
 
   const filteredEntities = queryOptions
     ? StorageAdapterUpdateTable.useAllMatching(
-        ({ blockNumber, tableName, tablePropertiesSchema, entity, properties }) => {
+        (update) => {
+          const { blockNumber, tableName, tablePropertiesSchema, entity, properties } =
+            update as StorageAdapterUpdateTableProperties;
           const {
             blockNumber: queryBlockNumber,
             tableName: queryTableName,
@@ -39,9 +40,7 @@ export const StorageAdapterData = (props: StorageAdapterDataProps) => {
             (queryTableName ? tableName.includes(queryTableName) : true) &&
             (queryEntity ? entity.includes(queryEntity) : true) &&
             (queryProperties
-              ? JSON.stringify(
-                  stringifyProperties(properties as Properties<Schema>, tablePropertiesSchema as Schema),
-                ).includes(queryProperties)
+              ? JSON.stringify(stringifyProperties(properties, tablePropertiesSchema)).includes(queryProperties)
               : true)
           );
         },

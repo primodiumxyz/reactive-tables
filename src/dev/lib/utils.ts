@@ -13,6 +13,38 @@ export const serialize = (obj: any) => {
   });
 };
 
+export const parseProperties = <PS extends Schema, T = unknown>(
+  obj: Record<string, string>,
+  propertiesSchema: PS,
+): Properties<PS, T> => {
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, value]) => {
+      switch (propertiesSchema[key]) {
+        case Type.BigInt:
+        case Type.OptionalBigInt:
+          return [key, BigInt(value)];
+        case Type.BigIntArray:
+        case Type.OptionalBigIntArray:
+          return [key, value.split(",").map(BigInt)];
+        case Type.T:
+        case Type.OptionalT:
+          return [key, JSON.parse(value)];
+        case Type.Number:
+        case Type.OptionalNumber:
+          return [key, Number(value)];
+        case Type.NumberArray:
+        case Type.OptionalNumberArray:
+          return [key, value.split(",").map(Number)];
+        case Type.Boolean:
+        case Type.OptionalBoolean:
+          return [key, value === "true"];
+        default:
+          return [key, value];
+      }
+    }),
+  ) as Properties<PS, T>;
+};
+
 export const stringifyProperties = <PS extends Schema, T = unknown>(
   properties: Properties<PS, T>,
   propertiesSchema: PS,

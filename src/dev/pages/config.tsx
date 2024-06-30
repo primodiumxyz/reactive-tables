@@ -15,7 +15,7 @@ export const ConfigPage = () => {
       <span className="whitespace-nowrap">Shrink entities in tables</span>
       <input
         type="checkbox"
-        className="w-4 h-4"
+        className="w-4 h-4 cursor-pointer"
         checked={config?.shrinkEntities}
         onChange={(e) => updateSettings({ shrinkEntities: e.target.checked })}
       />
