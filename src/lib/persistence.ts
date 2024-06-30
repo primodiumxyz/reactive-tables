@@ -27,7 +27,7 @@ import { Type } from "@/lib/external/mud/schema";
  */
 type Serialized = string | number | boolean | undefined;
 type Serializable = Serialized | Array<Serialized>;
-type StoredTable<PS extends Schema> = { [key in keyof PS]: { [entity: Entity]: Serializable; ["type"]: Type } };
+type StoredTable<PS extends Schema> = { [key in keyof PS]: { [entity: Entity]: Serializable; [SCHEMA_PREFIX]: Type } };
 export type TableProperties<
   PS extends Schema,
   M extends BaseTableMetadata = BaseTableMetadata,
@@ -39,6 +39,9 @@ export type TableProperties<
 /* -------------------------------------------------------------------------- */
 
 export const DEFAULT_VERSION = "0.0.0";
+
+// -> padHex(toHex(`__type`));
+const SCHEMA_PREFIX = "0x00000000000000000000000000000000000000000000000000005f5f74797065" as const;
 
 const LOCAL_STORAGE_KEY = "RETA";
 const TABLES_PREFIX = `${LOCAL_STORAGE_KEY}_tables_`;
@@ -85,7 +88,7 @@ const getAllProperties = <PS extends Schema, M extends BaseTableMetadata, T = un
       if (storedProperties) {
         Object.entries(storedProperties).forEach(([entity, value]) => {
           const decodedValue = decodeValue<PS, T>(propertiesSchema, key, value);
-          const type = storedProperties["type"];
+          const type = storedProperties[SCHEMA_PREFIX];
           if (type === propertiesSchema[key]) {
             properties.set(getEntitySymbol(entity as Entity), decodedValue);
             // if the type of the stored property is different from the schema (new/removed key, same name but different type)
@@ -127,7 +130,7 @@ const setProperties = <PS extends Schema, M extends BaseTableMetadata, T>(
 
       acc[key] = storedTable
         ? { ...storedTable[key], [entity]: encodedValue }
-        : { [entity]: encodedValue, ["type"]: table.propertiesSchema[key] };
+        : { [entity]: encodedValue, [SCHEMA_PREFIX]: table.propertiesSchema[key] };
       return acc;
     },
     { ...storedTable } as StoredTable<PS>,
