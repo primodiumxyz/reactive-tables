@@ -3,11 +3,11 @@ import { createMemoryRouter, createRoutesFromElements, Route, RouterProvider } f
 import "tailwindcss/tailwind.css";
 
 import type { Tables } from "@/tables/types";
+import type { ContractTableDefs, StoreConfig } from "@/lib/definitions";
 import { ConfigPage, EntitiesPage, HomePage, QueryPage, RootPage, TablesPage, StorageAdapterPage } from "@/dev/pages";
 import { RouteError, TableData } from "@/dev/components";
 import { CONTAINER_ID } from "@/dev/lib/constants";
 import type { VisualizerOptions } from "@/dev/lib/types";
-import type { ContractTableDefs, StoreConfig } from "@/lib/definitions";
 
 const router = createMemoryRouter(
   createRoutesFromElements(

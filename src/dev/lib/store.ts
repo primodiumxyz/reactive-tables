@@ -7,9 +7,9 @@ const world = createWorld();
 
 export const ConfigTable = createLocalTable(
   world,
-  { shrinkEntities: Type.Boolean, filter: Type.String },
+  { route: Type.String, shrinkEntities: Type.Boolean, filter: Type.String },
   { id: "Config", persist: true },
-  { shrinkEntities: true, filter: "" },
+  { route: "/", shrinkEntities: true, filter: "" },
 );
 
 export type StorageAdapterUpdateTableProperties<PS extends Schema = Schema, T = unknown> = {

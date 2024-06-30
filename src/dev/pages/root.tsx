@@ -1,14 +1,15 @@
 import React, { useEffect, useRef } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { toHex } from "viem";
 
 import type { Entity } from "@/lib/external/mud/entity";
 import { NavButton } from "@/dev/components/nav-button";
 import { useVisualizer } from "@/dev/lib/context";
-import { StorageAdapterUpdateTable } from "@/dev/lib/store";
+import { ConfigTable, StorageAdapterUpdateTable } from "@/dev/lib/store";
 
 export const RootPage = () => {
   const { adapterUpdate$ } = useVisualizer();
+  const navigate = useNavigate();
   const adapterUpdatesIndex = useRef(0);
 
   useEffect(() => {
@@ -28,6 +29,10 @@ export const RootPage = () => {
     return () => adapterSub.unsubscribe();
   }, [adapterUpdate$]);
 
+  useEffect(() => {
+    navigate(ConfigTable.get()?.route ?? "/");
+  }, []);
+
   return (
     <div className="flex flex-col gap-4 w-full min-h-[100vh]">
       <div className="flex">
@@ -38,32 +43,6 @@ export const RootPage = () => {
         <NavButton to="/query">Query</NavButton>
         <span className="flex-1" />
         <NavButton to="/config">Config</NavButton>
-        {/* <NavButton
-          to="/actions"
-          className={({ isActive }) =>
-            twMerge("py-1.5 px-3", isActive ? "bg-slate-800 text-white" : "hover:bg-blue-800 hover:text-white")
-          }
-        >
-          Actions
-        </NavButton>
-        <NavButton
-          to="/events"
-          className={({ isActive }) =>
-            twMerge("py-1.5 px-3", isActive ? "bg-slate-800 text-white" : "hover:bg-blue-800 hover:text-white")
-          }
-        >
-          Store log
-        </NavButton>
-        {useStore ? (
-          <NavButton
-            to="/tables"
-            className={({ isActive }) =>
-              twMerge("py-1.5 px-3", isActive ? "bg-slate-800 text-white" : "hover:bg-blue-800 hover:text-white")
-            }
-          >
-            Tables
-          </NavButton>
-        ) : null} */}
       </div>
       <div className="px-2">
         <Outlet />
