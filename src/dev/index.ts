@@ -1,5 +1,5 @@
 import type { Tables } from "@/tables/types";
-import { render } from "@/dev/render";
+import { mount } from "@/dev/mount";
 import type { VisualizerOptions } from "@/dev/lib/types";
 import type { ContractTableDefs, StoreConfig } from "@/lib/definitions";
 
@@ -12,7 +12,7 @@ export const createDevVisualizer = async <
 ): Promise<() => void> => {
   if (typeof window !== "undefined") {
     // @ts-expect-error union type too complex to represent
-    const unmount = await render(options);
+    const unmount = await mount(options);
     options.world.registerDisposer(unmount);
   }
 
