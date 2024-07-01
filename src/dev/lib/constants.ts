@@ -8,7 +8,7 @@ export const CONTAINER_ID = "RETA_DEV_TOOLS";
 export const BUTTON_ID = "RETA_DEV_TOOLS_BUTTON";
 
 export const BUTTON_STYLES = `
-${BUTTON_ID} button {
+#${BUTTON_ID} button {
   background: rgb(242 240 229);
   position: absolute;
   bottom: 8px;
