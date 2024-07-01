@@ -23,6 +23,7 @@
     "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && find . -name 'pnpm-lock.yaml' -type f -prune -exec rm -rf '{}' +",
     "dev": "concurrently -n node,contracts -c yellow,cyan \"pnpm dev:node\" \"pnpm dev:contracts\"",
     "dev:contracts": "cd __tests__/contracts && pnpm run deploy:local",
+    "dev:devtools": "vite",
     "dev:node": "cd __tests__/contracts && pnpm run devnode",
     "lint": "eslint --cache",
     "lint:fix": "eslint --cache --fix",

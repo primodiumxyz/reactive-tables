@@ -20,6 +20,6 @@ export default defineConfig({
   },
   plugins: [react()],
   server: {
-    open: "/src/dev/vite/index.html",
+    open: "__tests__/devtools/mock/index.html",
   },
 });

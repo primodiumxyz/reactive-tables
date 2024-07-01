@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { describe, it } from "vitest";
 
 // libs
@@ -33,9 +32,15 @@ const setup = () => ({
 /*                                    SETUP                                   */
 /* -------------------------------------------------------------------------- */
 
-describe("<TITLE>", () => {
-  it("<TITLE>", () => {
-    // const { tables } = setup();s
+describe("Dev Tools", () => {
+  it("should correctly render the button to visit dev tools on the original app", () => {
+    setup();
+  });
+
+  it("should directly render dev tools if the flag is set to true", () => {
+    setup();
+  });
+  it("should be able to refresh on the dev tools page and keep the context", () => {
     setup();
   });
 });
