@@ -8,7 +8,7 @@ const world = createWorld();
 export const ConfigTable = createLocalTable(
   world,
   { route: Type.String, shrinkEntities: Type.Boolean, filter: Type.String },
-  { id: "Config", persist: true },
+  { id: "Config", persist: typeof window !== "undefined" },
   { route: "/", shrinkEntities: true, filter: "" },
 );
 

@@ -19,14 +19,7 @@ export default defineConfig({
     ],
   },
   plugins: [react()],
-  build: {
-    rollupOptions: {
-      input: {
-        app: resolve(__dirname, "src/lib/dev/vite/idex.html"),
-      },
-    },
-  },
   server: {
-    open: "/src/lib/dev/vite/index.html",
+    open: "/src/dev/vite/index.html",
   },
 });

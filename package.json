@@ -30,6 +30,7 @@
     "sort-package-json": "npx sort-package-json package.json",
     "test": "vitest __tests__/index.test.tsx --run",
     "test:benchmarks": "vitest __tests__/benchmark --run",
+    "test:devtools": "vitest __tests__/devtools --run",
     "test:types": "vitest --typecheck.only --run",
     "test:verbose": "DEBUG=primodium:* vitest __tests__/index.test.ts > testLogs.txt",
     "test:watch": "vitest __tests__/index.test.tsx"
@@ -73,6 +74,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "jsdom": "^24.0.0",
     "lint-staged": ">=10",
+    "open": "^10.1.0",
     "postcss": "^8.4.38",
     "prettier": "^3.2.5",
     "react": "^18.3.1",
