@@ -1,5 +1,6 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 
 export default defineConfig({
@@ -16,5 +17,9 @@ export default defineConfig({
       { find: "@test", replacement: resolve(__dirname, "__tests__") },
       { find: "@primodiumxyz/reactive-tables", replacement: resolve(__dirname, "dist") },
     ],
+  },
+  plugins: [react()],
+  server: {
+    open: "__tests__/devtools/mock/index.html",
   },
 });

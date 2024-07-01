@@ -89,7 +89,7 @@ export const useQuery = <tables extends BaseTables | Tables>(
     });
 
     // perform run on init if needed
-    if (params.runOnInit) {
+    if (callbacks && params.runOnInit) {
       const enterTable = queryFragments.find(
         (fragment) => fragment.type === QueryFragmentType.With || fragment.type === QueryFragmentType.WithProperties,
       )!.table;

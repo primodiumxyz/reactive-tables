@@ -1,4 +1,5 @@
 import { type Hex, size } from "viem";
+import { Subject } from "rxjs";
 import { Write } from "@primodiumxyz/sync-stack";
 
 import { decodePropertiesArgs } from "@/adapter/decodeProperties";
@@ -8,14 +9,17 @@ import { hexToResource, resourceToLabel, spliceHex } from "@/lib/external/mud/co
 import { type Entity, hexKeyTupleToEntity } from "@/lib/external/mud/entity";
 import type { Properties } from "@/lib/external/mud/schema";
 import type { ContractTableDef, ContractTableDefs } from "@/lib/definitions";
+import type { StorageAdapterUpdate } from "@/dev/lib/types";
 import { debug } from "@/lib/debug";
 
 export const createStorageAdapter = <tableDefs extends ContractTableDefs = ContractTableDefs>({
   tables,
   shouldSkipUpdateStream,
+  adapterUpdate$,
 }: {
   tables: ContractTables<tableDefs>;
   shouldSkipUpdateStream?: () => boolean;
+  adapterUpdate$?: Subject<StorageAdapterUpdate>;
 }) => {
   const processLog = (log: StorageAdapterLog) => {
     const entity = hexKeyTupleToEntity(log.args.keyTuple);
@@ -64,25 +68,24 @@ export const createStorageAdapter = <tableDefs extends ContractTableDefs = Contr
       const { entity, table } = processed;
       if (skipIfMoreRecentState(log, table, entity)) return;
 
-      const properties = decodePropertiesArgs(table.metadata.abiPropertiesSchema, log.args);
+      const newProperties = decodePropertiesArgs(table.metadata.abiPropertiesSchema, log.args);
       debug("setting properties", {
         namespace: table.metadata.namespace,
         name: table.metadata.name,
         entity,
-        properties,
+        properties: newProperties,
       });
 
-      table.set(
-        {
-          ...properties,
-          __staticData: log.args.staticData,
-          __encodedLengths: log.args.encodedLengths,
-          __dynamicData: log.args.dynamicData,
-          __lastSyncedAtBlock: log.blockNumber,
-        },
-        entity,
-        { skipUpdateStream: shouldSkipUpdateStream?.() },
-      );
+      const properties = {
+        ...newProperties,
+        __staticData: log.args.staticData,
+        __encodedLengths: log.args.encodedLengths,
+        __dynamicData: log.args.dynamicData,
+        __lastSyncedAtBlock: log.blockNumber,
+      };
+
+      table.set(properties, entity, { skipUpdateStream: shouldSkipUpdateStream?.() });
+      adapterUpdate$?.next({ table, entity, properties, blockNumber: log.blockNumber });
     },
     /* --------------------------------- STATIC --------------------------------- */
     updateStatic: (log) => {
@@ -111,15 +114,14 @@ export const createStorageAdapter = <tableDefs extends ContractTableDefs = Contr
         newProperties,
       });
 
-      table.set(
-        {
-          ...newProperties,
-          __staticData: newStaticData,
-          __lastSyncedAtBlock: log.blockNumber,
-        },
-        entity,
-        { skipUpdateStream: shouldSkipUpdateStream?.() },
-      );
+      const properties = {
+        ...newProperties,
+        __staticData: newStaticData,
+        __lastSyncedAtBlock: log.blockNumber,
+      };
+
+      table.set(properties, entity, { skipUpdateStream: shouldSkipUpdateStream?.() });
+      adapterUpdate$?.next({ table, entity, properties, blockNumber: log.blockNumber });
     },
     /* --------------------------------- DYNAMIC -------------------------------- */
     updateDynamic: (log) => {
@@ -148,16 +150,15 @@ export const createStorageAdapter = <tableDefs extends ContractTableDefs = Contr
         newProperties,
       });
 
-      table.set(
-        {
-          ...newProperties,
-          __encodedLengths: log.args.encodedLengths,
-          __dynamicData: newDynamicData,
-          __lastSyncedAtBlock: log.blockNumber,
-        },
-        entity,
-        { skipUpdateStream: shouldSkipUpdateStream?.() },
-      );
+      const properties = {
+        ...newProperties,
+        __encodedLengths: log.args.encodedLengths,
+        __dynamicData: newDynamicData,
+        __lastSyncedAtBlock: log.blockNumber,
+      };
+
+      table.set(properties, entity, { skipUpdateStream: shouldSkipUpdateStream?.() });
+      adapterUpdate$?.next({ table, entity, properties, blockNumber: log.blockNumber });
     },
     /* --------------------------------- DELETE --------------------------------- */
     delete: (log) => {
