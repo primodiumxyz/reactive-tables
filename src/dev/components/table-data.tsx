@@ -4,11 +4,11 @@ import { twMerge } from "tailwind-merge";
 
 import type { Table } from "@/tables";
 import { stringifyProperties, useCopyCell } from "@/dev/lib/utils";
-import { useVisualizer } from "@/dev/lib/context";
+import { useDevTools } from "@/dev/lib/context";
 import { ConfigTable } from "@/dev/lib/store";
 
 export const TableData = () => {
-  const { contractTables, otherTables } = useVisualizer();
+  const { contractTables, otherTables } = useDevTools();
   const { id: idParam } = useParams();
   const { getCellAttributes } = useCopyCell();
   const config = ConfigTable.use();

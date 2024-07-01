@@ -5,7 +5,7 @@ import { isHex } from "viem";
 import type { Table } from "@/tables/types";
 import type { Entity } from "@/lib/external/mud/entity";
 import type { Properties } from "@/lib/external/mud/schema";
-import { useVisualizer } from "@/dev/lib/context";
+import { useDevTools } from "@/dev/lib/context";
 import { stringifyProperties, useCopyCell } from "@/dev/lib/utils";
 
 type EntityProperties<table extends Table = Table> = {
@@ -15,7 +15,7 @@ type EntityProperties<table extends Table = Table> = {
 
 export const EntitiesPage = () => {
   const { getCellAttributes } = useCopyCell();
-  const { contractTables, otherTables } = useVisualizer();
+  const { contractTables, otherTables } = useDevTools();
   const tables = Object.values({ ...contractTables, ...otherTables }) as Table[];
 
   const [properties, setProperties] = useState<EntityProperties[]>([]);

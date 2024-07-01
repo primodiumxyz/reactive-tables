@@ -4,11 +4,11 @@ import { toHex } from "viem";
 
 import type { Entity } from "@/lib/external/mud/entity";
 import { NavButton } from "@/dev/components/nav-button";
-import { useVisualizer } from "@/dev/lib/context";
+import { useDevTools } from "@/dev/lib/context";
 import { ConfigTable, StorageAdapterUpdateTable } from "@/dev/lib/store";
 
 export const RootPage = () => {
-  const { adapterUpdate$ } = useVisualizer();
+  const { adapterUpdate$ } = useDevTools();
   const navigate = useNavigate();
   const adapterUpdatesIndex = useRef(0);
 

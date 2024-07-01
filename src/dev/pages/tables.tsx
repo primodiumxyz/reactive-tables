@@ -4,11 +4,11 @@ import { twMerge } from "tailwind-merge";
 
 import type { Table } from "@/tables";
 import { NavButton, SearchInput } from "@/dev/components";
-import { useVisualizer } from "@/dev/lib/context";
+import { useDevTools } from "@/dev/lib/context";
 
 export const TablesPage = () => {
   const { id: idParam } = useParams();
-  const { contractTables, otherTables } = useVisualizer();
+  const { contractTables, otherTables } = useDevTools();
   const tables = Object.values({ ...contractTables, ...otherTables }).sort((a, b) =>
     a.metadata.name.localeCompare(b.metadata.name),
   ) as Table[];

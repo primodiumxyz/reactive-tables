@@ -7,7 +7,7 @@ import type { ContractTableDefs, StoreConfig } from "@/lib/definitions";
 import { ConfigPage, EntitiesPage, HomePage, QueryPage, RootPage, TablesPage, StorageAdapterPage } from "@/dev/pages";
 import { RouteError, TableData } from "@/dev/components";
 import { CONTAINER_ID } from "@/dev/lib/constants";
-import type { VisualizerOptions } from "@/dev/lib/types";
+import type { DevToolsProps } from "@/dev/lib/types";
 
 const Icon = (props: SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" {...props}>
@@ -36,10 +36,10 @@ export const mount = async <
   extraTableDefs extends ContractTableDefs | undefined,
   otherDevTables extends Tables | undefined,
 >(
-  options: VisualizerOptions<config, extraTableDefs, otherDevTables>,
+  options: DevToolsProps<config, extraTableDefs, otherDevTables>,
 ): Promise<() => void> => {
   if (document.getElementById(CONTAINER_ID)) {
-    console.warn("Dev visualizer is already mounted");
+    console.warn("Dev tools is already mounted");
     return () => {};
   }
 
@@ -72,7 +72,7 @@ export const mount = async <
       rootElement.remove();
     };
   } catch (error) {
-    console.error("Failed to mount dev visualizer", error);
+    console.error("Failed to mount dev tools", error);
     return () => {};
   }
 };
@@ -82,11 +82,11 @@ export const render = async <
   extraTableDefs extends ContractTableDefs | undefined,
   otherDevTables extends Tables | undefined,
 >(
-  options: VisualizerOptions<config, extraTableDefs, otherDevTables>,
+  options: DevToolsProps<config, extraTableDefs, otherDevTables>,
 ): Promise<() => void> => {
   const newWindow = window.open("./devtools.html", "_blank", "width=800,height=600");
   if (!newWindow) {
-    console.error("Failed to open a new window for dev visualizer");
+    console.error("Failed to open a new window for dev tools");
     return () => {};
   }
 
@@ -94,7 +94,7 @@ export const render = async <
     try {
       const React = await import("react");
       const ReactDOM = await import("react-dom/client");
-      const { VisualizerProvider } = await import("./lib/context");
+      const { DevToolsProvider } = await import("./lib/context");
 
       const rootElement = newWindow.document.getElementById("devtools-root");
       if (!rootElement) throw new Error("Failed to find root element");
@@ -102,15 +102,15 @@ export const render = async <
 
       root.render(
         <React.StrictMode>
-          <VisualizerProvider value={options}>
+          <DevToolsProvider value={options}>
             <RouterProvider router={router} />
-          </VisualizerProvider>
+          </DevToolsProvider>
         </React.StrictMode>,
       );
 
       newWindow.document.body.appendChild(rootElement);
     } catch (error) {
-      console.error("Failed to mount dev visualizer", error);
+      console.error("Failed to mount dev tools", error);
       return () => {};
     }
   };

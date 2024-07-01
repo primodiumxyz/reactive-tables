@@ -8,7 +8,7 @@ import type { Entity } from "@/lib/external/mud/entity";
 import { useDeepMemo } from "@/lib/external/mud/queries";
 import type { Properties } from "@/lib/external/mud/schema";
 import { uuid } from "@/lib/external/uuid";
-import { useVisualizer } from "@/dev/lib/context";
+import { useDevTools } from "@/dev/lib/context";
 import { QueryOptionsTable } from "@/dev/lib/store";
 import { parseProperties, serialize } from "@/dev/lib/utils";
 import { query } from "@/queries/query";
@@ -22,7 +22,7 @@ const emptyFragment = {
 } as const;
 
 export const QueryPage = () => {
-  const { contractTables, otherTables } = useVisualizer();
+  const { contractTables, otherTables } = useDevTools();
   const tables = Object.values({ ...contractTables, ...otherTables }).sort((a, b) =>
     a.metadata.name.localeCompare(b.metadata.name),
   ) as Table[];

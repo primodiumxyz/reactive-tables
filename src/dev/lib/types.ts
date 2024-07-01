@@ -7,18 +7,18 @@ import type { Properties } from "@/lib/external/mud/schema";
 import type { World } from "@/lib/external/mud/world";
 import type { AllTableDefs, ContractTableDefs, StoreConfig } from "@/lib/definitions";
 
-export type DevTools<otherDevTables extends Tables | undefined> = {
-  visualizer?: boolean;
+export type DevToolsOptions<otherDevTables extends Tables | undefined> = {
+  enabled?: boolean;
   publicClient?: PublicClient;
   worldAddress?: Hex;
   otherTables?: otherDevTables;
 };
 
-export type VisualizerOptions<
+export type DevToolsProps<
   config extends StoreConfig,
   extraTableDefs extends ContractTableDefs | undefined,
   otherDevTables extends Tables | undefined,
-> = Omit<DevTools<otherDevTables>, "visualizer"> & {
+> = Omit<DevToolsOptions<otherDevTables>, "enabled"> & {
   mudConfig: config;
   world: World;
   contractTables: ContractTables<AllTableDefs<config, extraTableDefs>>;

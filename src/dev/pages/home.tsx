@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 
-import { useVisualizer } from "@/dev/lib/context";
+import { useDevTools } from "@/dev/lib/context";
 
 export const HomePage = () => {
-  const { publicClient, worldAddress } = useVisualizer();
+  const { publicClient, worldAddress } = useDevTools();
   const [latestBlockNumber, setLatestBlockNumber] = useState<bigint | undefined>(undefined);
 
   useEffect(() => {

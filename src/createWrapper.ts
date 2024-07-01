@@ -4,7 +4,7 @@ import { Subject } from "rxjs";
 
 import { createContractTables, type Tables, type ContractTables } from "@/tables";
 import { createStorageAdapter, type StorageAdapter } from "@/adapter";
-import { createDevVisualizer, type DevTools, type StorageAdapterUpdate } from "@/dev";
+import { createDevTools, type DevToolsOptions, type StorageAdapterUpdate } from "@/dev";
 import {
   createWorld,
   storeTableDefs,
@@ -24,7 +24,7 @@ import {
  * @param world (optional) The RECS world object, used for creating tables and entities. If not provided, will create one and return it.
  * @param otherTableDefs (optional) Custom definitions to generate tables for as well.
  * @param shouldSkipUpdateStream (optional) Whether to skip the initial update stream (most likely to trigger it afterwards).
- * @param devTools (optional) The {@link DevTools} options for the dev visualizer, without contract tables which are created here.
+ * @param devTools (optional) The {@link DevToolsOptions} options for the dev tools, without contract tables which are created here.
  */
 export type WrapperOptions<
   config extends StoreConfig,
@@ -35,7 +35,7 @@ export type WrapperOptions<
   world?: World;
   otherTableDefs?: extraTableDefs;
   shouldSkipUpdateStream?: () => boolean;
-  devTools?: DevTools<extraDevTables>;
+  devTools?: DevToolsOptions<extraDevTables>;
 };
 
 /**
@@ -148,15 +148,15 @@ export const createWrapper = <
   const tables = createContractTables({ world, tableDefs });
 
   /* ----------------------------------- DEV ---------------------------------- */
-  // Create dev visualizer for debugging and monitoring
+  // Create dev tools for debugging and monitoring
   // `adapterUpdate$` will trigger an update every time a log is processed to provide
-  // the complete properties update to the visualizer, for two reasons:
+  // the complete properties update to the tools, for two reasons:
   // - we need the entire tables lifecycle to provide precise properties to the dev tools
   // - this allows us to visualize the entire lifecycle of a table, including during sync
-  const devVisualizer = devTools?.visualizer;
-  const adapterUpdate$ = devVisualizer ? new Subject<StorageAdapterUpdate>() : undefined;
-  if (devVisualizer) {
-    createDevVisualizer({ ...devTools, mudConfig, world, contractTables: tables, adapterUpdate$: adapterUpdate$! });
+  const dev = devTools?.enabled;
+  const adapterUpdate$ = dev ? new Subject<StorageAdapterUpdate>() : undefined;
+  if (dev) {
+    createDevTools({ ...devTools, mudConfig, world, contractTables: tables, adapterUpdate$: adapterUpdate$! });
   }
 
   /* ---------------------------------- SYNC ---------------------------------- */

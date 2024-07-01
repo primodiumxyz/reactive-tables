@@ -1,2 +1,2 @@
-export { createDevVisualizer } from "@/dev/index";
-export type { DevTools, StorageAdapterUpdate } from "@/dev/lib/types";
+export { createDevTools } from "@/dev/index";
+export type { DevToolsOptions, StorageAdapterUpdate } from "@/dev/lib/types";
