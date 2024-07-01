@@ -4,7 +4,6 @@ import { Subject } from "rxjs";
 import type { ContractTable, ContractTables, Tables } from "@/tables/types";
 import type { Entity } from "@/lib/external/mud/entity";
 import type { Properties } from "@/lib/external/mud/schema";
-import type { World } from "@/lib/external/mud/world";
 import type { AllTableDefs, ContractTableDefs, StoreConfig } from "@/lib/definitions";
 
 export type DevToolsOptions<otherDevTables extends Tables | undefined> = {
@@ -20,7 +19,6 @@ export type DevToolsProps<
   otherDevTables extends Tables | undefined,
 > = Omit<DevToolsOptions<otherDevTables>, "enabled"> & {
   mudConfig: config;
-  world: World;
   contractTables: ContractTables<AllTableDefs<config, extraTableDefs>>;
   adapterUpdate$: Subject<StorageAdapterUpdate>;
 };

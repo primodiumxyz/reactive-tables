@@ -156,7 +156,9 @@ export const createWrapper = <
   const dev = devTools?.enabled;
   const adapterUpdate$ = dev ? new Subject<StorageAdapterUpdate>() : undefined;
   if (dev) {
-    createDevTools({ ...devTools, mudConfig, world, contractTables: tables, adapterUpdate$: adapterUpdate$! });
+    createDevTools({ ...devTools, mudConfig, contractTables: tables, adapterUpdate$: adapterUpdate$! }).then(
+      (unmount) => world.registerDisposer(unmount),
+    );
   }
 
   /* ---------------------------------- SYNC ---------------------------------- */

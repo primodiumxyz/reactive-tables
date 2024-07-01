@@ -5,7 +5,7 @@ import type { Tables } from "@/tables/types";
 import type { ContractTableDefs, StoreConfig } from "@/lib/definitions";
 import { ConfigPage, EntitiesPage, HomePage, QueryPage, RootPage, TablesPage, StorageAdapterPage } from "@/dev/pages";
 import { RouteError, TableData } from "@/dev/components";
-import { BUTTON_STYLES, CONTAINER_ID } from "@/dev/lib/constants";
+import { BUTTON_STYLES, CONTAINER_ID, BUTTON_ID } from "@/dev/lib/constants";
 import type { DevToolsProps } from "@/dev/lib/types";
 
 const Icon = (props: SVGProps<SVGSVGElement>) => (
@@ -37,27 +37,35 @@ export const mount = async <
 >(
   options: DevToolsProps<config, extraTableDefs, otherDevTables>,
 ): Promise<() => void> => {
-  // if dev tools are already here, return early
-  if (document.getElementById(CONTAINER_ID)) {
-    console.warn("Dev tools is already mounted");
-    return () => {};
-  }
-
-  // check that the flag is set to true; if it is, mount (replace the dom with devtools)
+  // 1. If on the dev tools page (flag set to true)
   const params = new URLSearchParams(window.location.search);
-  if (params.get("devtools")) {
+  if (params.get("devtools") === "true") {
+    // a. if dev tools are already mounted, return early
+    if (document.getElementById(CONTAINER_ID)) {
+      console.warn("Dev tools are already mounted");
+      return () => {};
+    }
+
+    // b. otherwise, mount the dev tools
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore inconsistent too complex union type error
     return await render(options);
   }
 
-  // render the dev tools button to open in a new tab with flag set to true (which will mount)
+  // 3. If not on the dev page
+  // a. if button is already mounted, return early
+  if (document.getElementById(BUTTON_ID)) {
+    console.warn("Dev tools button is already mounted");
+    return () => {};
+  }
+
+  // b. otherwise, mount the dev tools button to open a new page with the flag set to true (which will mount dev tools)
   try {
     const React = await import("react");
     const ReactDOM = await import("react-dom/client");
 
     const rootElement = document.createElement("div");
-    rootElement.id = CONTAINER_ID;
+    rootElement.id = BUTTON_ID;
     const root = ReactDOM.createRoot(rootElement);
 
     const style = document.createElement("style");
@@ -69,7 +77,6 @@ export const mount = async <
     root.render(
       <React.StrictMode>
         <button
-          id="devtools-button"
           onClick={() => {
             const url = new URL(window.location.href);
             url.searchParams.set("devtools", "true");
@@ -103,7 +110,7 @@ export const render = async <
 ): Promise<() => void> => {
   // replace the dom with devtools
   document.title = "Dev Tools";
-  document.body.innerHTML = `<div id="devtools-root"></div>`;
+  document.body.innerHTML = `<div id=${CONTAINER_ID}></div>`;
   const link = window.document.createElement("link");
   link.rel = "stylesheet";
   link.href = "/src/dev/lib/styles.css";
@@ -114,7 +121,7 @@ export const render = async <
     const ReactDOM = await import("react-dom/client");
     const { DevToolsProvider } = await import("./lib/context");
 
-    const rootElement = document.getElementById("devtools-root");
+    const rootElement = document.getElementById(CONTAINER_ID);
     if (!rootElement) throw new Error("Failed to find root element");
     const root = ReactDOM.createRoot(rootElement);
 

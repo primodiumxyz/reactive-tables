@@ -13,9 +13,7 @@ export const createDevTools = async <
   if (typeof window !== "undefined") {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore inconsistent too complex union type error
-    const unmount = await mount(options);
-    options.world.registerDisposer(unmount);
-    return unmount;
+    return await mount(options);
   }
 
   throw new Error("Dev tools can only be mounted in the browser");
