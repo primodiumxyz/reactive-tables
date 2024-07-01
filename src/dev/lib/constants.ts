@@ -1,3 +1,9 @@
+export const DEFAULT_CONFIG = {
+  route: "/",
+  shrinkEntities: true,
+  filter: "",
+};
+
 export const CONTAINER_ID = "RETA_DEV_TOOLS";
 export const BUTTON_ID = "RETA_DEV_TOOLS_BUTTON";
 

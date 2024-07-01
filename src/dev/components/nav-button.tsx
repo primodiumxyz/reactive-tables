@@ -2,6 +2,7 @@ import React, { type ButtonHTMLAttributes, type DetailedHTMLProps } from "react"
 import { type To, useLocation, useResolvedPath, useNavigate } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
+import { DEFAULT_CONFIG } from "@/dev/lib/constants";
 import { ConfigTable } from "@/dev/lib/store";
 
 type ButtonProps = DetailedHTMLProps<ButtonHTMLAttributes<HTMLButtonElement>, HTMLButtonElement>;
@@ -32,8 +33,8 @@ export const NavButton = ({ to, className, type, onClick, ...buttonProps }: Prop
         className,
       )}
       onClick={(event) => {
+        ConfigTable.set({ ...ConfigTable.get(undefined, DEFAULT_CONFIG), route: path.pathname });
         navigate(to);
-        ConfigTable.update({ route: to.toString() });
         onClick?.(event);
       }}
       {...buttonProps}
