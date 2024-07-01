@@ -58,7 +58,7 @@ export const TableData = () => {
                 </td>
                 {Object.entries(properties).map(([key, value]) => {
                   return (
-                    <td key={key} {...getCellAttributes(value, `${index}-${key}`, "max-w-[600px] whitespace-normal")}>
+                    <td key={key} {...getCellAttributes(value, `${index}-${key}`, "max-w-[600px] whitespace-nowrap")}>
                       {value ?? <span className="text-base-500">✖️</span>}
                     </td>
                   );
