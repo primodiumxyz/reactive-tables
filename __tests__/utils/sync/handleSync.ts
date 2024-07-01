@@ -1,29 +1,30 @@
 import { LocalSyncTables, OnSyncCallbacks, Sync as SyncType } from "@test/utils/sync/types";
-import { SyncSourceType, SyncStep } from "@test/utils/sync/tables";
+import { SyncStep } from "@test/utils/sync/tables";
 
 export const hydrateFromRpc = (tables: LocalSyncTables, sync: SyncType, onSync: OnSyncCallbacks) => {
-  const { SyncStatus, SyncSource } = tables;
+  const { SyncStatus } = tables;
   const { progress: onProgress, complete: onComplete, error: onError } = onSync ?? {};
+  SyncStatus.set({
+    step: SyncStep.Syncing,
+    message: "Hydrating from RPC",
+    progress: 0,
+    lastBlockNumberProcessed: BigInt(0),
+  });
 
   sync.start(
     (index, blockNumber, progress) => {
-      SyncSource.set({ value: SyncSourceType.RPC });
-      SyncStatus.set({
-        step: SyncStep.Syncing,
-        message: "Hydrating from RPC",
+      onProgress?.(index, blockNumber, progress);
+      SyncStatus.update({
         progress,
         lastBlockNumberProcessed: blockNumber,
       });
-      onProgress?.(index, blockNumber, progress);
 
       if (progress === 1) {
-        SyncStatus.set({
-          step: SyncStep.Complete,
-          message: "DONE",
-          progress: 1,
-          lastBlockNumberProcessed: blockNumber,
-        });
         onComplete?.(blockNumber);
+        SyncStatus.update({
+          step: SyncStep.Live,
+          message: "Subscribed to RPC",
+        });
       }
     },
     (err: unknown) => {
@@ -44,14 +45,16 @@ export const subToRpc = (tables: LocalSyncTables, sync: SyncType) => {
   const { SyncStatus } = tables;
   sync.start(
     (_, blockNumber) => {
-      SyncStatus.set({
-        step: SyncStep.Live,
-        message: "Subscribed to RPC",
-        progress: 1,
-        lastBlockNumberProcessed: blockNumber,
-      });
+      if (SyncStatus.get()?.step === SyncStep.Live) {
+        SyncStatus.update({
+          lastBlockNumberProcessed: blockNumber,
+        });
+      }
 
-      console.log("Syncing updates on block:", blockNumber.toString());
+      console.log(
+        SyncStatus.get()?.step === SyncStep.Live ? "Syncing updates on block:" : "Storing logs for block:",
+        blockNumber.toString(),
+      );
     },
     (err: unknown) => {
       console.warn("Failed to subscribe to RPC. Client may be out of sync!");
