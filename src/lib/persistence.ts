@@ -154,7 +154,8 @@ const updateProperties = <PS extends Schema, M extends BaseTableMetadata, T>(
     (acc, _key) => {
       const key = _key as keyof PS;
       const type = table.propertiesSchema[key];
-      const encodedValue = properties[key] ? encodeValue(type, properties[key]) : storedTable[key][entity];
+      const encodedValue =
+        properties[key] !== undefined ? encodeValue(type, properties[key]) : storedTable[key][entity];
 
       acc[key] = { ...storedTable[key], [entity]: encodedValue };
       return acc;
