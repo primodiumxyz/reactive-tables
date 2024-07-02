@@ -2,6 +2,8 @@
 
 **A fully fledged, strictly typed library for generating and managing reactive tables in a MUD application, available for node and browser environments.**
 
+_This is a fork of the [RECS package](https://mud.dev/state-query/typescript/recs) from Lattice._
+
 ## Table of contents
 
 - [Introduction](#introduction)
@@ -13,6 +15,7 @@
   - [Creating tables](#creating-tables)
   - [Querying tables](#querying-tables)
   - [Watching tables for changes](#watching-tables-for-changes)
+  - [Using dev tools](#using-dev-tools)
 - [Details](#details)
   - [Entry points](#entry-points)
   - [Structure](#structure)
@@ -48,16 +51,19 @@ pnpm add @primodiumxyz/reactive-tables
 The wrapper is rather straightforward to use. Given a MUD config object, containing tables definitions, it will provide a fully typed tables registry, each with its own methods for updating, retrieving and querying data, as well as a storage adapter for syncing the state with onchain logs.
 
 ```typescript
-import { createWrapper } from "@primodiumxyz/reactive-tables";
+import { createWrapper, createWorld } from "@primodiumxyz/reactive-tables";
 import mudConfig from "contracts/mud.config";
 
 const { tables, tableDefs, storageAdapter } = createWrapper({
-  world,
   mudConfig,
+  // (optional) a world will be created and returned if not provided
+  world: createWorld(),
   // (optional) any additional table definitions
   // otherTableDefs: ...,
   // (optional) function that resolves to whether the update stream should be skipped (not triggered) on table properties update
   // shouldSkipUpdateStream: () => true/false,
+  // (optional) options for the dev tools, if used (see below in the Usage section)
+  // devTools: { ... },
 });
 ```
 
@@ -174,6 +180,30 @@ tables.Player.watch(
 tables.Player.update({ score: 20 }, aliceEntity);
 // -> { table: tables.Player, entity: aliceEntity, current: { id: "player1", name: "Alice", score: 20, level: 3 }, prev: { id: "player1", name: "Alice", score: 15, level: 3 }, type: "update" }
 ```
+
+### Using dev tools
+
+If the package is consumed in a React environment, some additional parameters can be passed to the `createWrapper` function to mount the dev tools and use them alongside development. These will help debugging tables state (properties and entities), sync with the storage adapter and querying tables.
+
+_This is a modified version of [MUD Dev Tools](https://github.com/latticexyz/mud/tree/main/packages/dev-tools)._
+
+```typescript
+// ...
+
+const { tables } = createWrapper({
+  mudConfig,
+  devTools: {
+    enabled: true
+    // (optional) a viem public client and world address to track blocks on the home screen
+    publicClient,
+    worldAddress,
+    // (optional) other tables—typically created with `createLocalTable`—to track in the dev tools as well
+    otherTables
+  }
+});
+```
+
+This will mount a button in the bottom right corner of the screen, which will open a new tab with the dev tools when clicked.
 
 ### Testing
 
