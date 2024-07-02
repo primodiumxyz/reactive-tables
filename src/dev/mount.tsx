@@ -105,7 +105,6 @@ export const render = async <
 >(
   options: DevToolsProps<config, extraTableDefs, otherDevTables>,
 ): Promise<() => void> => {
-  // replace the dom with devtools
   document.title = "Dev Tools";
   document.body.innerHTML = `<div id=${CONTAINER_ID}></div>`;
   const link = window.document.createElement("link");

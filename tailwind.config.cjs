@@ -3,7 +3,7 @@ export default {
   corePlugins: {
     preflight: false,
   },
-  content: ["./src/**/*.{html,js,jsx,ts,tsx}"],
+  content: ["./src/dev/**/*.{html,css,js,jsx,ts,tsx}"],
   theme: {
     extend: {
       colors: {
@@ -28,33 +28,13 @@ export default {
           DEFAULT: "#AF3029",
           light: "#D14D41",
         },
-        orange: {
-          DEFAULT: "#BC5215",
-          light: "#DA702C",
-        },
-        yellow: {
-          DEFAULT: "#AD8301",
-          light: "#D0A215",
-        },
         green: {
           DEFAULT: "#66800B",
           light: "#879A39",
         },
-        cyan: {
-          DEFAULT: "#24837B",
-          light: "#3AA99F",
-        },
         blue: {
           DEFAULT: "#205EA6",
           light: "#4385BE",
-        },
-        purple: {
-          DEFAULT: "#5E409D",
-          light: "#8B7EC8",
-        },
-        magenta: {
-          DEFAULT: "#A02F6F",
-          light: "#CE5D97",
         },
       },
     },

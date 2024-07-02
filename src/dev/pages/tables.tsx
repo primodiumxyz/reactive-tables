@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useParams } from "react-router-dom";
 import { twMerge } from "tailwind-merge";
 
 import type { Table } from "@/tables";
-import { NavButton, SearchInput } from "@/dev/components";
+import { NavButton, SearchInput, Title } from "@/dev/components";
 import { useDevTools } from "@/dev/lib/context";
 
 export const TablesPage = () => {
@@ -41,14 +41,10 @@ export const TablesPage = () => {
         <>Waiting for tables</>
       ) : (
         <div className="mb-2 flex flex-col gap-2">
-          <h1 className="font-bold text-base-500 uppercase text-xs">Table</h1>
-          <details ref={detailsRef} className="pointer-events-none select-none">
+          <Title>Table</Title>
+          <details ref={detailsRef} className="mb-2 pointer-events-none select-none">
             <summary className="inline-flex group pointer-events-auto cursor-pointer">
-              <div
-                className={
-                  "inline-flex gap-4 px-3 py-2 items-center border-2 text-sm border-base-200 group-hover:border-purple-light group-hover:bg-purple-light"
-                }
-              >
+              <div className={"inline-flex gap-4 px-3 py-2 items-center text-sm group-hover:bg-base-800"}>
                 {selectedTable ? (
                   <span className="font-mono">{selectedTable.metadata.name}</span>
                 ) : (
@@ -62,8 +58,8 @@ export const TablesPage = () => {
                 {tables.map((table) => (
                   <NavButton
                     className={twMerge(
-                      "px-2 py-1.5 text-left hover:bg-purple-light",
-                      table === selectedTable && "bg-purple",
+                      "px-2 py-1.5 text-left hover:bg-base-700",
+                      table === selectedTable && "bg-base-500 hover:bg-base-500",
                     )}
                     key={table.id}
                     to={table.id}

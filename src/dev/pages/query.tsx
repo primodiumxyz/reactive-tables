@@ -2,16 +2,17 @@ import React, { Fragment, useCallback, useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { toHex } from "viem";
 
+import { query } from "@/queries/query";
 import type { QueryOptions } from "@/queries/types";
 import type { Table } from "@/tables/types";
 import type { Entity } from "@/lib/external/mud/entity";
 import { useDeepMemo } from "@/lib/external/mud/queries";
 import type { Properties } from "@/lib/external/mud/schema";
 import { uuid } from "@/lib/external/uuid";
+import { Title } from "@/dev/components";
 import { useDevTools } from "@/dev/lib/context";
 import { QueryOptionsTable } from "@/dev/lib/store";
 import { parseProperties, serialize } from "@/dev/lib/utils";
-import { query } from "@/queries/query";
 
 type Fragment = Required<Omit<QueryOptions, "matching">> & { entity: Entity };
 const emptyFragment = {
@@ -83,8 +84,8 @@ export const QueryPage = () => {
 
   return (
     <div className="grid gap-y-2 lg:grid-cols-2">
-      <div className="grid grid-cols-[min-content_min-content] gap-x-8 gap-y-1">
-        <h1 className="font-bold text-base-500 uppercase text-xs col-span-2">With</h1>
+      <div className="grid gap-x-8 gap-y-1" style={{ gridTemplateColumns: "min-content min-content" }}>
+        <Title className="col-span-2">With</Title>
         <QueryFragmentForm
           tables={tables}
           onValidate={(table, properties) => {
@@ -104,7 +105,10 @@ export const QueryPage = () => {
           }}
         />
         {positiveFragments.length > 0 && (
-          <div className="mt-2 grid grid-cols-[min-content_min-content_1fr_auto] gap-x-4 gap-y-1 col-span-2 min-w-[600px]">
+          <div
+            className="mt-2 grid gap-x-4 gap-y-1 col-span-2 min-w-[600px]"
+            style={{ gridTemplateColumns: "min-content min-content 1fr auto" }}
+          >
             {positiveFragments.map((fragment, index) => (
               <QueryFragmentRow
                 key={index}
@@ -115,7 +119,7 @@ export const QueryPage = () => {
             ))}
           </div>
         )}
-        <h1 className="font-bold text-base-500 uppercase text-xs col-span-2">Without</h1>
+        <Title className="col-span-2">Without</Title>
         <QueryFragmentForm
           tables={tables}
           label="without properties"
@@ -136,7 +140,10 @@ export const QueryPage = () => {
           }}
         />
         {negativeFragments.length > 0 && (
-          <div className="mt-2 grid grid-cols-[min-content_min-content_1fr_auto] gap-x-4 gap-y-1 col-span-2 min-w-[600px]">
+          <div
+            className="mt-2 grid gap-x-4 gap-y-1 col-span-2 min-w-[600px]"
+            style={{ gridTemplateColumns: "min-content min-content 1fr auto" }}
+          >
             {negativeFragments.map((fragment, index) => (
               <QueryFragmentRow
                 key={index}
@@ -151,19 +158,22 @@ export const QueryPage = () => {
       </div>
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <h1 className="font-bold text-base-500 uppercase text-xs">Results </h1>
+          <Title>Results </Title>
           <span className="text-base-300 text-xs">
             ({queryResult.length} {queryResult.length > 1 ? "entities" : "entity"})
           </span>
           <span className="flex-1" />
           <button
-            className="border-none px-3 py-1 bg-purple text-base-50 hover:bg-purple-light font-semibold cursor-pointer"
+            className="h-6 px-3 py-0 border-none bg-base-200 text-base-950 hover:bg-base-100 font-semibold text-sm cursor-pointer"
             onClick={runQuery}
           >
             query
           </button>
         </div>
-        <div className="grid grid-cols-[min-content_min-content_auto_1fr] gap-x-4 gap-y-1 max-h-96 overflow-auto">
+        <div
+          className="grid gap-x-4 gap-y-1 max-h-96 overflow-auto"
+          style={{ gridTemplateColumns: "min-content min-content auto 1fr" }}
+        >
           {queryResult.map((entity, index) => (
             <Fragment key={index}>
               <span className="font-mono text-base-700 text-xs">{index + 1}</span>
@@ -193,7 +203,7 @@ const QueryFragmentForm = ({
   return (
     <>
       <select
-        className="border-none mb-1 px-3 py-1 bg-base-800 text-base-50 hover:bg-base-700 cursor-pointer"
+        className="border-none h-6 mb-1 px-3 py-0 bg-base-800 text-base-50 hover:bg-base-700 text-sm cursor-pointer"
         onChange={(e) => setSelectedTable(tables.find((table) => table.id === e.target.value) ?? tables[0])}
       >
         {tables.map((table) => (
@@ -204,7 +214,7 @@ const QueryFragmentForm = ({
       </select>
       <button
         className={twMerge(
-          "border-none mb-1 px-3 py-1 cursor-pointer",
+          "h-6 mb-1 px-3 py-0 border-none text-sm cursor-pointer",
           advanced ? "bg-blue hover:bg-blue-light text-base-50" : "bg-base-800 hover:bg-base-700 text-base-300",
         )}
         onClick={() => setAdvanced(!advanced)}
@@ -216,7 +226,10 @@ const QueryFragmentForm = ({
           <span className={twMerge("font-mono text-xs", !advanced && "text-base-600")}>{key}</span>
           <input
             type="text"
-            className={twMerge("border-none font-mono text-xs bg-base-800 text-base-50", !advanced && "bg-base-900")}
+            className={twMerge(
+              "min-w-[350px] border-none font-mono text-xs bg-base-800 text-base-50",
+              !advanced && "bg-base-900",
+            )}
             disabled={!advanced}
             value={properties[key] ?? ""}
             onChange={(e) => setProperties({ ...properties, [key]: e.target.value })}
@@ -224,7 +237,7 @@ const QueryFragmentForm = ({
         </Fragment>
       ))}
       <button
-        className="col-span-2 border-none mt-2 px-3 py-1 bg-base-800 text-base-50 hover:bg-base-700 cursor-pointer"
+        className="col-span-2 h-6 mt-2 px-3 py-0 border-none bg-base-800 text-base-50 hover:bg-base-700 text-sm cursor-pointer"
         onClick={() => {
           try {
             const formattedProperties = advanced

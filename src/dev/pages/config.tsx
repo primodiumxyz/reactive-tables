@@ -11,7 +11,7 @@ export const ConfigPage = () => {
   };
 
   return (
-    <div className="grid grid-cols-[min-content_1fr] gap-4">
+    <div className="grid items-center gap-4" style={{ gridTemplateColumns: "min-content 1fr" }}>
       <span className="whitespace-nowrap">Shrink entities in tables</span>
       <input
         type="checkbox"

@@ -1,11 +1,16 @@
 import React, { useEffect, useRef } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { toHex } from "viem";
+import { setup } from "twind/shim";
 
 import type { Entity } from "@/lib/external/mud/entity";
 import { NavButton } from "@/dev/components/nav-button";
 import { useDevTools } from "@/dev/lib/context";
 import { ConfigTable, StorageAdapterUpdateTable } from "@/dev/lib/store";
+// @ts-expect-error no declaration file for tailwind config
+import tailwindConfig from "../../../tailwind.config.cjs";
+
+setup(tailwindConfig);
 
 export const RootPage = () => {
   const { adapterUpdate$ } = useDevTools();
@@ -34,7 +39,7 @@ export const RootPage = () => {
   }, []);
 
   return (
-    <div className="flex flex-col gap-4 w-full min-h-[100vh]">
+    <div className="flex flex-col gap-4 w-full min-h-[100vh] font-sans bg-base-black text-base-50">
       <div className="flex">
         <NavButton to="/">Home</NavButton>
         <NavButton to="/tables">Tables</NavButton>

@@ -9,7 +9,6 @@ export const DEFAULT_CONFIG = {
 export const CONTAINER_ID = "RETA_DEV_TOOLS";
 export const BUTTON_ID = "RETA_DEV_TOOLS_BUTTON";
 
-// or direct style
 export const BUTTON_STYLES = {
   background: "rgb(242 240 229)",
   position: "absolute",
