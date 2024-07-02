@@ -19,7 +19,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup && build:styles",
+    "build": "tsup && pnpm build:styles",
     "build:contracts": "cd __tests__/contracts && pnpm run build",
     "build:styles": "tailwindcss -c tailwind.config.cjs -o dist/styles.css",
     "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && find . -name 'pnpm-lock.yaml' -type f -prune -exec rm -rf '{}' +",
