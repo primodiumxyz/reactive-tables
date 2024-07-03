@@ -1,8 +1,10 @@
 # Reactive Tables
 
-**A fully fledged, strictly typed library for generating and managing reactive tables in a MUD application, available for node and browser environments.**
+**A fully fledged, strictly typed library for generating and managing reactive tables in a MUD application for node and browser environments.**
 
-_This is a fork of the [RECS package](https://mud.dev/state-query/typescript/recs) from Lattice._
+_Reactive Tables is available from npm
+as
+[`@primodiumxyz/reactive-tables`](https://www.npmjs.com/package/@primodiumxyz/reactive-tables). It is a fork of the [RECS package](https://mud.dev/state-query/typescript/recs) from Lattice._
 
 ## Table of contents
 
@@ -27,9 +29,9 @@ _This is a fork of the [RECS package](https://mud.dev/state-query/typescript/rec
 
 ### Overview
 
-The package encompasses a wide range of functionnalities, from creating a tables registry from a MUD config object, including metadata and typed methods for updating, fetching and querying data associated with each entity, to decoding onchain logs into consumable properties, and creating/syncing local tables with minimal effort.
+The package encompasses a wide range of features, from creating a tables registry from a MUD config object, including metadata and typed methods for updating, fetching and querying data associated with each entity, to decoding onchain logs into consumable properties, and creating/syncing local tables with minimal effort.
 
-It is meant to be used inside a MUD application, encapsulating all of RECS functionnalities, with a more convenient and explicit API, and clearer [conventions and architectural pattern](#conventions).
+It is meant to be used inside a MUD application, encapsulating all of RECS features, with a more convenient and explicit API, and clearer [conventions and architectural pattern](#conventions).
 
 ### Notable features
 
