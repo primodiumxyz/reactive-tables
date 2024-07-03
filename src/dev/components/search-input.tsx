@@ -10,13 +10,14 @@ export const SearchInput = () => {
       Search
       <input
         type="text"
-        className="min-w-64 border-none bg-base-800 text-base-500 px-2 py-1"
-        placeholder="Search"
+        className="h-6 px-2 py-0 border-none bg-base-800 text-base-500 text-xs"
+        style={{ minWidth: 256 }} // override defaults
+        placeholder="Search an entity or property"
         value={search}
         onChange={(e) => ConfigTable.update({ filter: e.target.value })}
       />
       <button
-        className="border-none px-2 py-1 bg-base-800 text-base-150 hover:bg-base-700 cursor-pointer"
+        className="h-6 px-2 py-1 border-none bg-base-800 text-base-150 hover:bg-base-700 text-xs cursor-pointer"
         onClick={() => ConfigTable.update({ filter: "" })}
       >
         clear

@@ -28,7 +28,7 @@ export const NavButton = ({ to, className, type, onClick, ...buttonProps }: Prop
     <button
       type={type || "button"}
       className={twMerge(
-        "border-none px-4 py-1 text-sm bg-base-950 text-base-50 hover:bg-base-850 cursor-pointer",
+        "px-4 py-1 border-none shadow-none bg-base-950 text-base-50 text-sm hover:bg-base-850 focus:outline-none cursor-pointer",
         isActive && "bg-base-800",
         className,
       )}

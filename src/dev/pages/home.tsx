@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 
+import { Title } from "@/dev/components";
 import { useDevTools } from "@/dev/lib/context";
 
 export const HomePage = () => {
@@ -24,7 +25,7 @@ export const HomePage = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <h1 className="font-bold text-base-500 uppercase text-xs">Network</h1>
+      <Title>Network</Title>
       <div className="flex flex-col gap-1 text-sm">
         <div className="flex gap-4">
           <span className="text-base-500">Chain</span>
@@ -42,17 +43,17 @@ export const HomePage = () => {
         )}
       </div>
       <div className="flex flex-col gap-1">
-        <h1 className="mb-1 font-bold text-base-500 uppercase text-xs">Tables</h1>
+        <Title>Tables</Title>
         <span className="text-base-100 text-sm">
           View and search entities and their associated properties inside each table.
         </span>
-        <h1 className="mb-1 font-bold text-base-500 uppercase text-xs">Storage adapter</h1>
+        <Title>Storage adapter</Title>
         <span className="text-base-100 text-sm">
           View and query all historical and live table updates from the storage adapter.
         </span>
-        <h1 className="mb-1 font-bold text-base-500 uppercase text-xs">Entities</h1>
+        <Title>Entities</Title>
         <span className="text-base-100 text-sm">Search properties for an entity inside all tables.</span>
-        <h1 className="mb-1 font-bold text-base-500 uppercase text-xs">Query</h1>
+        <Title>Query</Title>
         <span className="text-base-100 text-sm">
           Perform queries over tables and their state to find entities that match specific criteria.
         </span>

@@ -10,7 +10,8 @@
   "exports": {
     ".": "./dist/index.js",
     "./utils": "./dist/utils.js",
-    "./dev": "./dist/dev.js"
+    "./dev": "./dist/dev.js",
+    "./styles.css": "./dist/styles.css"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,8 +19,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && pnpm build:styles",
     "build:contracts": "cd __tests__/contracts && pnpm run build",
+    "build:styles": "tailwindcss -c tailwind.config.cjs -o dist/styles.css",
     "clean": "find . -name 'node_modules' -type d -prune -exec rm -rf '{}' + && find . -name 'pnpm-lock.yaml' -type f -prune -exec rm -rf '{}' +",
     "dev": "concurrently -n node,contracts -c yellow,cyan \"pnpm dev:node\" \"pnpm dev:contracts\"",
     "dev:contracts": "cd __tests__/contracts && pnpm run deploy:local",
@@ -76,7 +78,6 @@
     "jsdom": "^24.0.0",
     "lint-staged": ">=10",
     "open": "^10.1.0",
-    "postcss": "^8.4.38",
     "prettier": "^3.2.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -86,7 +87,7 @@
     "tailwindcss": "^3.4.4",
     "ts-node": "^10.9.2",
     "tsup": "^8.0.2",
-    "typescript": "5.5.0-beta",
+    "typescript": "5.5.2",
     "vite": "^5.2.9",
     "vitest": "^1.5.2"
   },

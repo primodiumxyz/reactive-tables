@@ -34,7 +34,7 @@ export const RootPage = () => {
   }, []);
 
   return (
-    <div className="flex flex-col gap-4 w-full min-h-[100vh]">
+    <div className="flex flex-col gap-4 w-full min-h-[100vh] font-sans bg-base-black text-base-50">
       <div className="flex">
         <NavButton to="/">Home</NavButton>
         <NavButton to="/tables">Tables</NavButton>

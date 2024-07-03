@@ -12,7 +12,7 @@ export const FilterInput = ({
   return (
     <div className="w-auto pl-1 pr-2 bg-base-900">
       <input
-        className="w-full p-1 bg-base-900 text-base-50 border-none font-mono text-xs overflow-auto"
+        className="w-full p-1 bg-base-900 text-base-50 box-content border-none font-mono text-xs font-normal overflow-auto"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}

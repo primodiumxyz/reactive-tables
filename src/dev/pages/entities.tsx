@@ -5,6 +5,7 @@ import { isHex } from "viem";
 import type { Table } from "@/tables/types";
 import type { Entity } from "@/lib/external/mud/entity";
 import type { Properties } from "@/lib/external/mud/schema";
+import { Title } from "@/dev/components";
 import { useDevTools } from "@/dev/lib/context";
 import { stringifyProperties, useCopyCell } from "@/dev/lib/utils";
 
@@ -48,17 +49,17 @@ export const EntitiesPage = () => {
 
   return (
     <div className="flex flex-col gap-2">
-      <h1 className="font-bold text-base-500 uppercase text-xs col-span-2">Entity</h1>
+      <Title>Entity</Title>
       <div className="flex items-center gap-4 h-6">
         <input
           type="text"
-          className="min-w-[460px] border-none bg-base-800 text-base-500 px-2 py-1"
+          className="min-w-[460px] h-6 px-2 py-0 border-none bg-base-800 text-base-500 text-xs"
           placeholder="Search an entity across all tables"
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
         <button
-          className="border-none px-2 py-1 bg-base-800 text-base-150 hover:bg-base-700 cursor-pointer"
+          className="h-6 px-2 py-1 border-none bg-base-800 text-base-150 hover:bg-base-700 text-xs cursor-pointer"
           onClick={searchEntity}
         >
           search
@@ -67,7 +68,7 @@ export const EntitiesPage = () => {
       </div>
       {!!properties.length && (
         <>
-          <h1 className="font-bold text-base-500 uppercase text-xs col-span-2">Tables</h1>
+          <Title>Tables</Title>
           <div className="overflow-auto max-h-[calc(100vh-28px-16px-24px-16px-24px-48px)]">
             <table className="w-full">
               <thead className="sticky top-0 z-10 bg-base-950 text-left">
