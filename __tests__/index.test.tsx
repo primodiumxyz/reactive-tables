@@ -964,6 +964,48 @@ describe("queries: should emit appropriate update events with the correct data",
     expect(aggregator).toHaveLength(entities.length);
   });
 
+  it("table.once()", () => {
+    const { tables, entities, onChange, aggregator } = preTest();
+    const table = tables.Position;
+
+    entities.forEach((entity) => {
+      tables.Position.remove(entity);
+    });
+
+    tables.Position.once(
+      {
+        filter: ({ table, entity, properties }) => {
+          return table.id === tables.Position.id && entity === entities[0] && properties.current?.x === 10;
+        },
+        do: onChange,
+      },
+      { runOnInit: false },
+    );
+    expect(aggregator).toEqual([]);
+
+    // Update entities to fit the filter (except for the first one)
+    tables.Position.set({ x: 5, y: 10, ...emptyData }, entities[0]);
+    tables.Position.set({ x: 10, y: 10, ...emptyData }, entities[1]);
+
+    expect(aggregator).toEqual([]);
+
+    // Update the first entity to fit the filter
+    tables.Position.set({ x: 10, y: 10, ...emptyData }, entities[0]);
+    const expected = [
+      {
+        table: toBaseTable(table),
+        entity: entities[0],
+        properties: { current: tables.Position.get(entities[0]), prev: { x: 5, y: 10, ...emptyData } },
+        type: "update",
+      },
+    ];
+    expect(aggregator).toEqual(expected);
+
+    // Update another entity to fit the filter
+    tables.Position.set({ x: 10, y: 10, ...emptyData }, entities[2]);
+    expect(aggregator).toEqual(expected);
+  });
+
   it("query() (query)", () => {
     const { tables, entities } = setup();
     const [player, A, B, C] = entities;
