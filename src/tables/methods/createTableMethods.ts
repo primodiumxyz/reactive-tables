@@ -4,11 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import { createTableKeyMethods } from "@/tables/methods/createTableKeyMethods";
 import { createTableWatcher } from "@/tables/methods/createTableWatcher";
 import type { BaseTable, TableMethods, TableMutationOptions, TableUpdate } from "@/tables/types";
-import { type TableWatcherParams, type TableMethodsWatcherOptions } from "@/queries/types";
+import {
+  type TableWatcherParams,
+  type TableMethodsWatcherOptions,
+  type TableMethodsOnceOptions,
+} from "@/queries/types";
 import { defaultEntity, type Entity } from "@/lib/external/mud/entity";
 import type { BaseTableMetadata, Properties, PropertiesSansMetadata, Schema } from "@/lib/external/mud/schema";
 import { tableOperations } from "@/lib/external/mud/tables";
 import { queries } from "@/lib/external/mud/queries";
+import { systems } from "@/lib/external/mud/systems";
 import type { World } from "@/lib/external/mud/world";
 import { type PersistentStorageAdapter } from "@/lib/persistence";
 const {
@@ -20,6 +25,7 @@ const {
   isTableUpdate: _isTableUpdate,
 } = tableOperations;
 const { runQuery, defineQuery, useEntityQuery, With, WithProperties, WithoutProperties, MatchingProperties } = queries;
+const { defineTableSystem } = systems;
 
 /* -------------------------------------------------------------------------- */
 /*                               ATTACH METHODS                               */
@@ -242,6 +248,33 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
   const watch = (options: TableMethodsWatcherOptions<PS, M, T>, params?: TableWatcherParams) =>
     createTableWatcher({ world, table, ...options }, params);
 
+  /* ---------------------------------- ONCE ---------------------------------- */
+  // Create a watcher that triggers the `do` callback once the conditions from the `filter` function are met
+  // and unsubscribes after the first trigger
+  const once = (options: TableMethodsOnceOptions<PS, M, T>, params?: TableWatcherParams) => {
+    const { filter, do: _do } = options;
+
+    return defineTableSystem(
+      options.world ?? world,
+      table,
+      (_update) => {
+        const update = _update as TableUpdate<PS, M, T>;
+        // if it passes the filter, run the callback
+        if (filter(update)) {
+          _do(update);
+          // subscription will be automatically unsubscribed after the first pass
+          return () => {};
+        }
+      },
+      params,
+      (_update) => {
+        // if it passes the filter, return true, which will terminate the subscription
+        const update = _update as TableUpdate<PS, M, T>;
+        return filter(update);
+      },
+    );
+  };
+
   // Base methods available to all tables
   const baseMethods = {
     get,
@@ -258,6 +291,7 @@ export const createTableMethods = <PS extends Schema, M extends BaseTableMetadat
     blockUpdates,
     unblockUpdates,
     watch,
+    once,
   };
 
   // Add hooks only if not in a node environment

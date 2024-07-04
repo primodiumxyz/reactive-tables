@@ -17,6 +17,7 @@ import { queryToFragments } from "./utils";
  * @param options The {@link WatcherOptions} with the world object and callbacks to trigger on changes. Including: onUpdate, onEnter, onExit, onChange.
  * These will trigger a {@link TableUpdate} object inside the id of the updated table, the entity, the previous and new properties of the entity and the type of update.
  * @param params (optional) Additional {@link TableWatcherParams} for the query. Currently only supports `runOnInit` to trigger the callbacks for all matching entities on initialization.
+ * @returns Function to unsubscribe from the listener.
  * @example
  * This example creates a query that listens to all entities that represent online players notInside a score of 0.
  *
@@ -47,13 +48,13 @@ export const $query = <tables extends BaseTables | Tables>(
   query: QueryOptions<tables>,
   options: WatcherOptions<tables>,
   params: TableWatcherParams = { runOnInit: true },
-) => {
+): (() => void) => {
   const { world, onUpdate, onEnter, onExit, onChange } = options;
   if (!onUpdate && !onEnter && !onExit && !onChange) {
     throw new Error("At least one callback has to be provided");
   }
 
-  systems.defineSystem(
+  return systems.defineSystem(
     // one will necessarily be defined, otherwise no positive fragment -> will throw
     world ?? query.with?.[0].world ?? query.withProperties?.[0].table.world,
     queryToFragments(query),
