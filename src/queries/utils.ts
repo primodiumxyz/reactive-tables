@@ -25,15 +25,15 @@ export const queryMatchingCondition = <table extends BaseTable>({
 }): QueryMatchingCondition => ({ table, where }) as QueryMatchingCondition;
 
 export const queryToFragments = <tables extends BaseTables>(query: QueryOptions<tables>): QueryFragments => {
-  const { with: inside, without: notInside, withProperties, withoutProperties, matching } = query;
-  if (!inside && !withProperties) {
+  const { with: _with, without, withProperties, withoutProperties, matching } = query;
+  if (!_with && !withProperties) {
     throw new Error("At least one `with` or `withProperties` condition needs to be provided");
   }
 
   return [
-    ...(inside?.map((fragment) => With(fragment)) ?? []),
+    ...(_with?.map((fragment) => With(fragment)) ?? []),
     ...(withProperties?.map((matching) => WithProperties(matching.table, { ...matching.properties })) ?? []),
-    ...(notInside?.map((table) => Without(table)) ?? []),
+    ...(without?.map((table) => Without(table)) ?? []),
     ...(withoutProperties?.map((matching) => WithoutProperties(matching.table, { ...matching.properties })) ?? []),
     ...(matching?.map((matching) => MatchingProperties(matching.table, matching.where)) ?? []),
   ];
