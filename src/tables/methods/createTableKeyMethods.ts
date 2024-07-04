@@ -1,6 +1,6 @@
 import type { BaseTable, TableBaseMethods, TableWithKeysMethods } from "@/tables/types";
+import { decodeEntity, encodeEntity } from "@/adapter/encoder";
 import { defaultEntity, type Entity } from "@/lib/external/mud/entity";
-import { decodeEntity, encodeEntity } from "@/lib/external/mud/schema";
 import type { BaseTableMetadata, Keys, Properties, PropertiesSansMetadata, Schema } from "@/lib/external/mud/schema";
 
 /**
