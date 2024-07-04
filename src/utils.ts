@@ -1,7 +1,4 @@
 export {
-  // Decoding/encoding keys from/into an entity
-  decodeEntity,
-  encodeEntity,
   // Convert an entity into a tuple of hex keys
   entityToHexKeyTuple,
   // Concat a tuple of hex keys into a single entity
@@ -39,8 +36,12 @@ export type {
 } from "@/lib";
 
 export {
+  // Decoding/encoding keys from/into an entity
+  decodeEntity,
+  encodeEntity,
   // Schema utilities
   encodeField,
+  encodeKeys,
   // Storage adapter
   type StorageAdapterBlock,
   type StorageAdapterLog,
