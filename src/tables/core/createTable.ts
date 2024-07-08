@@ -26,7 +26,7 @@ import { createLocalStorageAdapter, DEFAULT_VERSION, type PersistentStorageAdapt
  */
 export type TableOptions<M extends BaseTableMetadata = BaseTableMetadata, P extends boolean = false> = {
   id?: string; // default: uuid
-  metadata?: M;
+  metadata?: Partial<M>;
   indexed?: boolean;
   persist?: P;
   version?: string;
