@@ -61,6 +61,8 @@ export type UnparsedAbiPropertiesSchema = {
   };
 };
 
+export type AdjustedPropertiesSchema<PS extends Schema, P extends boolean> = P extends true ? OptionalSchema<PS> : PS;
+
 /* -------------------------------------------------------------------------- */
 /*                                   TABLES                                   */
 /* -------------------------------------------------------------------------- */

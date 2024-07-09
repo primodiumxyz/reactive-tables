@@ -15,6 +15,7 @@ export { defaultEntity, localProperties, metadataProperties } from "@/lib";
 export type {
   AbiKeySchema,
   AbiPropertiesSchema,
+  AdjustedPropertiesSchema,
   UnparsedAbiKeySchema,
   UnparsedAbiPropertiesSchema,
   AbiToSchema,
@@ -27,6 +28,7 @@ export type {
   EntitySymbol,
   Keys,
   Metadata,
+  OptionalSchema,
   OptionalTypes,
   Properties,
   PropertiesSansMetadata,
