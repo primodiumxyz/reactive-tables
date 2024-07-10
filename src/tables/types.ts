@@ -1,6 +1,6 @@
 import { Subject } from "rxjs";
 
-import type { TableMethodsWatcherOptions, TableWatcherParams } from "@/queries/types";
+import type { TableMethodsOnceOptions, TableMethodsWatcherOptions, TableWatcherParams } from "@/queries/types";
 import type { Entity, EntitySymbol } from "@/lib/external/mud/entity";
 import type {
   BaseTableMetadata,
@@ -601,6 +601,41 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * @internal
    */
   watch: (options: TableMethodsWatcherOptions<PS, M, T>, params?: TableWatcherParams) => void;
+
+  /**
+   * Create a watcher that triggers `do` once `filter` returns true.
+   *
+   * This allows for a one-time trigger, based on some condition checked against the updates.
+   * The watcher will automatically unsubscribe after the first trigger.
+   *
+   * @param options The {@link TableMethodsOnceOptions} for creating the table watcher.
+   * - `world` The RECS world containing the table to watch (optional, default global world).
+   * - `filter` The condition to check against the updates.
+   * - `do` Callback triggered when the condition is met.
+   * @param params Additional {@link TableWatcherParams} for the watcher.
+   * @example
+   * This example creates a watcher for the "Player" table that triggers once the score of a player is 100 or more.
+   *
+   * ```ts
+   * const { tables } = createWrapper({ world, mudConfig });
+   * tables.Player.set({ score: 50 }, playerRecord);
+   *
+   * tables.Player.once({
+   *   filter: (update) => update.properties.current?.score >= 100,
+   *   do: (update) => console.log(update),
+   * });
+   * // no output
+   *
+   * tables.Player.update({ score: 100 }, playerRecord);
+   * // -> { table: tables.Player, entity: playerRecord, current: { score: 100 }, prev: { score: 50 }, type: "update" }
+   *
+   * tables.Player.set({ score: 100 }, otherPlayerRecord);
+   * // no output, since the subscription was disposed after the first trigger
+   * ```
+   * @category Methods
+   * @internal
+   */
+  once: (options: TableMethodsOnceOptions<PS, M, T>, params?: TableWatcherParams) => void;
 };
 
 /**

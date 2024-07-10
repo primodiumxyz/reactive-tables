@@ -51,7 +51,8 @@ export const createContractTables = <config extends StoreConfig, extraTableDefs 
         id: def.tableId,
         metadata: {
           name: def.name, // RECS `componentName`
-          globalName: resourceToLabel(def), // namespaced; RECS `tableName`
+          namespace: def.namespace, // RECS `namespace`
+          globalName: resourceToLabel(def), // namespace + name; RECS `tableName`
           // @ts-expect-error complex union type
           abiKeySchema: mapObject(def.keySchema, ({ type }) => type),
           // @ts-expect-error complex union type

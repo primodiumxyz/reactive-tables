@@ -46,6 +46,12 @@ export type TableMethodsWatcherOptions<
   T = unknown,
 > = Omit<TableWatcherOptions<PS, M, T>, "table">;
 
+export type TableMethodsOnceOptions<PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = {
+  filter: (update: TableUpdate<PS, M, T>) => boolean;
+  do: (update: TableUpdate<PS, M, T>) => void;
+  world?: World;
+};
+
 /**
  * Defines the callbacks for a table watcher.
  *

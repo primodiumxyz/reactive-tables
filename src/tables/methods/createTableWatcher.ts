@@ -17,6 +17,7 @@ import { systems } from "@/lib/external/mud/systems";
  * - `onExit` Callback triggered when an entity exits the table/query (`properties.current` will be undefined).
  * - `onChange` Callback triggered on any change in the table/query (encompassing enter, exit, and update).
  * @param params Additional {@link TableWatcherParams} for the watcher.
+ * @returns Function to unsubscribe from the listener.
  * @example
  * This example creates a watcher for all entities within (with properties inside) the "Player" table.
  *
@@ -46,13 +47,13 @@ import { systems } from "@/lib/external/mud/systems";
 export const createTableWatcher = <PS extends Schema, M extends BaseTableMetadata, T = unknown>(
   options: TableWatcherOptions<PS, M, T>,
   params: TableWatcherParams = { runOnInit: true },
-) => {
+): (() => void) => {
   const { world, table, onUpdate, onEnter, onExit, onChange } = options;
   if (!onUpdate && !onEnter && !onExit && !onChange) {
     throw new Error("At least one callback has to be provided");
   }
 
-  systems.defineTableSystem(
+  return systems.defineTableSystem(
     world ?? table.world,
     table,
     (_update) => {

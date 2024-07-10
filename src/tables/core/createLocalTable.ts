@@ -2,6 +2,7 @@ import { createTable, type TableOptions } from "@/tables/core/createTable";
 import type { Table } from "@/tables/types";
 import type { World } from "@/lib/external/mud/world";
 import {
+  type AdjustedPropertiesSchema,
   type BaseTableMetadata,
   OptionalSchema,
   type Properties,
@@ -10,8 +11,6 @@ import {
   toOptionalType,
 } from "@/lib/external/mud/schema";
 import { uuid } from "@/lib/external/uuid";
-
-type AdjustedPropertiesSchema<PS extends Schema, P extends boolean> = P extends true ? OptionalSchema<PS> : PS;
 
 /**
  * Creates a local table with the specified properties schema, options and metadata.

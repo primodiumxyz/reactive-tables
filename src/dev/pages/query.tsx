@@ -266,15 +266,15 @@ const QueryFragmentForm = ({
 
 const QueryFragmentRow = ({
   index,
-  fragment: { with: inside, withProperties, without: outside, withoutProperties },
+  fragment: { with: _with, withProperties, without, withoutProperties },
   onRemove,
 }: {
   index: number;
   fragment: Fragment;
   onRemove?: () => void;
 }) => {
-  const type = inside.length > 0 || withProperties.length > 0 ? "positive" : "negative";
-  const statement = type === "positive" ? inside[0] ?? withProperties[0] : outside[0] ?? withoutProperties[0];
+  const type = _with.length > 0 || withProperties.length > 0 ? "positive" : "negative";
+  const statement = type === "positive" ? _with[0] ?? withProperties[0] : without[0] ?? withoutProperties[0];
   const table = "table" in statement ? (statement.table as Table) : statement;
   const properties = "table" in statement ? statement.properties : undefined;
 
