@@ -12,7 +12,7 @@ const { defineChangeQuery, defineEnterQuery, defineExitQuery, defineQuery } = qu
 
 // All of the following code is taken and modified from MUD to fit new types and naming conventions.
 
-type Unsuscribe = () => void;
+type Unsubscribe = () => void;
 
 const _systems = () => {
   /**
@@ -33,7 +33,7 @@ const _systems = () => {
     observable$: Observable<T>,
     system: (event: T) => void,
     until?: (event: T) => boolean,
-  ): Unsuscribe => {
+  ): Unsubscribe => {
     // if until is provided, we want to close the sub when it returns true
     if (until) {
       const terminate = new Subject<void>();
@@ -71,7 +71,7 @@ const _systems = () => {
     query: QueryFragment[],
     system: (update: TableUpdate) => void,
     options: TableWatcherParams = { runOnInit: true },
-  ): Unsuscribe => {
+  ): Unsubscribe => {
     return defineRxSystem(world, defineChangeQuery(query, options), system);
   };
 
@@ -92,7 +92,7 @@ const _systems = () => {
     query: QueryFragment[],
     system: (update: TableUpdate) => void,
     options: TableWatcherParams = { runOnInit: true },
-  ): Unsuscribe => {
+  ): Unsubscribe => {
     return defineRxSystem(world, defineEnterQuery(query, options), system);
   };
 
@@ -113,7 +113,7 @@ const _systems = () => {
     query: QueryFragment[],
     system: (update: TableUpdate) => void,
     options: TableWatcherParams = { runOnInit: true },
-  ): Unsuscribe => {
+  ): Unsubscribe => {
     return defineRxSystem(world, defineExitQuery(query, options), system);
   };
 
@@ -134,7 +134,7 @@ const _systems = () => {
     query: QueryFragment[],
     system: (update: TableUpdate) => void,
     options: TableWatcherParams = { runOnInit: true },
-  ): Unsuscribe => {
+  ): Unsubscribe => {
     return defineRxSystem(world, defineQuery(query, options).update$, system);
   };
 
@@ -157,7 +157,7 @@ const _systems = () => {
     system: (update: TableUpdate<S>) => void,
     options: TableWatcherParams = { runOnInit: true },
     until?: (update: TableUpdate<S>) => boolean,
-  ): Unsuscribe => {
+  ): Unsubscribe => {
     const initial$ = options?.runOnInit ? from(getTableEntities(table)).pipe(toUpdateStream(table)) : EMPTY;
     return defineRxSystem(world, concat(initial$, table.update$), system, until);
   };
@@ -182,7 +182,7 @@ const _systems = () => {
     table: (entity: Entity) => BaseTable<S>,
     properties: (entity: Entity) => Properties<S>,
     options: TableWatcherParams & { update?: boolean } = { runOnInit: true, update: false },
-  ): Unsuscribe => {
+  ): Unsubscribe => {
     return defineSystem(
       world,
       query,
