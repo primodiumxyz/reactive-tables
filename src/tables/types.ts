@@ -576,6 +576,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * - `onExit` Callback triggered when an entity exits the table/query (`properties.current` will be undefined).
    * - `onChange` Callback triggered on any change in the table/query (encompassing enter, exit, and update).
    * @param params Additional {@link TableWatcherParams} for the watcher.
+   * @returns A function to unsubscribe the watcher.
    * @example
    * This example creates a watcher for all entities within (with properties inside) the "Player" table.
    *
@@ -600,7 +601,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * @category Methods
    * @internal
    */
-  watch: (options: TableMethodsWatcherOptions<PS, M, T>, params?: TableWatcherParams) => void;
+  watch: (options: TableMethodsWatcherOptions<PS, M, T>, params?: TableWatcherParams) => () => void;
 
   /**
    * Create a watcher that triggers `do` once `filter` returns true.
@@ -613,6 +614,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * - `filter` The condition to check against the updates.
    * - `do` Callback triggered when the condition is met.
    * @param params Additional {@link TableWatcherParams} for the watcher.
+   * @returns A function to unsubscribe the watcher.
    * @example
    * This example creates a watcher for the "Player" table that triggers once the score of a player is 100 or more.
    *
@@ -635,7 +637,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * @category Methods
    * @internal
    */
-  once: (options: TableMethodsOnceOptions<PS, M, T>, params?: TableWatcherParams) => void;
+  once: (options: TableMethodsOnceOptions<PS, M, T>, params?: TableWatcherParams) => () => void;
 };
 
 /**
