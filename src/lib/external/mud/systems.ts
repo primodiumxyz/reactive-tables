@@ -46,7 +46,15 @@ const _systems = () => {
       });
 
       world.registerDisposer(() => subscription?.unsubscribe());
-      return subscription?.unsubscribe;
+      return () => {
+        try {
+          subscription?.unsubscribe();
+          terminate.next();
+          terminate.unsubscribe();
+        } catch (err) {
+          console.warn(err);
+        }
+      };
     }
 
     const subscription = observable$.subscribe(system);
