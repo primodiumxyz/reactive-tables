@@ -20,9 +20,11 @@ import {
  *
  * @template config The type of the configuration object specifying tables definitions for contracts codegen.
  * @template extraTableDefs The types of any additional custom definitions to generate tables for.
+ * @template requiredTables The types of the tables with populated properties.
  * @param mudConfig The actual MUD configuration, usually retrieved for the contracts package.
  * @param world (optional) The RECS world object, used for creating tables and entities. If not provided, will create one and return it.
  * @param otherTableDefs (optional) Custom definitions to generate tables for as well.
+ * @param requiredTables (optional) A list of table names for tables that should have their properties populated (will always consider retrieved properties as non-undefined).
  * @param shouldSkipUpdateStream (optional) Whether to skip the initial update stream (most likely to trigger it afterwards).
  * @param devTools (optional) The {@link DevToolsOptions} options for the dev tools, without contract tables which are created here.
  */
@@ -30,10 +32,12 @@ export type WrapperOptions<
   config extends StoreConfig,
   extraTableDefs extends ContractTableDefs | undefined,
   extraDevTables extends Tables | undefined,
+  requiredTables extends (keyof AllTableDefs<config, extraTableDefs>)[] | undefined,
 > = {
   mudConfig: config;
   world?: World;
   otherTableDefs?: extraTableDefs;
+  requiredTables: requiredTables;
   shouldSkipUpdateStream?: () => boolean;
   devTools?: DevToolsOptions<extraDevTables>;
 };
@@ -44,17 +48,23 @@ export type WrapperOptions<
  * Tables are the main entry point to all kind of data retrieval and manipulation.
  *
  * @template config The type of the configuration object specifying tables definitions for contracts codegen.
- * @template tableDefs The types of the definitions used for generating tables.
+ * @template extraTableDefs The types of any additional custom definitions to generate tables for.
+ * @template requiredTables The types of the tables with populated properties.
  * @param world The RECS world object, either provided or created, on which all tables are registered.
  * @param tables The tables generated from all definitions (see {@link createContractTables}).
  * @param tableDefs The full definitions object, including provided MUD config and custom definitions, as well as store and world config tables.
  * @param storageAdapter The storage adapter for formatting onchain logs into TinyBase tabular data (see {@link createStorageAdapter}).
  * @param triggerUpdateStream A function to trigger the update stream on all tables and entities (e.g. after completing sync).
  */
-export type WrapperResult<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
+export type WrapperResult<
+  config extends StoreConfig,
+  extraTableDefs extends ContractTableDefs | undefined,
+  requiredTables extends (keyof AllTableDefs<config, extraTableDefs>)[] | undefined,
+  tableDefs extends AllTableDefs<config, extraTableDefs> = AllTableDefs<config, extraTableDefs>,
+> = {
   world: World;
-  tables: ContractTables<AllTableDefs<config, extraTableDefs>>;
-  tableDefs: AllTableDefs<config, extraTableDefs>;
+  tables: ContractTables<tableDefs, requiredTables>;
+  tableDefs: tableDefs;
   storageAdapter: StorageAdapter;
   triggerUpdateStream: () => void;
 };
@@ -125,13 +135,19 @@ export const createWrapper = <
   config extends StoreConfig,
   extraTableDefs extends ContractTableDefs | undefined,
   extraDevTables extends Tables | undefined,
+  requiredTables extends (keyof AllTableDefs<config, extraTableDefs>)[] | undefined,
 >({
   mudConfig,
   world: _world,
   otherTableDefs,
+  requiredTables,
   shouldSkipUpdateStream,
   devTools,
-}: WrapperOptions<config, extraTableDefs, extraDevTables>): WrapperResult<config, extraTableDefs> => {
+}: WrapperOptions<config, extraTableDefs, extraDevTables, requiredTables>): WrapperResult<
+  config,
+  extraTableDefs,
+  requiredTables
+> => {
   const world = _world ?? createWorld();
 
   /* ------------------------------- DEFINITIONS ------------------------------ */
@@ -145,7 +161,7 @@ export const createWrapper = <
 
   /* --------------------------------- TABLES --------------------------------- */
   // Create contract tables from the definitions (define metadata, create read/write methods, queries, and listeners APIs)
-  const tables = createContractTables({ world, tableDefs });
+  const tables = createContractTables({ world, tableDefs, requiredTables });
 
   /* ----------------------------------- DEV ---------------------------------- */
   // Create dev tools for debugging and monitoring

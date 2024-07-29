@@ -52,6 +52,7 @@ export type AllTableDefs<
   config extends StoreConfig,
   extraTableDefs extends ContractTableDefs | undefined = undefined,
 > = ResolvedStoreConfig<storeToV1<config>>["tables"] &
-  (extraTableDefs extends ContractTableDefs ? extraTableDefs : Record<string, never>) &
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  (extraTableDefs extends ContractTableDefs ? extraTableDefs : {}) &
   typeof storeTableDefs &
   typeof worldTableDefs;

@@ -21,22 +21,29 @@ import type { ContractTableDef } from "@/lib/definitions";
 
 /* --------------------------------- GLOBAL --------------------------------- */
 export type Tables = { [name: string]: Table };
-export type Table<PS extends Schema = Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = BaseTable<
-  PS,
-  M,
-  T
-> &
-  TableMethods<PS, M, T>;
+export type Table<
+  PS extends Schema = Schema,
+  M extends BaseTableMetadata = BaseTableMetadata,
+  T = unknown,
+  R extends boolean = false,
+> = BaseTable<PS, M, T> & TableMethods<PS, M, T, R>;
 
 /* -------------------------------- CONTRACT -------------------------------- */
-export type ContractTables<tableDefs extends Record<string, ContractTableDef>> = {
-  [name in keyof tableDefs]: ContractTable<tableDefs[name]>;
+export type ContractTables<
+  tableDefs extends Record<string, ContractTableDef>,
+  requiredTables extends (keyof tableDefs)[] | undefined,
+> = {
+  [name in keyof tableDefs]: ContractTable<
+    tableDefs[name],
+    requiredTables extends (keyof tableDefs)[] ? (name extends requiredTables[number] ? true : false) : false
+  >;
 };
 
-export type ContractTable<tableDef extends ContractTableDef = ContractTableDef> = Table<
-  ContractTablePropertiesSchema<tableDef>,
-  ContractTableMetadata<tableDef>
->;
+export type ContractTable<
+  tableDef extends ContractTableDef = ContractTableDef,
+  R extends boolean = false,
+  T = unknown,
+> = Table<ContractTablePropertiesSchema<tableDef>, ContractTableMetadata<tableDef>, T, R>;
 
 /* --------------------------------- INDEXED -------------------------------- */
 export type IndexedBaseTable<
@@ -115,8 +122,12 @@ export type TableMutationOptions = {
  * @category Table
  * @internal
  */
-export type TableMethods<PS extends Schema, M extends BaseTableMetadata, T = unknown> = TableBaseMethods<PS, M, T> &
-  TableWithKeysMethods<PS, M, T>;
+export type TableMethods<
+  PS extends Schema,
+  M extends BaseTableMetadata,
+  T = unknown,
+  R extends boolean = false,
+> = TableBaseMethods<PS, M, T, R> & TableWithKeysMethods<PS, M, T, R>;
 
 /**
  * Defines the base methods available for a table.
@@ -124,7 +135,12 @@ export type TableMethods<PS extends Schema, M extends BaseTableMetadata, T = unk
  * @category Table
  * @internal
  */
-export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = {
+export type TableBaseMethods<
+  PS extends Schema,
+  M extends BaseTableMetadata = BaseTableMetadata,
+  T = unknown,
+  R extends boolean = false,
+> = {
   /**
    * Get the current properties of an entity, or the table as a whole if it doesn't require any keys.
    *
@@ -141,8 +157,8 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  get(): Properties<PS, T> | undefined;
-  get(entity: Entity | undefined): Properties<PS, T> | undefined;
+  get(): R extends true ? Properties<PS, T> : Properties<PS, T> | undefined;
+  get(entity: Entity | undefined): R extends true ? Properties<PS, T> : Properties<PS, T> | undefined;
   get(entity?: Entity | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   /**
@@ -451,7 +467,7 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
    * ```
    * @category Methods
    */
-  use(entity?: Entity | undefined): Properties<PS, T> | undefined;
+  use(entity?: Entity | undefined): R extends true ? Properties<PS, T> : Properties<PS, T> | undefined;
   use(entity: Entity | undefined, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   /**
@@ -646,7 +662,12 @@ export type TableBaseMethods<PS extends Schema, M extends BaseTableMetadata = Ba
  * @category Table
  * @internal
  */
-export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata = BaseTableMetadata, T = unknown> = {
+export type TableWithKeysMethods<
+  PS extends Schema,
+  M extends BaseTableMetadata = BaseTableMetadata,
+  T = unknown,
+  R extends boolean = false,
+> = {
   /**
    * Get the current properties of an entity using its keys instead of the entity itself.
    *
@@ -666,8 +687,8 @@ export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata 
    * ```
    * @category Methods
    */
-  getWithKeys(): Properties<PS, T> | undefined;
-  getWithKeys(keys?: Keys<M["abiKeySchema"], T>): Properties<PS, T> | undefined;
+  getWithKeys(): R extends true ? Properties<PS, T> : Properties<PS, T> | undefined;
+  getWithKeys(keys?: Keys<M["abiKeySchema"], T>): R extends true ? Properties<PS, T> : Properties<PS, T> | undefined;
   getWithKeys(keys?: Keys<M["abiKeySchema"], T>, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   /**
@@ -717,8 +738,8 @@ export type TableWithKeysMethods<PS extends Schema, M extends BaseTableMetadata 
    * ```
    * @category Methods
    */
-  useWithKeys(keys?: Keys<M["abiKeySchema"], T>): Properties<PS, T> | undefined;
-  useWithKeys(keys?: Keys<M["abiKeySchema"], T>, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS>;
+  useWithKeys(keys?: Keys<M["abiKeySchema"], T>): R extends true ? Properties<PS, T> : Properties<PS, T> | undefined;
+  useWithKeys(keys?: Keys<M["abiKeySchema"], T>, defaultProperties?: PropertiesSansMetadata<PS, T>): Properties<PS, T>;
 
   /**
    * Set the properties of an entity using its keys instead of the entity itself.

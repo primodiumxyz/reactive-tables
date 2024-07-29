@@ -7,10 +7,14 @@ import { mapObject } from "@/lib/external/mud/utils";
 import type { World } from "@/lib/external/mud/world";
 import type { AllTableDefs, ContractTableDefs, StoreConfig } from "@/lib/definitions";
 
-type CreateContractTablesOptions<config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined> = {
+type CreateContractTablesOptions<
+  config extends StoreConfig,
+  extraTableDefs extends ContractTableDefs | undefined,
+  requiredTables extends Array<keyof AllTableDefs<config, extraTableDefs>> | undefined,
+> = {
   world: World;
   tableDefs: AllTableDefs<config, extraTableDefs>;
-  skipUpdateStream?: boolean;
+  requiredTables?: requiredTables;
 };
 
 /**
@@ -22,10 +26,15 @@ type CreateContractTablesOptions<config extends StoreConfig, extraTableDefs exte
  * @category Tables
  * @internal
  */
-export const createContractTables = <config extends StoreConfig, extraTableDefs extends ContractTableDefs | undefined>({
+export const createContractTables = <
+  config extends StoreConfig,
+  extraTableDefs extends ContractTableDefs | undefined,
+  requiredTables extends Array<keyof AllTableDefs<config, extraTableDefs>> | undefined,
+>({
   world,
   tableDefs,
-}: CreateContractTablesOptions<config, extraTableDefs>) => {
+  requiredTables,
+}: CreateContractTablesOptions<config, extraTableDefs, requiredTables>) => {
   if (!world.hasEntity(defaultEntity)) {
     world.registerEntity({ id: defaultEntity });
   }
@@ -44,21 +53,17 @@ export const createContractTables = <config extends StoreConfig, extraTableDefs 
       __lastSyncedAtBlock: Type.OptionalBigInt,
     } as const satisfies Schema;
 
-    return createTable(
-      world,
-      propertiesSchema,
-      /* keySchema, */ {
-        id: def.tableId,
-        metadata: {
-          name: def.name, // RECS `componentName`
-          namespace: def.namespace, // RECS `namespace`
-          globalName: resourceToLabel(def), // namespace + name; RECS `tableName`
-          // @ts-expect-error complex union type
-          abiKeySchema: mapObject(def.keySchema, ({ type }) => type),
-          // @ts-expect-error complex union type
-          abiPropertiesSchema: mapObject(def.valueSchema, ({ type }) => type),
-        },
+    return createTable(world, propertiesSchema, {
+      id: def.tableId,
+      metadata: {
+        name: def.name, // RECS `componentName`
+        namespace: def.namespace, // RECS `namespace`
+        globalName: resourceToLabel(def), // namespace + name; RECS `tableName`
+        // @ts-expect-error complex union type
+        abiKeySchema: mapObject(def.keySchema, ({ type }) => type),
+        // @ts-expect-error complex union type
+        abiPropertiesSchema: mapObject(def.valueSchema, ({ type }) => type),
       },
-    );
-  }) as unknown as ContractTables<AllTableDefs<config, extraTableDefs>>;
+    });
+  }) as unknown as ContractTables<AllTableDefs<config, extraTableDefs>, requiredTables>;
 };

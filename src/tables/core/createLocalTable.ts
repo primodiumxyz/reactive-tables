@@ -4,7 +4,7 @@ import type { World } from "@/lib/external/mud/world";
 import {
   type AdjustedPropertiesSchema,
   type BaseTableMetadata,
-  OptionalSchema,
+  type OptionalSchema,
   type Properties,
   type Schema,
   Type,

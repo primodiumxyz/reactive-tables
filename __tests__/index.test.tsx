@@ -79,7 +79,7 @@ const setup = (options?: SetupOptions) => {
     storageAdapter,
     triggerUpdateStream,
   } = createWrapper({
-    world: world,
+    world,
     mudConfig,
     shouldSkipUpdateStream: () => localTables.SyncStatus.get()?.step !== SyncStep.Live,
   });
