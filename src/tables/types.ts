@@ -31,7 +31,7 @@ export type Table<
 /* -------------------------------- CONTRACT -------------------------------- */
 export type ContractTables<
   tableDefs extends Record<string, ContractTableDef>,
-  requiredTables extends (keyof tableDefs)[] | undefined,
+  requiredTables extends (keyof tableDefs)[] | undefined = undefined,
 > = {
   [name in keyof tableDefs]: ContractTable<
     tableDefs[name],

@@ -11,7 +11,7 @@ export const createDevTools = async <
 ): Promise<() => void> => {
   if (typeof window !== "undefined") {
     const { mount } = await import("@/dev/mount");
-    return await mount(options);
+    return (await mount(options)) as () => void;
   }
 
   throw new Error("Dev tools can only be mounted in the browser");
