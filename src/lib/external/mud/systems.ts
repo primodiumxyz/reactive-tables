@@ -41,19 +41,14 @@ const _systems = () => {
         system(update);
         if (until(update)) {
           terminate.next();
-          terminate.unsubscribe();
+          terminate.complete();
         }
       });
 
       world.registerDisposer(() => subscription?.unsubscribe());
       return () => {
-        try {
-          subscription?.unsubscribe();
-          terminate.next();
-          terminate.unsubscribe();
-        } catch (err) {
-          console.warn(err);
-        }
+        subscription?.unsubscribe();
+        terminate.complete();
       };
     }
 
