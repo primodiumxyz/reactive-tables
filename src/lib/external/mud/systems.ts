@@ -45,16 +45,22 @@ const _systems = () => {
         }
       });
 
-      world.registerDisposer(() => subscription?.unsubscribe());
-      return () => {
-        subscription?.unsubscribe();
-        terminate.complete();
+      const unsubscribe = () => {
+        if (subscription && !subscription.closed) subscription.unsubscribe();
+        if (terminate && !terminate.closed) terminate.complete();
       };
+
+      world.registerDisposer(() => unsubscribe());
+      return unsubscribe;
     }
 
     const subscription = observable$.subscribe(system);
-    world.registerDisposer(() => subscription?.unsubscribe());
-    return subscription?.unsubscribe;
+    const unsubscribe = () => {
+      if (subscription && !subscription.closed) subscription.unsubscribe();
+    };
+
+    world.registerDisposer(() => unsubscribe());
+    return unsubscribe;
   };
 
   /**
