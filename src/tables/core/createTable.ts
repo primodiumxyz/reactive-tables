@@ -62,12 +62,14 @@ export const createTable = <PS extends Schema, M extends BaseTableMetadata, P ex
   const id = options?.id ?? uuid();
   const baseMetadata = options?.metadata ?? {};
   const indexed = options?.indexed ?? false;
-  const persist = options?.persist ?? false;
+  let persist = options?.persist ?? false;
   const version = options?.version ?? DEFAULT_VERSION;
   const storageAdapter = options?.storageAdapter ?? createLocalStorageAdapter();
 
-  if (persist && typeof window === "undefined")
-    throw new Error("Tables cannot be persisted in a non-browser environment");
+  if (persist && typeof window === "undefined") {
+    persist = false;
+    console.warn("Tables will not be persisted in a non-browser environment");
+  }
   if (persist && !options?.id) throw new Error("You must provide an id for a table to be persisted");
 
   // Metadata
