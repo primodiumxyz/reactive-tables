@@ -40,6 +40,7 @@ export {
   decodeEntity,
   encodeEntity,
   // Schema utilities
+  decodeArgs,
   encodeField,
   encodeKeys,
   // Storage adapter
