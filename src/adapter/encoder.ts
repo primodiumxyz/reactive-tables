@@ -103,9 +103,6 @@ export const encodeField = <TSchemaAbiType extends SchemaAbiType>(
  * @category Schema
  */
 export const encodeKeys = (abiKeySchema: AbiKeySchema, keys: Properties<AbiToSchema<AbiKeySchema>>): Hex[] => {
-  // sort both properties because they might be provided in a different order
-  const staticFields = Object.values(abiKeySchema).filter(isStaticAbiType).sort();
-  const sortedKeys = Object.values(keys).sort();
-
-  return Object.values(sortedKeys).map((key, index) => encodeAbiParameters([{ type: staticFields[index] }], [key]));
+  const staticFields = Object.fromEntries(Object.entries(abiKeySchema).filter(([, type]) => isStaticAbiType(type)));
+  return Object.entries(staticFields).map(([key, type]) => encodeAbiParameters([{ type }], [keys[key]]));
 };
