@@ -34,7 +34,7 @@ importers:
         version: 7.5.5
       tinybase:
         specifier: ^4.8.0
-        version: 4.8.12(prettier@3.3.2)(react-dom@18.3.1)(react@18.3.1)
+        version: 4.8.12(prettier@3.4.2)(react-dom@18.3.1)(react@18.3.1)
       viem:
         specifier: 2.9.20
         version: 2.9.20(typescript@5.5.2)(zod@3.23.8)
@@ -106,8 +106,8 @@ importers:
         specifier: ^10.1.0
         version: 10.1.0
       prettier:
-        specifier: ^3.2.5
-        version: 3.3.2
+        specifier: ^3.3.3
+        version: 3.4.2
       react:
         specifier: ^18.3.1
         version: 18.3.1
@@ -7099,8 +7099,8 @@ packages:
     engines: {node: '>=14'}
     hasBin: true
 
-  /prettier@3.3.2:
-    resolution: {integrity: sha512-rAVeHYMcv8ATV5d508CFdn+8/pHPpXeIid1DdrPwXnaAdH7cqjVbpJaT5eq4yRAFU/lsbwYwSF/n5iNrdJHPQA==}
+  /prettier@3.4.2:
+    resolution: {integrity: sha512-e9MewbtFo+Fevyuxn/4rrcDAaq0IYxPGLvObpQjiZBMAzB9IGmzlnG9RZy3FFas+eBMu2vA0CszMeduow5dIuQ==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -7879,7 +7879,7 @@ packages:
       react-dom: 18.3.1(react@18.3.1)
     dev: false
 
-  /tinybase@4.8.12(prettier@3.3.2)(react-dom@18.3.1)(react@18.3.1):
+  /tinybase@4.8.12(prettier@3.4.2)(react-dom@18.3.1)(react@18.3.1):
     resolution: {integrity: sha512-bLtT/aFQmC16xVvLg3Aojy+AJqmg1meMlXEb06K1s31u1Ttj2csj4cjKzWjL6GC901t+TpDUs2+1yjwwTd1uHw==}
     hasBin: true
     peerDependencies:
@@ -7927,7 +7927,7 @@ packages:
       yjs:
         optional: true
     dependencies:
-      prettier: 3.3.2
+      prettier: 3.4.2
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
     dev: false
